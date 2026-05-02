@@ -72,6 +72,11 @@ document.addEventListener('click',function(e){
   if(dd&&!dd.contains(e.target)){
     document.getElementById('dataMenu').classList.remove('open');
   }
+  const td=document.getElementById('templateDropdown');
+  const tm=document.getElementById('templateMenu');
+  if(td&&tm&&!td.contains(e.target)){
+    tm.classList.remove('open');
+  }
 });
 
 // ===== SIDEBAR TOGGLE =====
@@ -105,7 +110,7 @@ function toggleRightPanel(){
   const hidden=panel.classList.toggle('collapsed');
   cal.classList.toggle('right-hidden',hidden);
   if(handle)handle.style.display=hidden?'none':'';
-  btn.textContent=hidden?'▶ Panel':'◀ Panel';
+  btn.textContent=hidden?'▶':'◀';
   if(hidden){
     cal.style.gridTemplateColumns='';
   } else {
@@ -384,10 +389,13 @@ function restoreCollapsed(){
 function switchTab(id,el){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('p-'+id).classList.add('active');
-  el.classList.add('active');
+  const panel=document.getElementById('p-'+id);
+  if(panel)panel.classList.add('active');
+  if(el)el.classList.add('active');
   const vt=document.getElementById('viewToggle');
-  vt.style.display='flex';
+  if(vt)vt.style.display=(id==='cal')?'flex':'none';
+  const mvt=document.getElementById('mobileViewToggle');
+  if(mvt)mvt.style.display=(id==='cal')?'':'none';
   if(id==='tasks')renderAllTasks();
   if(id==='dump')renderInbox();
   if(id==='cal')renderCalendar();
