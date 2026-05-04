@@ -916,19 +916,7 @@ button,input,select,textarea{font-family:inherit;}
 /* ====== MOBILE VIEW TOGGLE ====== */
 .mobile-view-toggle{display:none;}
 @media(max-width:900px){
-  .mobile-view-toggle{
-    display:flex;align-items:center;gap:6px;
-    padding:10px 4px;margin-bottom:4px;
-    overflow-x:auto;flex-shrink:0;
-  }
-  .mvt-btn{
-    padding:10px 16px;border:1px solid var(--border);background:var(--card);
-    color:var(--dim);font-size:13px;font-weight:500;border-radius:10px;
-    cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;
-    gap:4px;font-family:inherit;white-space:nowrap;min-height:40px;
-  }
-  .mvt-btn.active{background:var(--blue);color:white;border-color:var(--blue);}
-  .mvt-date{font-size:12px;color:var(--dim);margin-left:auto;white-space:nowrap;font-weight:500;}
+  .mobile-view-toggle{display:none!important;}
 }
 
 /* ====== MOBILE BOTTOM NAV ====== */
@@ -1034,7 +1022,10 @@ button,input,select,textarea{font-family:inherit;}
   #cal-right-panel.collapsed{display:none!important;}
   .right-panel-toggle{font-size:10px!important;padding:3px 8px!important;}
 
-  /* Mobile day view — add view toggle */
+  /* Force day view only on mobile */
+  #calWeekView{display:none!important;}
+  #calMonthView{display:none!important;}
+  #calDayView{display:block!important;}
   .day-view{max-width:100%!important;padding-bottom:20px!important;}
 
   /* Popovers — full width on mobile */

@@ -552,14 +552,6 @@
     <span class="mi">checklist</span>
     <span class="mob-nav-label">Tasks</span>
   </button>
-  <button class="mob-nav-btn" onclick="mobNav('dump',this)" data-tab="dump">
-    <span class="mi">psychology</span>
-    <span class="mob-nav-label">Dump</span>
-  </button>
-  <button class="mob-nav-btn" onclick="mobNav('wins',this)" data-tab="wins">
-    <span class="mi">emoji_events</span>
-    <span class="mob-nav-label">Wins</span>
-  </button>
   <button class="mob-nav-btn" onclick="mobNav('more',this)" data-tab="more">
     <span class="mi">more_horiz</span>
     <span class="mob-nav-label">More</span>
@@ -568,6 +560,8 @@
 
 <!-- MOBILE MORE MENU -->
 <div class="mobile-more-menu" id="mobileMoreMenu">
+  <button onclick="mobNav('dump')"><span class="mi" style="color:var(--purple);">psychology</span> Brain Dump</button>
+  <button onclick="mobNav('wins')"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
   <button onclick="mobNav('mcat')"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
   <button onclick="mobNav('rec')"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
   <button onclick="toggleMobileSidebar();closeMobileMore()"><span class="mi" style="color:var(--green);">psychology</span> ADHD Coach</button>
@@ -589,6 +583,7 @@ function mobNav(tab,btn){
   document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
   else{const b=document.querySelector(`.mob-nav-btn[data-tab="${tab}"]`);if(b)b.classList.add('active');}
+  if(tab==='cal'){D.calView='day';save();}
   switchTab(tab,document.querySelector(`.tab-btn[onclick*="'${tab}'"]`));
 }
 function closeMobileMore(){document.getElementById('mobileMoreMenu').classList.remove('show');}
@@ -599,8 +594,7 @@ function updateMvt(btn){
   if(d)d.textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  const d=document.getElementById('mvtDate');
-  if(d)d.textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  if(window.innerWidth<=900){D.calView='day';save();}
 });
 </script>
 </body>
