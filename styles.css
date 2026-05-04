@@ -1013,8 +1013,9 @@ button,input,select,textarea{font-family:inherit;}
   }
 
   /* Right panel stacks below on mobile */
-  #p-cal{display:flex!important;flex-direction:column!important;}
-  #p-cal.active{display:flex!important;}
+  .tab-panel{display:none!important;}
+  .tab-panel.active{display:block!important;}
+  #p-cal.active{display:flex!important;flex-direction:column!important;}
   #cal-main-area{flex:none!important;min-height:0!important;}
   #rightPanelResize{display:none!important;}
   #cal-right-panel{
