@@ -974,9 +974,10 @@ button,input,select,textarea{font-family:inherit;}
   .view-toggle{display:none!important;}
   .date-label{display:none!important;}
 
-  /* Topbar — slim on mobile */
+  /* Topbar — slim on mobile, push below notch/Dynamic Island */
   .topbar{
-    padding:8px 12px;gap:8px;flex-wrap:nowrap;
+    padding:8px 12px;padding-top:calc(12px + env(safe-area-inset-top));
+    gap:8px;flex-wrap:nowrap;
     position:sticky;top:0;z-index:50;
     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
   }
