@@ -30,6 +30,7 @@
         <button onclick="pasteDataFromClipboard();toggleDataMenu();">📥 Paste</button>
       </div>
     </div>
+    <button id="notifToggleBtn" onclick="requestNotifPermission()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
     <button id="themeBtn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Toggle theme">☀️</button>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
@@ -137,7 +138,7 @@
   <div class="main">
     <!-- CALENDAR TAB -->
     <div class="tab-panel active" id="p-cal">
-      <button class="right-panel-toggle" id="rightPanelToggle" onclick="toggleRightPanel()" title="Toggle right panel">◀ Panel</button>
+      <button class="right-panel-toggle" id="rightPanelToggle" onclick="toggleRightPanel()" title="Toggle right panel">◀</button>
       <!-- Mobile view toggle -->
       <div class="mobile-view-toggle" id="mobileViewToggle">
         <button class="mvt-btn active" onclick="setCalView('day',this);updateMvt(this)"><span class="mi" style="font-size:14px;">today</span> Day</button>
@@ -152,6 +153,7 @@
       </div>
       <div id="rightPanelResize" class="right-resize-handle"></div>
       <div id="cal-right-panel">
+        <button class="right-panel-close-btn" onclick="toggleRightPanel()" title="Close panel">✕</button>
         <!-- Quick-Add Event -->
         <div class="s-card" data-card="calright-quickadd" style="border-color:rgba(96,165,250,.25);">
           <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--blue);">add_circle</span> Add Event<button class="s-collapse" onclick="toggleCard('calright-quickadd',this)">▾</button></div>
@@ -201,8 +203,8 @@
         </div>
 
         <!-- Completed -->
-        <div class="s-card" data-card="calright-completed" style="border-color:rgba(239,68,68,.2);">
-          <div class="s-title" style="color:var(--red);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--red);">task_alt</span> Completed <span class="badge" id="calRightCompletedBadge" style="background:rgba(239,68,68,.12);color:var(--red);">0</span><button class="s-collapse" onclick="toggleCard('calright-completed',this)">▾</button></div>
+        <div class="s-card" data-card="calright-completed" style="border-color:rgba(52,211,153,.2);">
+          <div class="s-title" style="color:var(--green);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">task_alt</span> Completed <span class="badge" id="calRightCompletedBadge" style="background:rgba(52,211,153,.12);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-completed',this)">▾</button></div>
           <div class="s-body" id="cardBody-calright-completed">
             <div id="calRightCompletedList"></div>
           </div>
@@ -569,6 +571,8 @@
   <button onclick="mobNav('mcat')"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
   <button onclick="mobNav('rec')"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
   <button onclick="toggleMobileSidebar();closeMobileMore()"><span class="mi" style="color:var(--green);">psychology</span> ADHD Coach</button>
+  <button onclick="toggleTheme();closeMobileMore()"><span class="mi" style="color:var(--amber);">light_mode</span> Toggle Theme</button>
+  <button onclick="document.getElementById('dataMenu').classList.toggle('show');closeMobileMore()"><span class="mi" style="color:var(--dim);">settings</span> Data / Backup</button>
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
