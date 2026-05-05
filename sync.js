@@ -137,10 +137,12 @@ window.SyncEngine=(function(){
 
   function init(){
     const cfg=getConfig();
+    const el=document.getElementById('syncStatusBtn');
+    if(el)el.addEventListener('click',()=>{
+      if(_state==='error'||_state==='disabled')showPairingModal();
+    });
     if(!cfg){
       setStatus('disabled','Tap to connect sync');
-      const el=document.getElementById('syncStatusBtn');
-      if(el)el.addEventListener('click',showPairingModal);
       return;
     }
     setTimeout(()=>pull(),800);
