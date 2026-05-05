@@ -490,7 +490,8 @@ function renderCalRightTasks(){
 
   let html='';
 
-  // Active schedule blocks
+  // --- SCHEDULE section (time blocks/meetings) ---
+  const allSlotBlocks=[];
   activeSlots.forEach(slot=>{
     if(!slot._id)slot._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
     const sid=slot._id;
@@ -498,49 +499,58 @@ function renderCalRightTasks(){
     const catColor=cat?cat.color:slot.cls==='focus'?'#fbbf24':slot.cls==='_task'?'#f87171':slot.cls==='_todo'?'#60a5fa':'var(--blue)';
     const startM=(typeof parseMin==='function')?parseMin(slot.t):0;
     const endM=slot.end?parseMin(slot.end):startM+60;
-    html+=renderBlock({
+    allSlotBlocks.push(renderBlock({
       color:catColor, done:false,
       isPast:isToday&&endM<=nowMin, isCurrent:isToday&&startM<=nowMin&&endM>nowMin,
       label:slot.text, subtitle:slot.t+(slot.end?' – '+slot.end:'')+(slot.loc?' · '+slot.loc:''),
       toggleAction:`togSlotDone('${dt}','${sid}')`, ctx:''
-    });
+    }));
   });
-
-  // Active tasks
-  activeTasks.forEach(t=>{
-    const cat=D.cats[t.cat];
-    const catColor=cat?cat.color:'var(--dim)';
-    const emoji=cat?cat.emoji:'';
-    const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
-    html+=renderBlock({
-      color:catColor, done:false, isPast:false, isCurrent:false,
-      label:emoji+' '+effortTag+t.text, subtitle:'',
-      toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`
-    });
-  });
-
-  // Done slots + tasks (greyed inline)
   doneSlots.forEach(slot=>{
     if(!slot._id)slot._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
     const sid=slot._id;
     const cat=D.cats&&D.cats[slot.cls];
     const catColor=cat?cat.color:'var(--green)';
-    html+=renderBlock({
+    allSlotBlocks.push(renderBlock({
       color:catColor, done:true, isPast:false, isCurrent:false,
       label:slot.text, subtitle:'',
       toggleAction:`togSlotDone('${dt}','${sid}')`, ctx:''
-    });
+    }));
+  });
+
+  if(allSlotBlocks.length){
+    html+=`<div style="font-size:9px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:4px 0 2px;">Schedule</div>`;
+    html+=allSlotBlocks.join('');
+  }
+
+  // --- TASKS section (to-do items) ---
+  const allTaskBlocks=[];
+  activeTasks.forEach(t=>{
+    const cat=D.cats[t.cat];
+    const catColor=cat?cat.color:'var(--dim)';
+    const emoji=cat?cat.emoji:'';
+    const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
+    allTaskBlocks.push(renderBlock({
+      color:catColor, done:false, isPast:false, isCurrent:false,
+      label:emoji+' '+effortTag+t.text, subtitle:'',
+      toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`
+    }));
   });
   doneTasks.forEach(t=>{
     const cat=D.cats[t.cat];
     const catColor=cat?cat.color:'var(--dim)';
     const emoji=cat?cat.emoji:'';
-    html+=renderBlock({
+    allTaskBlocks.push(renderBlock({
       color:catColor, done:true, isPast:false, isCurrent:false,
       label:emoji+' '+t.text, subtitle:'',
       toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`
-    });
+    }));
   });
+
+  if(allTaskBlocks.length){
+    html+=`<div style="font-size:9px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:${allSlotBlocks.length?'8':'4'}px 0 2px;">Tasks</div>`;
+    html+=allTaskBlocks.join('');
+  }
 
   el.innerHTML=html;
 }

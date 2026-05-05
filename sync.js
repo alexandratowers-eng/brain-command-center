@@ -135,7 +135,22 @@ window.SyncEngine=(function(){
     });
   }
 
+  function autoPairFromURL(){
+    const h=window.location.hash;
+    if(!h||!h.startsWith('#BCC:'))return false;
+    const val=decodeURIComponent(h.slice(1));
+    const parts=val.split(':');
+    if(parts.length<3)return false;
+    const gistId=parts[1];
+    const token=parts.slice(2).join(':');
+    localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId,token}));
+    window.location.hash='';
+    history.replaceState(null,'',window.location.pathname+window.location.search);
+    return true;
+  }
+
   function init(){
+    const paired=autoPairFromURL();
     const cfg=getConfig();
     const el=document.getElementById('syncStatusBtn');
     if(el)el.addEventListener('click',()=>{
@@ -145,6 +160,7 @@ window.SyncEngine=(function(){
       setStatus('disabled','Tap to connect sync');
       return;
     }
+    if(paired)setStatus('syncing','Connecting...');
     setTimeout(()=>pull(),800);
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible')pull();

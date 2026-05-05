@@ -215,18 +215,7 @@
             </div>
           </div>
         </div>
-        <!-- Quick Wins (compact) -->
-        <div class="s-card" data-card="calright-quickwins" style="border-color:rgba(52,211,153,.25);">
-          <div class="s-title" style="color:var(--green);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;">emoji_events</span> Quick Wins <span class="badge" id="quickWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-quickwins',this)">▾</button></div>
-          <div class="s-body" id="cardBody-calright-quickwins">
-            <div class="quick-wins-input-row">
-              <input type="text" id="quickWinsInput" placeholder="just finished..." onkeydown="if(event.key==='Enter')addQuickWin()">
-              <button class="quick-wins-add-btn" onclick="addQuickWin()">+</button>
-            </div>
-            <div id="quickWinsList"></div>
-            <button class="t-btn qw-move-wins-btn" id="qwMoveBtn" onclick="moveCheckedWinsToWins()" style="display:none;">✨ Send checked to Wins</button>
-          </div>
-        </div>
+        <!-- Quick Wins removed from right panel — now in sidebar -->
         <!-- Hidden containers for compat -->
         <div id="calRightCompletedList" style="display:none;"></div>
         <div id="calRightCompletedBadge" style="display:none;">0</div>
