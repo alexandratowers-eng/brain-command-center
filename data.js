@@ -126,6 +126,7 @@ function renderAll(){
   if(typeof renderCalRightTasks==='function')renderCalRightTasks();
   if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();
   if(typeof renderCalRightStash==='function')renderCalRightStash();
+  if(typeof renderSidebarWins==='function')renderSidebarWins();
   if(typeof checkWeeklyReview==='function')checkWeeklyReview();
   if(typeof renderWeeklyGoal==='function')renderWeeklyGoal();
   if(typeof autoParkingReview==='function')autoParkingReview();

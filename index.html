@@ -105,6 +105,18 @@
       </div>
     </div>
 
+    <!-- Quick Wins (sidebar) -->
+    <div class="s-card" data-card="sidebar-quickwins" style="border-color:rgba(52,211,153,.25);">
+      <div class="s-title" style="color:var(--green);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;">emoji_events</span> Quick Wins <span class="badge" id="sidebarWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('sidebar-quickwins',this)">▾</button></div>
+      <div class="s-body" id="cardBody-sidebar-quickwins">
+        <div class="quick-wins-input-row">
+          <input type="text" id="sidebarWinsInput" placeholder="just finished..." onkeydown="if(event.key==='Enter')addQuickWinSidebar()">
+          <button class="quick-wins-add-btn" onclick="addQuickWinSidebar()">+</button>
+        </div>
+        <div id="sidebarWinsList"></div>
+      </div>
+    </div>
+
     <!-- Weekly Goal Tracker -->
     <div class="s-card" data-card="weeklygoal">
       <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">trending_up</span> Weekly Progress<button class="s-collapse" onclick="toggleCard('weeklygoal',this)">▾</button></div>

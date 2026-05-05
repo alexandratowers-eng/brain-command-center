@@ -568,42 +568,43 @@ function renderCalRightStash(){
   if(badge)badge.textContent=total;
   if(!total){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing parked — your mind is clear</p>';return;}
 
-  let html='';
+  const STASH_LIMIT=3;
+  const allItems=[];
 
-  // Later tasks — with checkbox for completion
   laterTasks.forEach(t=>{
     const cat=D.cats[t.cat];
-    html+=`<div class="task-item" style="padding:3px 0;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+    allItems.push({sort:0,html:`<div class="task-item" style="padding:3px 0;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
       <div class="p-dot ${t.pri}"></div>
       <input type="checkbox" onchange="togTask(${t.id},this)">
       <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</div>
       <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today" style="font-size:9px;">→ today</button>
-    </div>`;
+    </div>`});
   });
 
-  // Parked thoughts — with done button
   parked.forEach(p=>{
-    html+=`<div class="task-item" style="padding:3px 0;">
+    allItems.push({sort:1,html:`<div class="task-item" style="padding:3px 0;">
       <span style="font-size:11px;flex-shrink:0;">📌</span>
       <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.text}</div>
       <button class="defer-btn" onclick="promoteParkingItem(${p.id});renderCalRightStash();" title="Make a task" style="font-size:9px;">→ task</button>
       <button class="pi-act" onclick="parkingItemDone(${p.id});renderCalRightStash();" title="Done" style="font-size:9px;color:var(--green);">✓</button>
       <button class="pi-act pi-del" onclick="removeParkingItem(${p.id});renderCalRightStash();" title="Remove" style="font-size:9px;">✕</button>
-    </div>`;
+    </div>`});
   });
 
-  // Backlog (compact)
-  if(backlog.length){
-    backlog.slice(0,5).forEach(b=>{
-      const cat=D.cats[b.cat];
-      html+=`<div class="task-item" style="padding:3px 0;opacity:.6;">
-        <span style="font-size:11px;">${cat?.emoji||'📌'}</span>
-        <div class="t-label" style="flex:1;font-size:11px;">${b.text}</div>
-        <button class="defer-btn" onclick="restoreFromBacklog(${b.id});renderCalRightStash();" style="font-size:9px;">↑</button>
-        <button class="pi-act pi-del" onclick="removeFromBacklog(${b.id});renderCalRightStash();" style="font-size:9px;">✕</button>
-      </div>`;
-    });
-    if(backlog.length>5) html+=`<p style="font-size:9px;color:var(--dim);text-align:center;">+${backlog.length-5} more</p>`;
+  backlog.forEach(b=>{
+    const cat=D.cats[b.cat];
+    allItems.push({sort:2,html:`<div class="task-item" style="padding:3px 0;opacity:.6;">
+      <span style="font-size:11px;">${cat?.emoji||'📌'}</span>
+      <div class="t-label" style="flex:1;font-size:11px;">${b.text}</div>
+      <button class="defer-btn" onclick="restoreFromBacklog(${b.id});renderCalRightStash();" style="font-size:9px;">↑</button>
+      <button class="pi-act pi-del" onclick="removeFromBacklog(${b.id});renderCalRightStash();" style="font-size:9px;">✕</button>
+    </div>`});
+  });
+
+  let html=allItems.slice(0,STASH_LIMIT).map(i=>i.html).join('');
+  if(allItems.length>STASH_LIMIT){
+    html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">Show all ${allItems.length} items</button>`;
+    html+=`<div id="stashOverflow" style="display:none;">${allItems.slice(STASH_LIMIT).map(i=>i.html).join('')}</div>`;
   }
   el.innerHTML=html;
 }
@@ -760,7 +761,7 @@ function addQuickWin(){
   D.reflections[today].manualWins.push(text);
   window._quickWins.push({text,checked:true,added:today});
   inp.value='';
-  save();renderQuickWins();
+  save();renderQuickWins();renderSidebarWins();
   setTimeout(()=>{
     const item=document.querySelector('#quickWinsList .qw-item:last-child');
     if(item)item.classList.add('qw-just-added');
@@ -798,6 +799,37 @@ function moveCheckedWinsToWins(){
   save();renderQuickWins();
   const toast=document.getElementById('saveToast');
   if(toast){toast.innerHTML='✨ '+checked.length+' win'+(checked.length>1?'s':'')+' saved!';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2000);}
+}
+
+// ===== SIDEBAR QUICK WINS =====
+function renderSidebarWins(){
+  const el=document.getElementById('sidebarWinsList');if(!el)return;
+  const wins=window._quickWins||[];
+  const badge=document.getElementById('sidebarWinsBadge');
+  if(badge)badge.textContent=wins.length;
+  if(!wins.length){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:6px;">Log a win — you deserve it</p>';return;}
+  el.innerHTML=wins.map((w,i)=>`<div class="qw-item${w.checked?' checked':''}" id="sqw-${i}">
+    <span class="qw-check${w.checked?' qw-checked':''}" onclick="toggleQuickWin(${i});renderSidebarWins();">
+      ${w.checked?'<span class="mi" style="font-size:16px;color:var(--green);">check_circle</span>':'<span class="mi" style="font-size:16px;color:var(--border);">radio_button_unchecked</span>'}
+    </span>
+    <span class="qw-text">${w.text}</span>
+    <button class="qw-del" onclick="deleteQuickWin(${i});renderSidebarWins();">✕</button>
+  </div>`).join('');
+}
+function addQuickWinSidebar(){
+  const inp=document.getElementById('sidebarWinsInput');if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  const today=todayStr();
+  if(!D.reflections)D.reflections={};
+  if(!D.reflections[today])D.reflections[today]={};
+  if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
+  D.reflections[today].manualWins.push(text);
+  window._quickWins.push({text,checked:true,added:today});
+  inp.value='';
+  save();renderSidebarWins();renderQuickWins();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='✨ Saved to today\'s wins!';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+  if(typeof renderWinsTab==='function')renderWinsTab();
 }
 
 // ===== EDIT MODAL =====
