@@ -59,7 +59,7 @@ function addSidebarTask(inp){
   D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:todayStr()});
   inp.value='';save();renderCalTasks();updateStats();
 }
-function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done)celebrate();save();setTimeout(()=>{renderCalTasks();renderAllTasks();updateStats();},300);}
+function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){celebrate();autoAddWin(t.text,t.date||todayStr());}save();setTimeout(()=>{renderCalTasks();renderAllTasks();updateStats();},300);}
 function moveTaskDate(id,dir){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   const d=new Date((t.date||todayStr())+'T12:00:00');
@@ -129,6 +129,7 @@ let _slCollapsed=JSON.parse(localStorage.getItem('swimlaneCollapsed')||'{}');
 let _doneCollapsed=localStorage.getItem('doneCollapsed')!=='false';
 
 function renderAllTasks(){
+  if(window.innerWidth<=900){renderMobileTasks();return;}
   const priOrd={high:0,med:1,low:2};
   const today=todayStr();
   const allActive=D.tasks.filter(t=>!t.done&&t.cat!=='braindump');
@@ -1037,5 +1038,108 @@ function renderInbox(){
     </select>
     <button class="task-act-btn" onclick="D.tasks=D.tasks.filter(x=>x.id!==${t.id});save();renderInbox();">x</button>
   </div>`).join('');
+}
+
+// ===== MOBILE TASKS VIEW =====
+function renderMobileTasks(){
+  const pane=document.getElementById('tasksActivePane');
+  if(!pane)return;
+  pane.style.display='';
+  const pp=document.getElementById('tasksParkingPane');if(pp)pp.style.display='none';
+  const bp=document.getElementById('tasksBacklogPane');if(bp)bp.style.display='none';
+
+  const today=todayStr();
+  const tmrw=dateStr(new Date(new Date().getTime()+86400000));
+  const priOrd={high:0,med:1,low:2};
+  const active=D.tasks.filter(t=>!t.done&&t.cat!=='braindump');
+  const done=D.tasks.filter(t=>t.done&&t.cat!=='braindump');
+
+  const todayTasks=active.filter(t=>t.date===today||t.date<today&&t.date).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
+  const tmrwTasks=active.filter(t=>t.date===tmrw).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
+  const laterTasks=active.filter(t=>!t.date||(t.date>tmrw)).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
+
+  function taskRow(t,section){
+    const cat=D.cats[t.cat];
+    const isOverdue=t.date&&t.date<today;
+    const catBadge=cat?`<span style="font-size:10px;color:${cat.color};">${cat.emoji}</span>`:'';
+    let actions='';
+    if(section==='today'){
+      actions=`<button onclick="deferToTomorrow(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">tmrw</button>
+        <button onclick="deferToLater(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">later</button>`;
+    } else if(section==='tomorrow'){
+      actions=`<button onclick="laterToToday(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">today</button>
+        <button onclick="deferToLater(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">later</button>`;
+    } else {
+      actions=`<button onclick="laterToToday(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">today</button>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;${isOverdue?'border-left:3px solid var(--red);':''}">
+      <input type="checkbox" onchange="togTask(${t.id},this)" style="width:20px;height:20px;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.text}</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px;display:flex;gap:6px;align-items:center;">${catBadge}${isOverdue?'<span style="color:var(--red);">overdue</span>':''}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0;">${actions}</div>
+    </div>`;
+  }
+
+  let h=`<div style="padding:4px 0;">
+    <div style="margin-bottom:6px;">
+      <input type="text" id="mobileTaskAdd" placeholder="+ Add a task..."
+        onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){D.tasks.push({id:D.nextId++,text:v,cat:'personal',pri:'med',done:false,date:'${today}'});this.value='';save();renderMobileTasks();updateStats();}}"
+        style="width:100%;padding:12px 14px;font-size:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none;font-family:inherit;">
+    </div>`;
+
+  // Today
+  h+=`<div style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+      <span class="mi" style="font-size:18px;">today</span> Today <span style="font-size:11px;font-weight:500;color:var(--dim);">${todayTasks.length}</span>
+    </div>`;
+  if(todayTasks.length) todayTasks.forEach(t=>{h+=taskRow(t,'today');});
+  else h+=`<div style="font-size:12px;color:var(--dim);padding:12px;text-align:center;">Nothing for today</div>`;
+  h+=`</div>`;
+
+  // Tomorrow
+  h+=`<div style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+      <span class="mi" style="font-size:18px;">wb_sunny</span> Tomorrow <span style="font-size:11px;font-weight:500;color:var(--dim);">${tmrwTasks.length}</span>
+    </div>`;
+  if(tmrwTasks.length) tmrwTasks.forEach(t=>{h+=taskRow(t,'tomorrow');});
+  else h+=`<div style="font-size:12px;color:var(--dim);padding:12px;text-align:center;">Nothing for tomorrow</div>`;
+  h+=`</div>`;
+
+  // Later
+  h+=`<div style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+      <span class="mi" style="font-size:18px;">schedule</span> Later <span style="font-size:11px;font-weight:500;color:var(--dim);">${laterTasks.length}</span>
+    </div>`;
+  if(laterTasks.length) laterTasks.forEach(t=>{h+=taskRow(t,'later');});
+  else h+=`<div style="font-size:12px;color:var(--dim);padding:12px;text-align:center;">Nothing stashed</div>`;
+  h+=`</div>`;
+
+  // Done (collapsed by default)
+  if(done.length){
+    h+=`<div style="margin-bottom:16px;">
+      <div onclick="document.getElementById('mobDoneList').style.display=document.getElementById('mobDoneList').style.display==='none'?'':'none'" style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <span class="mi" style="font-size:18px;">check_circle</span> Done <span style="font-size:11px;font-weight:500;color:var(--dim);">${done.length}</span>
+      </div>
+      <div id="mobDoneList" style="display:none;">`;
+    done.forEach(t=>{
+      const cat=D.cats[t.cat];
+      h+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:4px;opacity:.5;">
+        <input type="checkbox" checked onchange="togTask(${t.id},this)" style="width:20px;height:20px;">
+        <span style="font-size:13px;text-decoration:line-through;flex:1;">${cat?cat.emoji:''} ${t.text}</span>
+      </div>`;
+    });
+    h+=`</div></div>`;
+  }
+  h+=`</div>`;
+
+  pane.innerHTML=h;
+  // Hide desktop elements
+  const subtabs=document.querySelector('#p-tasks .tasks-subtabs');if(subtabs)subtabs.style.display='none';
+  const sidebar=document.getElementById('tasksCatSidebar');if(sidebar)sidebar.style.display='none';
+  const mainInbox=document.getElementById('tasksMainInbox');if(mainInbox)mainInbox.style.display='none';
+  const doneSection=document.getElementById('swimlaneDoneSection');if(doneSection)doneSection.style.display='none';
+  const addBar=document.querySelector('.swimlane-add-bar');if(addBar)addBar.style.display='none';
 }
 
