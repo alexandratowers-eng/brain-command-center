@@ -11,6 +11,7 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
   // Migrate: add reflections if missing
   if(!d.reflections) d.reflections={};
   if(!d.backlog) d.backlog=[];
+  if(!d.worryLog) d.worryLog={};
   if(!d.weeklyGoals) d.weeklyGoals=[];
   // Migrate: consolidate gma+errands into personal, inbox into braindump
   if(!d._catsMerged){
@@ -163,7 +164,7 @@ function defaults(){
     ],
     days:{},
     reflections:{},
-    energy:3,pomo:0,brainDump:'',parking:'',parkingItems:[],backlog:[],nextId:20,
+    energy:3,pomo:0,brainDump:'',parking:'',parkingItems:[],backlog:[],worryLog:{},nextId:20,
     selectedDate:today,
     calView:'week',
     miniMonth:new Date().getMonth(),

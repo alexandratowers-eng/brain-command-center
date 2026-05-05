@@ -269,6 +269,22 @@
           <h3 style="font-size:14px;margin-bottom:8px;">Inbox <span class="badge" id="inboxCount">0</span></h3>
           <div id="inboxItems"></div>
         </div>
+        <!-- Worry Notes -->
+        <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <h3 style="font-size:14px;margin:0;">Worry Notes</h3>
+            <span id="worryTimerDisplay" class="worry-timer" style="display:none;"></span>
+          </div>
+          <p style="font-size:11px;color:var(--dim);margin-bottom:8px;">Give yourself 10 minutes. Write what's on your mind — no editing, just flow.</p>
+          <textarea class="dump-area" id="worryNotes" placeholder="What's weighing on your mind right now..." oninput="onWorryInput(this)"></textarea>
+          <div style="display:flex;gap:6px;margin-top:6px;align-items:center;">
+            <button class="t-btn primary" onclick="finishWorryNotes()">Done — show me next steps</button>
+            <select id="worryDatePicker" onchange="loadWorryEntry(this.value)" style="font-size:10px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--dim);">
+              <option value="">Past entries...</option>
+            </select>
+          </div>
+          <div id="worryNextSteps" style="display:none;margin-top:12px;"></div>
+        </div>
       </div>
     </div>
 
@@ -499,18 +515,11 @@
   </div>
 </div>
 
-<!-- MORNING MOTIVATION -->
-<div class="modal-bg" id="morningModal" onclick="if(event.target===this)closeMorningModal()">
+<!-- DAILY MOTIVATION -->
+<div class="modal-bg" id="motivModal" onclick="if(event.target===this)closeDailyMotivation()">
   <div class="modal motivation-modal">
-    <div id="morningContent"></div>
-    <button class="t-btn primary" onclick="closeMorningModal()" style="margin-top:12px;">Let's go</button>
-  </div>
-</div>
-<!-- EVENING MOTIVATION -->
-<div class="modal-bg" id="eveningModal" onclick="if(event.target===this)closeEveningModal()">
-  <div class="modal motivation-modal">
-    <div id="eveningContent"></div>
-    <button class="t-btn primary" onclick="closeEveningModal()" style="margin-top:12px;">Done for today</button>
+    <div id="motivContent"></div>
+    <button class="t-btn primary" onclick="closeDailyMotivation()" style="margin-top:12px;">Let's go</button>
   </div>
 </div>
 

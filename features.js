@@ -912,7 +912,7 @@ function generateCoachSuggestions(){
 
   // Build goal-based action blocks
   let html='';
-  const shown=Math.min(pendingTasks.length,3);
+  const shown=Math.min(pendingTasks.length,2);
   for(let i=0;i<shown;i++){
     const t=pendingTasks[i];
     const cat=D.cats[t.cat];
@@ -937,7 +937,6 @@ function generateCoachSuggestions(){
       backupHtml=`<div style="display:flex;align-items:center;gap:4px;margin-top:2px;padding-left:22px;">
         <span style="font-size:8px;color:var(--dim);">or</span>
         <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();coachAddBlock('${t.cat}',${backupDur},'${safe}')">${backupLabel}</button>
-        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();switchTab('dump',document.querySelector('.tab-btn[onclick*=\\'dump\\']'))">brain dump it</button>
       </div>`;
     } else if(energy>=3&&t.effort!=='quick'){
       const backupDur=isBig?25:15;
@@ -959,43 +958,8 @@ function generateCoachSuggestions(){
     </div>`;
   }
 
-  // Contextual extras
-  if(shown<3){
-    // Business hours call nudge
-    if(hour>=15&&hour<17){
-      const callTask=D.tasks.find(t=>t.date===today&&!t.done&&t.effort==='call');
-      if(callTask){
-        const s=callTask.text.length>25?callTask.text.slice(0,25)+'…':callTask.text;
-        html+=`<div class="coach-suggestion" onclick="coachAddBlock('${callTask.cat}',20,'${callTask.text.replace(/'/g,"\\'")}')">
-          <span class="coach-s-icon">📞</span>
-          <span class="coach-s-text">Biz hours closing — ${s}</span>
-          <button class="coach-s-btn" onclick="event.stopPropagation();coachAddBlock('${callTask.cat}',20,'${callTask.text.replace(/'/g,"\\'")}')">+ block</button>
-        </div>`;
-      }
-    }
-    // Monday CHOP calls
-    if(dayOfWeek===1&&timeOfDay==='afternoon'&&!tl.some(s=>s.cls==='chop'&&parseMin(s.t)>=720)){
-      html+=`<div class="coach-suggestion" onclick="coachAddBlock('chop',120,'CHOP Calls — 20 new + follow-ups')">
-        <span class="coach-s-icon">📞</span>
-        <span class="coach-s-text">Post-TPP: CHOP calls window</span>
-        <button class="coach-s-btn" onclick="event.stopPropagation();coachAddBlock('chop',120,'CHOP Calls — 20 new + follow-ups')">+ Add block</button>
-      </div>`;
-    }
-    // Evening exercise
-    if(timeOfDay==='evening'&&D.cats.exercise&&energy>1){
-      const hasMoved=tl.some(s=>s.cls==='exercise');
-      if(!hasMoved) html+=`<div class="coach-suggestion" onclick="coachAddBlock('exercise',15)">
-        <span class="coach-s-icon">🌙</span>
-        <span class="coach-s-text">Quick stretch or walk?</span>
-        <button class="coach-s-btn" onclick="event.stopPropagation();coachAddBlock('exercise',15)">+ 15m</button>
-      </div>`;
-    }
-  }
-
-  // Energy-based header
-  const eMsgs={1:'Really low energy — start tiny',2:'Low battery — ease in',3:'Steady — pick one thing',4:'Good energy — go for it',5:'Locked in — crush it'};
-  const eMsg=eMsgs[Math.min(5,Math.max(1,energy))]||eMsgs[3];
-  el.innerHTML=`<div style="font-size:9px;color:var(--dim);margin-bottom:4px;padding:0 4px;">${eMsg} · ${pendingTasks.length} left today</div>${html}`;
+  const eMsg=energy>=4?'Good energy today':energy<=2?'Low energy — start small':'Steady — one thing at a time';
+  el.innerHTML=`<div style="font-size:9px;color:var(--dim);margin-bottom:6px;padding:0 4px;">${eMsg} · <b style="color:var(--amber);">${pendingTasks.length}</b> left</div>${html}`;
 }
 
 function coachAddBlock(catKey,durMin,title){
@@ -1508,92 +1472,125 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-// ===== MORNING/EVENING MOTIVATION =====
-function checkMorningMotivation(){
-  const now=new Date();
-  const hour=now.getHours();
-  if(hour>=10)return;
+// ===== DAILY MOTIVATION =====
+const DAILY_MOTIV_MSGS=[
+  "One thing at a time. That's enough.",
+  "Your brain works differently — that's your edge.",
+  "Start messy. Done is better than perfect.",
+  "You don't have to feel ready. Just start.",
+  "Small steps still move you forward.",
+  "Progress over perfection, always.",
+  "The hardest part is opening the app. You did that.",
+  "Showing up counts. You're here."
+];
+function checkDailyMotivation(){
   const today=todayStr();
-  const key='morningDismissed_'+today;
-  if(localStorage.getItem(key))return;
-  const modal=document.getElementById('morningModal');
-  const content=document.getElementById('morningContent');
+  if(localStorage.getItem('motivDismissed_'+today))return;
+  const modal=document.getElementById('motivModal');
+  const content=document.getElementById('motivContent');
   if(!modal||!content)return;
-
-  // Yesterday's wins
+  const now=new Date();
   const yesterday=new Date(now);yesterday.setDate(yesterday.getDate()-1);
   const yStr=yesterday.toISOString().split('T')[0];
   const yDone=D.tasks.filter(t=>t.date===yStr&&t.done);
   const yBlocks=(getTimeline(yStr)||[]).filter(s=>s.done);
   const totalWins=yDone.length+yBlocks.length;
-
-  // Today's top 3 priorities
-  const todayTasks=D.tasks.filter(t=>t.date===today&&!t.done).sort((a,b)=>({high:0,med:1,low:2})[a.pri]-({high:0,med:1,low:2})[b.pri]);
-  const top3=todayTasks.slice(0,3);
-
-  const hypes=['You showed up yesterday and crushed it!','Look at you, already here!','Yesterday was solid — today will be too!','Your brain is online — let\'s go!'];
-  const hype=hypes[Math.floor(Math.random()*hypes.length)];
-
-  let html=`<h2>Good Morning</h2>`;
-  html+=`<p style="font-size:13px;color:var(--dim);margin-bottom:12px;">${hype}</p>`;
+  const msg=DAILY_MOTIV_MSGS[Math.floor(Math.random()*DAILY_MOTIV_MSGS.length)];
+  let html=`<h2>Hey, Alex</h2>`;
+  html+=`<p style="font-size:14px;color:var(--text);margin-bottom:16px;line-height:1.5;">${msg}</p>`;
   if(totalWins>0){
     html+=`<div class="hype-stat">${totalWins}</div>`;
-    html+=`<p style="font-size:11px;color:var(--green);margin-bottom:16px;">things done yesterday</p>`;
-  }
-  if(top3.length){
-    html+=`<div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Today's Focus</div>`;
-    html+=top3.map((t,i)=>{
-      const cat=D.cats[t.cat];
-      const eff=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
-      return `<div class="top3-item"><span style="color:var(--dim);margin-right:6px;">${i+1}.</span>${eff}${cat?.emoji||''} ${t.text}</div>`;
-    }).join('');
+    html+=`<p style="font-size:11px;color:var(--green);margin-bottom:8px;">things done yesterday</p>`;
   }
   content.innerHTML=html;
   modal.classList.add('show');
 }
-function closeMorningModal(){
-  document.getElementById('morningModal').classList.remove('show');
-  localStorage.setItem('morningDismissed_'+todayStr(),'1');
+function closeDailyMotivation(){
+  const modal=document.getElementById('motivModal');
+  if(modal)modal.classList.remove('show');
+  localStorage.setItem('motivDismissed_'+todayStr(),'1');
 }
 
-function checkEveningMotivation(){
-  const now=new Date();
-  const hour=now.getHours();
-  if(hour<20)return;
+// ===== WORRY NOTES =====
+let _worryTimer=null,_worrySecondsLeft=600,_worryActive=false;
+function onWorryInput(textarea){
   const today=todayStr();
-  const key='eveningDismissed_'+today;
-  if(localStorage.getItem(key))return;
-  const modal=document.getElementById('eveningModal');
-  const content=document.getElementById('eveningContent');
-  if(!modal||!content)return;
-
-  const doneTasks=D.tasks.filter(t=>t.date===today&&t.done);
-  const doneBlocks=(getTimeline(today)||[]).filter(s=>s.done);
-  const total=doneTasks.length+doneBlocks.length;
-
-  const hypes=['You did the thing. Actually, you did multiple things.','Rest is earned, and you earned it today.','Not every day needs to be perfect — this one was productive.','You showed up. That\'s the hardest part.'];
-  const hype=hypes[Math.floor(Math.random()*hypes.length)];
-
-  let html=`<h2>Day's Winding Down</h2>`;
-  html+=`<p style="font-size:13px;color:var(--dim);margin-bottom:12px;">${hype}</p>`;
-  if(total>0){
-    html+=`<div class="hype-stat">${total}</div>`;
-    html+=`<p style="font-size:11px;color:var(--green);margin-bottom:12px;">things completed today</p>`;
-  }
-  if(doneTasks.length){
-    html+=`<div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:8px 0 4px;">Today's Wins</div>`;
-    html+=doneTasks.slice(0,5).map(t=>{
-      const cat=D.cats[t.cat];
-      return `<div class="win-item">${cat?.emoji||'✓'} ${t.text}</div>`;
-    }).join('');
-    if(doneTasks.length>5)html+=`<div style="font-size:9px;color:var(--dim);">+${doneTasks.length-5} more</div>`;
-  }
-  content.innerHTML=html;
-  modal.classList.add('show');
+  if(!D.worryLog)D.worryLog={};
+  if(!D.worryLog[today])D.worryLog[today]={text:'',startedAt:Date.now()};
+  D.worryLog[today].text=textarea.value;
+  save();
+  if(!_worryActive){_worryActive=true;_worrySecondsLeft=600;startWorryTimer();}
 }
-function closeEveningModal(){
-  document.getElementById('eveningModal').classList.remove('show');
-  localStorage.setItem('eveningDismissed_'+todayStr(),'1');
+function startWorryTimer(){
+  const disp=document.getElementById('worryTimerDisplay');
+  if(disp)disp.style.display='inline-flex';
+  updateWorryTimerDisplay();
+  _worryTimer=setInterval(()=>{
+    _worrySecondsLeft--;
+    updateWorryTimerDisplay();
+    if(_worrySecondsLeft<=0){clearInterval(_worryTimer);_worryTimer=null;finishWorryNotes();}
+  },1000);
+}
+function updateWorryTimerDisplay(){
+  const disp=document.getElementById('worryTimerDisplay');if(!disp)return;
+  const m=Math.floor(_worrySecondsLeft/60),s=_worrySecondsLeft%60;
+  disp.textContent=m+':'+String(s).padStart(2,'0');
+  disp.style.color=_worrySecondsLeft<=60?'var(--red)':'var(--amber)';
+}
+function finishWorryNotes(){
+  if(_worryTimer){clearInterval(_worryTimer);_worryTimer=null;}
+  _worryActive=false;
+  const disp=document.getElementById('worryTimerDisplay');
+  if(disp){disp.textContent='Done';disp.style.color='var(--green)';}
+  const today=todayStr();
+  const text=(D.worryLog&&D.worryLog[today]&&D.worryLog[today].text)||'';
+  showWorrySuggestions(text);
+  populateWorryDatePicker();
+}
+const WORRY_KEYWORDS=[
+  {pattern:/\b(test|exam|mcat|study|score|fail|grade)\b/i,suggestion:'Could you study for just 15 minutes right now? Start with one topic.'},
+  {pattern:/\b(mom|dad|family|friend|text|call|reach|person|email)\b/i,suggestion:'Could you send one short message to them today?'},
+  {pattern:/\b(money|bill|rent|afford|cost|pay|debt)\b/i,suggestion:'Write down one concrete thing you can control about this.'},
+  {pattern:/\b(time|late|deadline|behind|rush|due|overdue)\b/i,suggestion:'What is the single next step — even a 5-minute one?'},
+  {pattern:/\b(sleep|tired|exhaust|overwhelm|anxious|stress)\b/i,suggestion:'Your body is sending a signal. Rest for 10 minutes, then reassess.'},
+];
+function showWorrySuggestions(text){
+  const el=document.getElementById('worryNextSteps');if(!el)return;
+  const matches=WORRY_KEYWORDS.filter(k=>k.pattern.test(text)).map(k=>k.suggestion);
+  const unique=[...new Set(matches)].slice(0,2);
+  unique.push('Take 3 slow breaths, then pick one small thing to do next.');
+  el.style.display='block';
+  el.innerHTML=`<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:10px 12px;">
+    <div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Next steps for you:</div>
+    ${unique.map(s=>`<div style="font-size:12px;padding:4px 0;display:flex;align-items:flex-start;gap:6px;"><span style="color:var(--purple);flex-shrink:0;">→</span><span>${s}</span></div>`).join('')}
+  </div>`;
+}
+function loadWorryEntry(dateStr){
+  if(!dateStr)return;
+  const entry=D.worryLog&&D.worryLog[dateStr];
+  const ta=document.getElementById('worryNotes');
+  if(ta)ta.value=entry?entry.text:'';
+  _worryActive=false;
+  if(_worryTimer){clearInterval(_worryTimer);_worryTimer=null;}
+  const disp=document.getElementById('worryTimerDisplay');if(disp)disp.style.display='none';
+  const ns=document.getElementById('worryNextSteps');if(ns)ns.style.display='none';
+}
+function populateWorryDatePicker(){
+  const sel=document.getElementById('worryDatePicker');if(!sel||!D.worryLog)return;
+  const today=todayStr();
+  const dates=Object.keys(D.worryLog).filter(d=>D.worryLog[d].text&&d!==today).sort().reverse();
+  sel.innerHTML='<option value="">Past entries...</option>'+dates.map(d=>`<option value="${d}">${d}</option>`).join('');
+}
+function initWorryNotes(){
+  const today=todayStr();
+  const ta=document.getElementById('worryNotes');if(!ta)return;
+  ta.value=(D.worryLog&&D.worryLog[today]&&D.worryLog[today].text)||'';
+  if(!_worryActive){
+    _worrySecondsLeft=600;
+    const disp=document.getElementById('worryTimerDisplay');if(disp)disp.style.display='none';
+    const ns=document.getElementById('worryNextSteps');if(ns)ns.style.display='none';
+  }
+  populateWorryDatePicker();
 }
 
 // ===== WINDOW RESIZE for week view =====

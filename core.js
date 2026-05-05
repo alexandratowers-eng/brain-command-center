@@ -55,8 +55,7 @@ function init(){
   initMeetingNotes();
   if(typeof renderWeeklyGoal==='function')renderWeeklyGoal();
   restoreCollapsed();
-  if(typeof checkMorningMotivation==='function')checkMorningMotivation();
-  if(typeof checkEveningMotivation==='function')checkEveningMotivation();
+  if(typeof checkDailyMotivation==='function')checkDailyMotivation();
   setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();},60000);
   // On mobile, default to day view for easier use
   if(window.innerWidth<=900&&D.calView==='week'){setCalView('day');}
@@ -397,7 +396,7 @@ function switchTab(id,el){
   const mvt=document.getElementById('mobileViewToggle');
   if(mvt)mvt.style.display=(id==='cal')?'':'none';
   if(id==='tasks')renderAllTasks();
-  if(id==='dump')renderInbox();
+  if(id==='dump'){renderInbox();if(typeof initWorryNotes==='function')initWorryNotes();}
   if(id==='cal')renderCalendar();
   if(id==='wins')renderWinsTab();
   if(id==='rec'&&typeof renderMtgCalendarView==='function')renderMtgCalendarView();

@@ -484,7 +484,20 @@ function renderCalRightTasks(){
         <div style="font-size:11px;font-weight:600;${strikeStyle}">${opts.label}</div>
         ${subtitle?`<div style="font-size:9px;color:var(--dim);">${subtitle}</div>`:''}
       </div>
+      ${opts.extraBtn||''}
       <div style="width:3px;height:20px;border-radius:2px;background:${opts.color};flex-shrink:0;opacity:.6;"></div>
+    </div>`;
+  }
+
+  // Plan banner — show today's pre-planned spots + priorities
+  let bannerHtml='';
+  const todayMode=(typeof getTodayMode==='function')?getTodayMode():null;
+  const todayPris=(typeof getTodayPriorities==='function')?getTodayPriorities():[];
+  if(isToday&&(todayMode||todayPris.length)){
+    const spotPart=todayMode?todayMode.icon+' '+todayMode.label:'';
+    const priParts=todayPris.filter(p=>!p.done).slice(0,2).map(p=>p.text).join(' · ');
+    bannerHtml=`<div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
+      <span style="font-weight:700;color:var(--amber);">Your plan:</span> ${spotPart?spotPart+' ':''}${priParts?'<span style="color:var(--dim);">·</span> '+priParts:''}
     </div>`;
   }
 
@@ -503,7 +516,9 @@ function renderCalRightTasks(){
       color:catColor, done:false,
       isPast:isToday&&endM<=nowMin, isCurrent:isToday&&startM<=nowMin&&endM>nowMin,
       label:slot.text, subtitle:slot.t+(slot.end?' – '+slot.end:'')+(slot.loc?' · '+slot.loc:''),
-      toggleAction:`togSlotDone('${dt}','${sid}')`, ctx:''
+      toggleAction:`togSlotDone('${dt}','${sid}')`,
+      extraBtn:`<button onclick="event.stopPropagation();slotToTask('${dt}','${sid}')" title="Move to tasks" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1';this.style.color='var(--amber)';this.style.borderColor='var(--amber)';" onmouseleave="this.style.opacity='.5';this.style.color='var(--dim)';this.style.borderColor='var(--dim)';">→ task</button>`,
+      ctx:''
     }));
   });
   doneSlots.forEach(slot=>{
@@ -552,7 +567,18 @@ function renderCalRightTasks(){
     html+=allTaskBlocks.join('');
   }
 
-  el.innerHTML=html;
+  el.innerHTML=bannerHtml+html;
+}
+function slotToTask(dt,sid){
+  const tl=getTimeline(dt);
+  const i=_slotIdx(tl,sid);
+  if(i<0)return;
+  const slot=tl[i];
+  const catKey=(slot.cls&&D.cats[slot.cls])?slot.cls:'personal';
+  D.tasks.push({id:D.nextId++,text:slot.text,cat:catKey,pri:'med',done:false,date:dt});
+  tl.splice(i,1);
+  setTimeline(dt,tl);
+  renderCalRightTasks();renderCalendar();updateStats();
 }
 function addCalRightTask(inp){
   const text=inp.value.trim();if(!text)return;

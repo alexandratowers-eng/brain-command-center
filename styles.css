@@ -954,6 +954,7 @@ button,input,select,textarea{font-family:inherit;}
 #syncStatusBtn[data-state="disabled"]{opacity:.4;}
 #syncStatusBtn[data-state="idle"]{opacity:.7;}
 @keyframes syncSpin{to{transform:rotate(360deg);}}
+.worry-timer{display:inline-flex;align-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);border-radius:5px;padding:2px 8px;letter-spacing:.5px;transition:color .3s;}
 
 /* ====== MOBILE VIEW TOGGLE ====== */
 .mobile-view-toggle{display:none;}
