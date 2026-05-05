@@ -690,6 +690,41 @@ button,input,select,textarea{font-family:inherit;}
 .task-to-cal-btn:hover{background:var(--blue);color:white;}
 @media(max-width:900px){.tasks-board-layout{grid-template-columns:1fr;}.tasks-cat-sidebar{max-height:none;}}
 
+/* ====== SIMPLIFIED TASKS VIEW ====== */
+.tasks-simple-header{margin-bottom:16px;}
+.tasks-simple-add-bar{display:flex;gap:6px;align-items:center;}
+.tasks-simple-add-bar input[type="text"]{flex:1;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
+.tasks-simple-add-bar input[type="text"]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(96,165,250,.12);}
+.tasks-simple-add-bar select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 8px;color:var(--dim);font-size:10px;outline:none;font-family:inherit;cursor:pointer;max-width:120px;}
+.simple-tasks-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:700px;}
+.simple-tasks-section.parked-section{border-color:rgba(167,139,250,.2);background:linear-gradient(135deg,rgba(167,139,250,.03),var(--card));}
+.simple-tasks-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.simple-tasks-title{font-size:16px;font-weight:700;}
+.simple-tasks-empty{text-align:center;padding:20px;color:var(--dim);font-size:12px;}
+.simple-task-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;transition:background .12s;margin-bottom:2px;}
+.simple-task-row:hover{background:rgba(255,255,255,.03);}
+.simple-task-row:hover .simple-task-actions{opacity:1;}
+.simple-task-row.done{opacity:.4;}
+.simple-task-row.done .simple-task-text{text-decoration:line-through;}
+.simple-task-row.parked-thought{border-left:2px solid rgba(167,139,250,.2);padding-left:12px;}
+.simple-task-content{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.simple-task-text{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.simple-task-overdue{font-size:9px;color:var(--red);font-weight:600;}
+.simple-task-actions{display:flex;gap:3px;flex-shrink:0;align-items:center;opacity:0;transition:opacity .15s;}
+.simple-done-toggle{display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;font-size:11px;font-weight:600;color:var(--green);border-top:1px solid var(--border);margin-top:8px;}
+.simple-done-toggle:hover{background:rgba(52,211,153,.04);border-radius:6px;}
+:root.light .simple-task-row:hover{background:rgba(0,0,0,.02);}
+:root.light .simple-tasks-section.parked-section{background:linear-gradient(135deg,rgba(124,58,237,.03),var(--card));}
+@media(max-width:900px){
+  .tasks-simple-add-bar{flex-direction:column;}
+  .tasks-simple-add-bar input[type="text"]{min-width:100%;}
+  .tasks-simple-add-bar select{max-width:100%;}
+  .simple-task-actions{opacity:1;}
+}
+
+/* Hide legacy overdue card (overdue tasks now shown inline) */
+#cal-right-panel #overdueCard{display:none !important;}
+
 /* ====== TOPBAR DROPDOWN ====== */
 .topbar-dropdown{position:relative;}
 .topbar-dropdown-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text);transition:all .15s;font-family:inherit;}
@@ -912,6 +947,13 @@ button,input,select,textarea{font-family:inherit;}
 .task-effort-badge{font-size:10px;margin-right:2px;flex-shrink:0;}
 
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* SYNC STATUS */
+#syncStatusBtn[data-state="error"]{border-color:var(--red);opacity:1;}
+#syncStatusBtn[data-state="syncing"]{animation:syncSpin 1s linear infinite;opacity:1;}
+#syncStatusBtn[data-state="disabled"]{opacity:.4;}
+#syncStatusBtn[data-state="idle"]{opacity:.7;}
+@keyframes syncSpin{to{transform:rotate(360deg);}}
 
 /* ====== MOBILE VIEW TOGGLE ====== */
 .mobile-view-toggle{display:none;}

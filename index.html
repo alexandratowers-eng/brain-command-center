@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
 <link rel="stylesheet" href="styles.css">
+<script src="sync-config.js" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 </head>
 <body>
 <div class="app">
@@ -30,6 +31,7 @@
         <button onclick="pasteDataFromClipboard();toggleDataMenu();">📥 Paste from Clipboard</button>
       </div>
     </div>
+    <button id="syncStatusBtn" data-state="disabled" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Sync status">🔗</button>
     <button id="notifToggleBtn" onclick="requestNotifPermission()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
     <button id="themeBtn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Toggle theme">☀️</button>
     <div class="tabs">
@@ -544,6 +546,7 @@
 <script src="calendar.js"></script>
 <script src="tasks.js"></script>
 <script src="features.js"></script>
+<script src="sync.js"></script>
 <script>
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
 function mobNav(tab,btn){
@@ -564,6 +567,7 @@ function updateMvt(btn){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.innerWidth<=900){D.calView='day';save();}
+  if(typeof SyncEngine!=='undefined')SyncEngine.init();
 });
 </script>
 </body>

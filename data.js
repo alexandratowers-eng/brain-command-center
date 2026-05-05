@@ -64,6 +64,11 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     npTasks.forEach(t=>{d.tasks.push({id:d.nextId++,text:t.text,cat:t.cat,pri:t.pri,done:false,date:''});});
     d._npImported=true;
   }
+  if(!d._colorSwapV2){
+    if(d.cats&&d.cats.personal) d.cats.personal.color='#34d399';
+    if(d.cats&&d.cats.medapp) d.cats.medapp.color='#93c5fd';
+    d._colorSwapV2=true;
+  }
   if(d.tasks)d.tasks.forEach(t=>{if(!t.effort)t.effort='';});
   // Seed daily 10-min MCAT review blocks May 1–31 2026
   if(!d._mcatMaySeeded){
@@ -100,6 +105,7 @@ function save(){
     _lastSnap=now;
   }
   localStorage.setItem(SK,JSON.stringify(D));
+  if(typeof SyncEngine!=='undefined')SyncEngine.scheduleSync();
   const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Saved';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),1200);}
 }
 function undo(){
@@ -177,5 +183,18 @@ function dateObj(str){const [y,m,d]=str.split('-').map(Number);return new Date(y
 function dateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getTimeline(dt){return D.days[dt]||[];}
 function setTimeline(dt,tl){D.days[dt]=tl;save();}
+function autoAddWin(text,dt){
+  if(!text)return;
+  if(!dt)dt=todayStr();
+  if(!D.reflections)D.reflections={};
+  if(!D.reflections[dt])D.reflections[dt]={};
+  if(!D.reflections[dt].manualWins)D.reflections[dt].manualWins=[];
+  if(D.reflections[dt].manualWins.indexOf(text)===-1){
+    D.reflections[dt].manualWins.push(text);
+    save();
+    if(typeof renderQuickWins==='function')renderQuickWins();
+    if(typeof renderWinsTab==='function')renderWinsTab();
+  }
+}
 function getWeekDates(dt){const d=dateObj(dt);const day=d.getDay();const mon=new Date(d);mon.setDate(d.getDate()-(day===0?6:day-1));const dates=[];for(let i=0;i<7;i++){const dd=new Date(mon);dd.setDate(mon.getDate()+i);dates.push(dateStr(dd));}return dates;}
 

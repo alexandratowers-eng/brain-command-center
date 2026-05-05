@@ -705,11 +705,16 @@ function renderDayView(){
   // Quick actions bar
   const catOpts=Object.entries(D.cats).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('')+'<option value="free">--- Break</option>';
   html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
-    <button class="t-btn" onclick="applyTemplate('remote')" style="font-size:10px;">🏠 Remote</button>
-    <button class="t-btn" onclick="applyTemplate('inperson')" style="font-size:10px;">🏢 In-Person</button>
-    <button class="t-btn" onclick="applyTemplate('study')" style="font-size:10px;">📚 Study</button>
-    <button class="t-btn" onclick="applyTemplate('light')" style="font-size:10px;">🌿 Light</button>
-    <button class="t-btn" onclick="applyTemplate('nightowl')" style="font-size:10px;">🌙 Night Owl</button>
+    <div class="topbar-dropdown" id="templateDropdown">
+      <button class="topbar-dropdown-btn" onclick="document.getElementById('templateMenu').classList.toggle('open')" style="font-size:10px;display:flex;align-items:center;gap:4px;">📋 Templates ▾</button>
+      <div class="topbar-dropdown-menu" id="templateMenu" style="left:0;right:auto;min-width:160px;">
+        <button onclick="applyTemplate('remote');document.getElementById('templateMenu').classList.remove('open');">🏠 Remote</button>
+        <button onclick="applyTemplate('inperson');document.getElementById('templateMenu').classList.remove('open');">🏢 In-Person</button>
+        <button onclick="applyTemplate('study');document.getElementById('templateMenu').classList.remove('open');">📚 Study</button>
+        <button onclick="applyTemplate('light');document.getElementById('templateMenu').classList.remove('open');">🌿 Light</button>
+        <button onclick="applyTemplate('nightowl');document.getElementById('templateMenu').classList.remove('open');">🌙 Night Owl</button>
+      </div>
+    </div>
   </div>`;
 
 
@@ -982,7 +987,7 @@ function _slotIdx(tl,sid){return tl.findIndex(s=>String(s._id)===String(sid));}
 function editSlotTime(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].t=val;tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));setTimeline(dt,tl);renderCalendar();}
 function editSlotText(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].text=val.trim()||tl[i].text;setTimeline(dt,tl);}
 function editSlotSm(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].sm=val.trim();setTimeline(dt,tl);}
-function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].done=!tl[i].done;setTimeline(dt,tl);renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
+function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 function removeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl.splice(i,1);setTimeline(dt,tl);renderCalendar();}
 function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const orig=tl[i];const newT=parseMin(orig.t)+30;tl.splice(i+1,0,{t:minToTime(newT),text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});setTimeline(dt,tl);renderCalendar();}
 function editSlotLoc(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].loc=val.trim();setTimeline(dt,tl);}

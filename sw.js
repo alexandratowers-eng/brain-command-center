@@ -1,4 +1,4 @@
-const CACHE='bcc-v2';
+const CACHE='bcc-v3';
 const ASSETS=[
   './',
   './index.html',

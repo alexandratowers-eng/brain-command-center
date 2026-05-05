@@ -124,141 +124,182 @@ function quickAdd(){
   }
 }
 
-// ===== ALL TASKS (BOARD VIEW) =====
+// ===== ALL TASKS (SIMPLIFIED: Today + Parked/Later) =====
 let _slCollapsed=JSON.parse(localStorage.getItem('swimlaneCollapsed')||'{}');
 let _doneCollapsed=localStorage.getItem('doneCollapsed')!=='false';
+let _todayDoneCollapsed=localStorage.getItem('todayDoneCollapsed')!=='false';
 
 function renderAllTasks(){
   if(window.innerWidth<=900){renderMobileTasks();return;}
   const priOrd={high:0,med:1,low:2};
   const today=todayStr();
-  const allActive=D.tasks.filter(t=>!t.done&&t.cat!=='braindump');
-  const allDone=D.tasks.filter(t=>t.done&&t.cat!=='braindump');
 
-  // --- CENTRAL TASK INBOX ---
-  const inbox=document.getElementById('tasksMainInbox');
-  if(inbox){
-    const sorted=[...allActive].sort((a,b)=>{const p=priOrd[a.pri]-priOrd[b.pri];if(p!==0)return p;return (a.date||'z').localeCompare(b.date||'z');});
-    let ihtml=`<h3><span class="mi" style="color:var(--blue);font-size:18px;">inbox</span> All Tasks <span class="badge">${sorted.length}</span></h3>`;
-    if(!sorted.length){
-      ihtml+=`<div style="text-align:center;padding:30px;color:var(--dim);font-size:12px;">No active tasks — add one above!</div>`;
+  // --- TODAY section: tasks dated today or overdue, active first then done ---
+  const todayActive=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&t.date&&t.date<=today).sort((a,b)=>{
+    if(a.date!==b.date){if(a.date<today&&b.date>=today)return -1;if(b.date<today&&a.date>=today)return 1;}
+    return priOrd[a.pri]-priOrd[b.pri];
+  });
+  const todayDone=D.tasks.filter(t=>t.done&&t.cat!=='braindump'&&t.date&&t.date<=today);
+
+  const todayEl=document.getElementById('tasksSimpleToday');
+  if(todayEl){
+    const totalActive=todayActive.length;
+    const totalDone=todayDone.length;
+    let h=`<div class="simple-tasks-section">
+      <div class="simple-tasks-header">
+        <span class="mi" style="font-size:20px;color:var(--blue);">today</span>
+        <span class="simple-tasks-title">Today</span>
+        <span class="badge">${totalActive}</span>
+        ${totalDone?`<span style="font-size:10px;color:var(--green);margin-left:4px;">✓ ${totalDone} done</span>`:''}
+      </div>`;
+
+    if(!todayActive.length&&!todayDone.length){
+      h+=`<div class="simple-tasks-empty">No tasks for today — add one above!</div>`;
     } else {
-      sorted.forEach(t=>{
+      todayActive.forEach(t=>{
         const cat=D.cats[t.cat];
-        const priE=t.pri==='high'?'🔴':t.pri==='low'?'🔵':'🟡';
-        const dl=t.date?(t.date===today?'Today':new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})):'No date';
+        const isOverdue=t.date&&t.date<today;
         const catColor=cat?cat.color:'var(--blue)';
-        ihtml+=`<div class="task-inbox-item" draggable="true" data-task-id="${t.id}" ondragstart="taskDragStart(event,${t.id})" ondragend="taskDragEnd(event)">
-          <div class="p-dot ${t.pri}" style="flex-shrink:0;"></div>
-          <input type="checkbox" onchange="togTask(${t.id},this)" style="flex-shrink:0;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''}${t.text}</div>
-            <div style="font-size:9px;color:var(--dim);display:flex;gap:6px;align-items:center;margin-top:2px;">
-              <span style="color:${catColor};">${cat?.emoji||'📌'} ${cat?.label||''}</span>
-              <span>${dl}</span>
-            </div>
+        const dl=isOverdue?new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+        h+=`<div class="simple-task-row" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+          <div class="p-dot ${t.pri}"></div>
+          <input type="checkbox" onchange="togTask(${t.id},this)">
+          <div class="simple-task-content">
+            <span class="simple-task-text">${cat?cat.emoji:''} ${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''}${t.text}</span>
+            ${isOverdue?`<span class="simple-task-overdue">overdue · ${dl}</span>`:''}
           </div>
-          <div style="display:flex;gap:3px;flex-shrink:0;align-items:center;">
-            <div class="task-date-move">
-              <button class="task-move-btn" onclick="event.stopPropagation();moveTaskDate(${t.id},-1)">◀</button>
-              <span class="task-date-label" style="font-size:8px;min-width:32px;">${dl}</span>
-              <button class="task-move-btn" onclick="event.stopPropagation();moveTaskDate(${t.id},1)">▶</button>
-            </div>
-            ${t.date?`<button class="task-to-cal-btn" onclick="event.stopPropagation();taskToCalBlock(${t.id})" title="Add to calendar as a block">📅 →cal</button>`:''}
-            <button class="task-act-btn" onclick="event.stopPropagation();openEdit(${t.id})" style="font-size:10px;">edit</button>
-            <button class="task-act-btn" onclick="event.stopPropagation();delTask(${t.id})" style="font-size:10px;">x</button>
+          <div class="simple-task-actions">
+            <button class="defer-btn" onclick="deferToTomorrow(${t.id})" title="Tomorrow">→ tmrw</button>
+            <button class="defer-btn later" onclick="deferToLater(${t.id})" title="Park for later">→ later</button>
+            <button class="task-act-btn" onclick="openEdit(${t.id})">edit</button>
           </div>
         </div>`;
       });
-    }
-    inbox.innerHTML=ihtml;
-    // Drop zone for the inbox
-    inbox.ondragover=e=>{e.preventDefault();inbox.classList.add('drag-over');};
-    inbox.ondragleave=()=>inbox.classList.remove('drag-over');
-    inbox.ondrop=e=>{e.preventDefault();inbox.classList.remove('drag-over');};
-  }
 
-  // --- CATEGORY SIDEBAR (swimlanes) ---
-  const grouped={};
-  Object.keys(D.cats).forEach(k=>{if(k==='braindump')return;grouped[k]=allActive.filter(t=>t.cat===k);});
-
-  const catOrder=Object.keys(D.cats).filter(k=>k!=='braindump');
-  catOrder.sort((a,b)=>{
-    const aH=grouped[a]?.length>0?0:1,bH=grouped[b]?.length>0?0:1;
-    if(aH!==bH)return aH-bH;
-    if(grouped[a]?.length&&grouped[b]?.length){
-      const aM=Math.min(...grouped[a].map(t=>priOrd[t.pri]||1));
-      const bM=Math.min(...grouped[b].map(t=>priOrd[t.pri]||1));
-      return aM-bM;
-    }
-    return 0;
-  });
-
-  const container=document.getElementById('swimlaneContainer');
-  if(!container)return;
-  let html='';
-
-  catOrder.forEach(ck=>{
-    const cat=D.cats[ck];if(!cat)return;
-    const tasks=(grouped[ck]||[]).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
-    const collapsed=_slCollapsed[ck]===true;
-    const count=tasks.length;
-
-    html+=`<div class="swimlane" data-cat="${ck}" ondragover="event.preventDefault();this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="taskDropOnCat(event,'${ck}');this.classList.remove('drag-over');">
-      <div class="swimlane-header" onclick="toggleSwimlane('${ck}')" style="border-left-color:${cat.color};">
-        <span class="swimlane-icon">${cat.emoji||'📌'}</span>
-        <span class="swimlane-label">${cat.label}</span>
-        <span class="swimlane-count">${count>0?count+' left':'empty'}</span>
-        <button class="swimlane-add-btn" onclick="event.stopPropagation();swimlaneCatAdd('${ck}')" title="Add task to ${cat.label}">+</button>
-        <span class="swimlane-chevron">${collapsed?'▸':'▾'}</span>
-      </div>`;
-
-    if(!collapsed){
-      html+=`<div class="swimlane-body">`;
-      if(!tasks.length){
-        html+=`<div class="swimlane-empty">Drop tasks here or click +</div>`;
-      } else {
-        tasks.forEach(t=>{
-          const priE=t.pri==='high'?'🔴':t.pri==='low'?'🔵':'🟡';
-          const dl=t.date?(t.date===today?'Today':new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})):'';
-          html+=`<div class="swimlane-task" data-id="${t.id}" draggable="true" ondragstart="taskDragStart(event,${t.id})" ondragend="taskDragEnd(event)">
-            <span class="swimlane-pri">${priE}</span>
-            <input type="checkbox" onchange="togTask(${t.id},this)">
-            <span class="swimlane-task-text">${t.text}</span>
-            ${dl?`<span class="task-date-label" style="font-size:8px;">${dl}</span>`:''}
-            <div class="task-actions"><button class="task-act-btn" onclick="openEdit(${t.id})">edit</button><button class="task-act-btn" onclick="delTask(${t.id})">x</button></div>
-          </div>`;
-        });
+      // Completed tasks greyed out inline
+      if(todayDone.length){
+        h+=`<div class="simple-done-toggle" onclick="toggleTodayDone()">
+          <span class="mi" style="font-size:14px;color:var(--green);">check_circle</span>
+          <span>${todayDone.length} completed</span>
+          <span class="swimlane-chevron">${_todayDoneCollapsed?'▸':'▾'}</span>
+        </div>`;
+        if(!_todayDoneCollapsed){
+          todayDone.forEach(t=>{
+            const cat=D.cats[t.cat];
+            h+=`<div class="simple-task-row done">
+              <input type="checkbox" checked onchange="togTask(${t.id},this)">
+              <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
+              <button class="task-act-btn" onclick="delTask(${t.id})" style="opacity:.4;">x</button>
+            </div>`;
+          });
+        }
       }
-      html+=`</div>`;
     }
-    html+=`</div>`;
-  });
-  container.innerHTML=html;
-
-  const doneEl=document.getElementById('swimlaneDoneSection');
-  if(!doneEl)return;
-  let dH=`<div class="swimlane swimlane-done">
-    <div class="swimlane-header swimlane-header-done" onclick="toggleDoneSection()">
-      <span class="swimlane-icon">✅</span>
-      <span class="swimlane-label">Done</span>
-      <span class="swimlane-count">${allDone.length} completed</span>
-      <span class="swimlane-chevron">${_doneCollapsed?'▸':'▾'}</span>
-    </div>`;
-  if(!_doneCollapsed&&allDone.length){
-    dH+=`<div class="swimlane-body swimlane-body-done">`;
-    allDone.forEach(t=>{
-      const cat=D.cats[t.cat];
-      dH+=`<div class="swimlane-task done">
-        <input type="checkbox" checked onchange="togTask(${t.id},this)">
-        <span class="swimlane-task-text">${cat?.emoji||''} ${t.text}</span>
-        <div class="task-actions"><button class="task-act-btn" onclick="delTask(${t.id})">x</button></div>
-      </div>`;
-    });
-    dH+=`</div>`;
+    h+=`</div>`;
+    todayEl.innerHTML=h;
   }
-  dH+=`</div>`;
-  doneEl.innerHTML=allDone.length?dH:'';
+
+  // --- PARKED / LATER section: undated tasks + parking items + backlog ---
+  const laterTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&(!t.date||t.date>today)).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
+  const laterDone=D.tasks.filter(t=>t.done&&t.cat!=='braindump'&&(!t.date||t.date>today));
+  const parked=D.parkingItems||[];
+  const backlog=D.backlog||[];
+
+  const parkedEl=document.getElementById('tasksSimpleParked');
+  if(parkedEl){
+    const totalParked=laterTasks.length+parked.length+backlog.length;
+    let h=`<div class="simple-tasks-section parked-section">
+      <div class="simple-tasks-header">
+        <span class="mi" style="font-size:20px;color:var(--purple);">schedule</span>
+        <span class="simple-tasks-title">Parked / Later</span>
+        <span class="badge" style="background:rgba(192,132,252,.15);color:#c084fc;">${totalParked}</span>
+      </div>`;
+
+    if(!totalParked&&!laterDone.length){
+      h+=`<div class="simple-tasks-empty">Nothing parked — your mind is clear!</div>`;
+    } else {
+      // Later tasks (no date or future date)
+      laterTasks.forEach(t=>{
+        const cat=D.cats[t.cat];
+        const dl=t.date?new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+        h+=`<div class="simple-task-row" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+          <div class="p-dot ${t.pri}"></div>
+          <input type="checkbox" onchange="togTask(${t.id},this)">
+          <div class="simple-task-content">
+            <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
+            ${dl?`<span style="font-size:9px;color:var(--dim);">${dl}</span>`:''}
+          </div>
+          <div class="simple-task-actions">
+            <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today">→ today</button>
+            <button class="task-act-btn" onclick="openEdit(${t.id})">edit</button>
+          </div>
+        </div>`;
+      });
+
+      // Parked thoughts
+      parked.forEach(p=>{
+        h+=`<div class="simple-task-row parked-thought">
+          <span style="font-size:13px;flex-shrink:0;">📌</span>
+          <div class="simple-task-content">
+            <span class="simple-task-text">${p.text}</span>
+            <span style="font-size:9px;color:var(--dim);">parked ${p.added||''}</span>
+          </div>
+          <div class="simple-task-actions">
+            <button class="defer-btn" onclick="promoteParkingItem(${p.id})" title="Make a task">→ task</button>
+            <button class="task-act-btn" style="color:var(--green);" onclick="parkingItemDone(${p.id});renderAllTasks();renderCalTasks();" title="Done">✓</button>
+            <button class="task-act-btn" onclick="removeParkingItem(${p.id});renderAllTasks();renderCalTasks();">x</button>
+          </div>
+        </div>`;
+      });
+
+      // Backlog
+      backlog.forEach(b=>{
+        const cat=D.cats[b.cat];
+        h+=`<div class="simple-task-row parked-thought" style="opacity:.6;">
+          <span style="font-size:13px;flex-shrink:0;">${cat?.emoji||'📌'}</span>
+          <div class="simple-task-content">
+            <span class="simple-task-text">${b.text}</span>
+            <span style="font-size:9px;color:var(--dim);">dropped ${b.droppedOn||''}</span>
+          </div>
+          <div class="simple-task-actions">
+            <button class="defer-btn" onclick="restoreFromBacklog(${b.id})" title="Restore">↑ restore</button>
+            <button class="task-act-btn" onclick="removeFromBacklog(${b.id});renderAllTasks();">x</button>
+          </div>
+        </div>`;
+      });
+
+      // Completed later tasks
+      if(laterDone.length){
+        h+=`<div class="simple-done-toggle" onclick="toggleLaterDone()">
+          <span class="mi" style="font-size:14px;color:var(--green);">check_circle</span>
+          <span>${laterDone.length} completed</span>
+          <span class="swimlane-chevron">${_doneCollapsed?'▸':'▾'}</span>
+        </div>`;
+        if(!_doneCollapsed){
+          laterDone.forEach(t=>{
+            const cat=D.cats[t.cat];
+            h+=`<div class="simple-task-row done">
+              <input type="checkbox" checked onchange="togTask(${t.id},this)">
+              <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
+              <button class="task-act-btn" onclick="delTask(${t.id})" style="opacity:.4;">x</button>
+            </div>`;
+          });
+        }
+      }
+    }
+    h+=`</div>`;
+    parkedEl.innerHTML=h;
+  }
+}
+function toggleTodayDone(){
+  _todayDoneCollapsed=!_todayDoneCollapsed;
+  localStorage.setItem('todayDoneCollapsed',_todayDoneCollapsed);
+  renderAllTasks();
+}
+function toggleLaterDone(){
+  _doneCollapsed=!_doneCollapsed;
+  localStorage.setItem('doneCollapsed',_doneCollapsed);
+  renderAllTasks();
 }
 
 // ===== DRAG TASKS BETWEEN CATEGORIES =====
@@ -413,24 +454,31 @@ function renderCalRightTasks(){
   const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();
   const isToday=dt===today;
 
-  const tasks=D.tasks.filter(t=>t.date===dt&&!t.done&&t.cat!=='braindump').sort((a,b)=>{const p={high:0,med:1,low:2};return (p[a.pri]||1)-(p[b.pri]||1);});
-  const activeSched=tl.filter(s=>!s.done).length;
-  const activeCount=activeSched+tasks.length;
+  // Include ALL tasks for this date + overdue — active + done (done shown greyed inline)
+  const overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&t.cat!=='braindump'):[];
+  const todayActiveTasks=D.tasks.filter(t=>t.date===dt&&!t.done&&t.cat!=='braindump').sort((a,b)=>{const p={high:0,med:1,low:2};return (p[a.pri]||1)-(p[b.pri]||1);});
+  const activeTasks=[...overdueTasks,...todayActiveTasks];
+  const doneTasks=D.tasks.filter(t=>t.date===dt&&t.done&&t.cat!=='braindump');
+  const activeSlots=tl.filter(s=>!s.done);
+  const doneSlots=tl.filter(s=>s.done);
+  const activeCount=activeSlots.length+activeTasks.length;
+  const doneCount=doneSlots.length+doneTasks.length;
   const badge=document.getElementById('calRightTaskBadge');
-  if(badge)badge.textContent=activeCount;
+  if(badge)badge.textContent=activeCount+(doneCount?` · ${doneCount}✓`:'');
 
-  if(!activeSched&&!tasks.length){
+  if(!activeSlots.length&&!activeTasks.length&&!doneSlots.length&&!doneTasks.length){
     el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">No tasks or events for this day</p>';return;
   }
 
-  // Build unified list — all items use the same block style
   function renderBlock(opts){
     const opacity=opts.done?0.4:opts.isPast?0.5:1;
     const currentDot=opts.isCurrent?'<span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;animation:pulse 2s infinite;"></span>':'';
     const strikeStyle=opts.done?'text-decoration:line-through;':'';
+    const bgColor=opts.done?'background:rgba(52,211,153,.04);':'';
+    const checkFill=opts.done?`background:${opts.color};color:#fff;`:`background:none;color:${opts.color};`;
     const subtitle=opts.subtitle||'';
-    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);" ${opts.ctx||''}>
-      <button onclick="event.stopPropagation();${opts.toggleAction}" style="background:none;border:1.5px solid ${opts.color};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;color:${opts.color};padding:0;">${opts.done?'✓':''}</button>
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);${bgColor}" ${opts.ctx||''}>
+      <button onclick="event.stopPropagation();${opts.toggleAction}" style="${checkFill}border:1.5px solid ${opts.color};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;padding:0;">${opts.done?'✓':''}</button>
       ${currentDot}
       <div style="flex:1;min-width:0;">
         <div style="font-size:11px;font-weight:600;${strikeStyle}">${opts.label}</div>
@@ -442,8 +490,8 @@ function renderCalRightTasks(){
 
   let html='';
 
-  // Schedule blocks
-  tl.filter(slot=>!slot.done).forEach(slot=>{
+  // Active schedule blocks
+  activeSlots.forEach(slot=>{
     if(!slot._id)slot._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
     const sid=slot._id;
     const cat=D.cats&&D.cats[slot.cls];
@@ -451,22 +499,45 @@ function renderCalRightTasks(){
     const startM=(typeof parseMin==='function')?parseMin(slot.t):0;
     const endM=slot.end?parseMin(slot.end):startM+60;
     html+=renderBlock({
-      color:catColor, done:slot.done,
+      color:catColor, done:false,
       isPast:isToday&&endM<=nowMin, isCurrent:isToday&&startM<=nowMin&&endM>nowMin,
       label:slot.text, subtitle:slot.t+(slot.end?' – '+slot.end:'')+(slot.loc?' · '+slot.loc:''),
       toggleAction:`togSlotDone('${dt}','${sid}')`, ctx:''
     });
   });
 
-  // Tasks — same block style
-  tasks.forEach(t=>{
+  // Active tasks
+  activeTasks.forEach(t=>{
     const cat=D.cats[t.cat];
     const catColor=cat?cat.color:'var(--dim)';
     const emoji=cat?cat.emoji:'';
     const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
     html+=renderBlock({
-      color:catColor, done:t.done, isPast:false, isCurrent:false,
+      color:catColor, done:false, isPast:false, isCurrent:false,
       label:emoji+' '+effortTag+t.text, subtitle:'',
+      toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`
+    });
+  });
+
+  // Done slots + tasks (greyed inline)
+  doneSlots.forEach(slot=>{
+    if(!slot._id)slot._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
+    const sid=slot._id;
+    const cat=D.cats&&D.cats[slot.cls];
+    const catColor=cat?cat.color:'var(--green)';
+    html+=renderBlock({
+      color:catColor, done:true, isPast:false, isCurrent:false,
+      label:slot.text, subtitle:'',
+      toggleAction:`togSlotDone('${dt}','${sid}')`, ctx:''
+    });
+  });
+  doneTasks.forEach(t=>{
+    const cat=D.cats[t.cat];
+    const catColor=cat?cat.color:'var(--dim)';
+    const emoji=cat?cat.emoji:'';
+    html+=renderBlock({
+      color:catColor, done:true, isPast:false, isCurrent:false,
+      label:emoji+' '+t.text, subtitle:'',
       toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`
     });
   });
@@ -479,43 +550,8 @@ function addCalRightTask(inp){
   D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:dt});
   inp.value='';save();renderCalRightTasks();renderAllTasks();updateStats();
 }
-function renderCalRightCompleted(){
-  const el=document.getElementById('calRightCompletedList');if(!el)return;
-  const today=todayStr();
-  const dt=(D.calView==='day'||D.calView==='tomorrow')?D.selectedDate:today;
-  const tl=(typeof getTimeline==='function')?getTimeline(dt):[];
-  const doneSlots=tl.filter(s=>s.done);
-  const doneTasks=D.tasks.filter(t=>t.date===dt&&t.done&&t.cat!=='braindump');
-  const total=doneSlots.length+doneTasks.length;
-  const badge=document.getElementById('calRightCompletedBadge');
-  if(badge)badge.textContent=total;
-  if(!total){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing completed yet</p>';return;}
-  let html='';
-  doneSlots.forEach(slot=>{
-    if(!slot._id)slot._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
-    const sid=slot._id;
-    const cat=D.cats&&D.cats[slot.cls];
-    const catColor=cat?cat.color:slot.cls==='focus'?'#fbbf24':slot.cls==='_task'?'#f87171':slot.cls==='_todo'?'#60a5fa':'var(--blue)';
-    html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);opacity:.6;">
-      <button onclick="event.stopPropagation();togSlotDone('${dt}','${sid}')" style="background:${catColor};border:1.5px solid ${catColor};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;padding:0;">✓</button>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;text-decoration:line-through;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(slot.text||'').replace(/</g,'&lt;')}</div>
-      </div>
-    </div>`;
-  });
-  doneTasks.forEach(t=>{
-    const cat=D.cats[t.cat];
-    const catColor=cat?cat.color:'var(--dim)';
-    const emoji=cat?cat.emoji:'';
-    html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);opacity:.6;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
-      <button onclick="event.stopPropagation();togTask(${t.id})" style="background:${catColor};border:1.5px solid ${catColor};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;padding:0;">✓</button>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;text-decoration:line-through;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${emoji} ${t.text}</div>
-      </div>
-    </div>`;
-  });
-  el.innerHTML=html;
-}
+// Completed tasks are now shown inline in renderCalRightTasks — this is a no-op for compat
+function renderCalRightCompleted(){}
 // Legacy compat — redirect old calls to unified stash
 function renderCalRightLater(){renderCalRightStash();}
 function renderCalRightParking(){renderCalRightStash();}
@@ -530,65 +566,46 @@ function renderCalRightStash(){
   const total=laterTasks.length+parked.length+backlog.length;
   const badge=document.getElementById('calRightStashBadge');
   if(badge)badge.textContent=total;
-  if(!total){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing stashed — your mind is clear</p>';return;}
+  if(!total){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing parked — your mind is clear</p>';return;}
 
   let html='';
 
-  // Overdue reminders first
-  const overdueParked=parked.filter(p=>p.remindDate&&p.remindDate<today);
-  if(overdueParked.length){
-    html+=`<div style="font-size:8px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;padding:4px 0 2px;margin-top:2px;">⚠️ Needs attention</div>`;
-    overdueParked.forEach(p=>{html+=stashParkRow(p,true);});
-  }
+  // Later tasks — with checkbox for completion
+  laterTasks.forEach(t=>{
+    const cat=D.cats[t.cat];
+    html+=`<div class="task-item" style="padding:3px 0;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+      <div class="p-dot ${t.pri}"></div>
+      <input type="checkbox" onchange="togTask(${t.id},this)">
+      <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</div>
+      <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today" style="font-size:9px;">→ today</button>
+    </div>`;
+  });
 
-  // Later tasks
-  if(laterTasks.length){
-    html+=`<div style="font-size:8px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;padding:4px 0 2px;margin-top:4px;">Tasks for later (${laterTasks.length})</div>`;
-    laterTasks.forEach(t=>{
-      const cat=D.cats[t.cat];
-      html+=`<div class="task-item" style="padding:3px 0;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
-        <div class="p-dot ${t.pri}"></div>
-        <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''}${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''} ${t.text}</div>
-        <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today" style="font-size:9px;">→ today</button>
-      </div>`;
-    });
-  }
+  // Parked thoughts — with done button
+  parked.forEach(p=>{
+    html+=`<div class="task-item" style="padding:3px 0;">
+      <span style="font-size:11px;flex-shrink:0;">📌</span>
+      <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.text}</div>
+      <button class="defer-btn" onclick="promoteParkingItem(${p.id});renderCalRightStash();" title="Make a task" style="font-size:9px;">→ task</button>
+      <button class="pi-act" onclick="parkingItemDone(${p.id});renderCalRightStash();" title="Done" style="font-size:9px;color:var(--green);">✓</button>
+      <button class="pi-act pi-del" onclick="removeParkingItem(${p.id});renderCalRightStash();" title="Remove" style="font-size:9px;">✕</button>
+    </div>`;
+  });
 
-  // Parked thoughts (non-overdue)
-  const normalParked=parked.filter(p=>!p.remindDate||p.remindDate>=today);
-  if(normalParked.length){
-    html+=`<div style="font-size:8px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;padding:4px 0 2px;margin-top:4px;">Parked thoughts (${normalParked.length})</div>`;
-    normalParked.forEach(p=>{html+=stashParkRow(p,false);});
-  }
-
-  // Backlog
+  // Backlog (compact)
   if(backlog.length){
-    html+=`<div style="font-size:8px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:4px 0 2px;margin-top:4px;">Dropped / backlog (${backlog.length})</div>`;
     backlog.slice(0,5).forEach(b=>{
       const cat=D.cats[b.cat];
-      html+=`<div class="parking-item" style="padding:3px 0;">
-        <span style="font-size:12px;">${cat?.emoji||'📌'}</span>
-        <div class="pi-text" style="font-size:11px;">${b.text}</div>
-        <button class="pi-act pi-promote" onclick="restoreFromBacklog(${b.id})" title="Restore to today" style="font-size:9px;">↑</button>
-        <button class="pi-act pi-del" onclick="removeFromBacklog(${b.id})" title="Delete" style="font-size:9px;">✕</button>
+      html+=`<div class="task-item" style="padding:3px 0;opacity:.6;">
+        <span style="font-size:11px;">${cat?.emoji||'📌'}</span>
+        <div class="t-label" style="flex:1;font-size:11px;">${b.text}</div>
+        <button class="defer-btn" onclick="restoreFromBacklog(${b.id});renderCalRightStash();" style="font-size:9px;">↑</button>
+        <button class="pi-act pi-del" onclick="removeFromBacklog(${b.id});renderCalRightStash();" style="font-size:9px;">✕</button>
       </div>`;
     });
     if(backlog.length>5) html+=`<p style="font-size:9px;color:var(--dim);text-align:center;">+${backlog.length-5} more</p>`;
   }
   el.innerHTML=html;
-}
-function stashParkRow(p,overdue){
-  const dateLabel=p.remindDate?new Date(p.remindDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-  return `<div class="parking-item" style="padding:3px 0;${overdue?'border-left:2px solid var(--amber);padding-left:4px;':''}">
-    <span style="font-size:12px;">📌</span>
-    <div class="pi-text" style="font-size:11px;flex:1;">
-      ${p.text}
-      ${dateLabel?`<div style="font-size:8px;color:${overdue?'var(--amber)':'var(--dim)'};margin-top:1px;">${overdue?'⚠️ ':'📅 '}${dateLabel}</div>`:''}
-    </div>
-    <button class="pi-act" onclick="dateParkingItem(${p.id})" title="Set reminder date" style="font-size:9px;color:var(--amber);">📅</button>
-    <button class="pi-act" onclick="parkingItemDone(${p.id});renderCalRightStash();" title="Mark complete" style="font-size:9px;color:var(--green);">✓</button>
-    <button class="pi-act pi-del" onclick="removeParkingItem(${p.id});renderCalRightStash();" title="Remove" style="font-size:9px;">✕</button>
-  </div>`;
 }
 
 function addToStash(inp){
