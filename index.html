@@ -24,10 +24,10 @@
     <div class="topbar-dropdown" id="dataDropdown">
       <button class="topbar-dropdown-btn" onclick="toggleDataMenu()" title="Data management">⚙ Data ▾</button>
       <div class="topbar-dropdown-menu" id="dataMenu">
-        <button onclick="exportData();toggleDataMenu();">⬇ Backup</button>
-        <button onclick="importData();toggleDataMenu();">⬆ Restore</button>
-        <button onclick="copyDataToClipboard();toggleDataMenu();">📋 Copy</button>
-        <button onclick="pasteDataFromClipboard();toggleDataMenu();">📥 Paste</button>
+        <button onclick="exportData();toggleDataMenu();">⬇ Download Backup (.json)</button>
+        <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
+        <button onclick="copyDataToClipboard();toggleDataMenu();">📋 Copy to Clipboard</button>
+        <button onclick="pasteDataFromClipboard();toggleDataMenu();">📥 Paste from Clipboard</button>
       </div>
     </div>
     <button id="notifToggleBtn" onclick="requestNotifPermission()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
@@ -165,12 +165,23 @@
             </div>
           </div>
         </div>
+        <!-- Today's Tasks (active + completed inline) -->
         <div class="s-card" data-card="calright-tasks">
           <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--amber);">checklist</span> Today's Tasks <span class="badge" id="calRightTaskBadge">0</span><button class="s-collapse" onclick="toggleCard('calright-tasks',this)">▾</button></div>
           <div class="s-body" id="cardBody-calright-tasks">
             <div id="calRightTaskList"></div>
             <div class="add-inline" style="margin-top:4px;">
               <input type="text" placeholder="+ add task..." onkeydown="if(event.key==='Enter')addCalRightTask(this)">
+            </div>
+          </div>
+        </div>
+        <!-- Parked / Later -->
+        <div class="s-card" data-card="calright-stash">
+          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--purple);">schedule</span> Parked / Later <span class="badge" id="calRightStashBadge" style="background:rgba(192,132,252,.15);color:#c084fc;">0</span><button class="s-collapse" onclick="toggleCard('calright-stash',this)">▾</button></div>
+          <div class="s-body" id="cardBody-calright-stash">
+            <div id="calRightStashList"></div>
+            <div class="add-inline" style="margin-top:4px;">
+              <input type="text" placeholder="+ park a thought or task..." onkeydown="if(event.key==='Enter')addToStash(this)">
             </div>
           </div>
         </div>
@@ -190,30 +201,10 @@
             </div>
           </div>
         </div>
-        <div class="s-card" data-card="calright-stash">
-          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--purple);">inbox</span> Stash <span class="badge" id="calRightStashBadge" style="background:rgba(192,132,252,.15);color:#c084fc;">0</span><button class="s-collapse" onclick="toggleCard('calright-stash',this)">▾</button></div>
-          <div class="s-body" id="cardBody-calright-stash">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">Not now — but not forgotten. Tasks, thoughts, anything.</div>
-            <div id="calRightStashList"></div>
-            <div class="add-inline" style="margin-top:4px;">
-              <input type="text" placeholder="+ stash a thought or task..." onkeydown="if(event.key==='Enter')addToStash(this)">
-            </div>
-            <button class="t-btn" onclick="schedParkingReview()" style="font-size:8px;padding:2px 6px;margin-top:4px;color:var(--amber);border-color:var(--amber);width:100%;">📌 Schedule weekly review (Fri 2 PM)</button>
-          </div>
-        </div>
-
-        <!-- Completed -->
-        <div class="s-card" data-card="calright-completed" style="border-color:rgba(52,211,153,.2);">
-          <div class="s-title" style="color:var(--green);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">task_alt</span> Completed <span class="badge" id="calRightCompletedBadge" style="background:rgba(52,211,153,.12);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-completed',this)">▾</button></div>
-          <div class="s-body" id="cardBody-calright-completed">
-            <div id="calRightCompletedList"></div>
-          </div>
-        </div>
-        <!-- Quick Wins / Done List -->
+        <!-- Quick Wins (compact) -->
         <div class="s-card" data-card="calright-quickwins" style="border-color:rgba(52,211,153,.25);">
           <div class="s-title" style="color:var(--green);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;">emoji_events</span> Quick Wins <span class="badge" id="quickWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-quickwins',this)">▾</button></div>
           <div class="s-body" id="cardBody-calright-quickwins">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:6px;">Type what you did + hit enter — auto-saves to today's wins</div>
             <div class="quick-wins-input-row">
               <input type="text" id="quickWinsInput" placeholder="just finished..." onkeydown="if(event.key==='Enter')addQuickWin()">
               <button class="quick-wins-add-btn" onclick="addQuickWin()">+</button>
@@ -222,18 +213,10 @@
             <button class="t-btn qw-move-wins-btn" id="qwMoveBtn" onclick="moveCheckedWinsToWins()" style="display:none;">✨ Send checked to Wins</button>
           </div>
         </div>
-        <!-- Carried Over (bottom) -->
-        <div class="s-card overdue-card" id="overdueCard" style="display:none;" data-card="overdue">
-          <div class="s-title" style="color:var(--amber);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;">warning</span> Carried Over <span class="badge" id="overdueCount" style="background:var(--amber);color:var(--bg);">0</span><button class="s-collapse" onclick="toggleCard('overdue',this)">▾</button></div>
-          <div class="s-body" id="cardBody-overdue">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">These slipped — reschedule or move to today</div>
-            <div id="overdueList"></div>
-            <div style="display:flex;gap:4px;margin-top:4px;">
-              <button class="t-btn" onclick="moveAllOverdueToToday()" style="font-size:9px;flex:1;">Move all to today</button>
-              <button class="t-btn" onclick="dismissAllOverdue()" style="font-size:9px;">Dismiss done</button>
-            </div>
-          </div>
-        </div>
+        <!-- Hidden containers for compat -->
+        <div id="calRightCompletedList" style="display:none;"></div>
+        <div id="calRightCompletedBadge" style="display:none;">0</div>
+        <div id="overdueCard" style="display:none;"><div id="overdueCount" style="display:none;">0</div><div id="overdueList"></div></div>
       </div>
     </div>
 
@@ -242,45 +225,31 @@
       <div id="winsContent"></div>
     </div>
 
-    <!-- TASKS TAB -->
+    <!-- TASKS TAB (simplified) -->
     <div class="tab-panel" id="p-tasks">
-      <div class="tasks-subtabs">
-        <button class="tasks-subtab active" onclick="switchTasksSubtab('active',this)">Active</button>
-        <button class="tasks-subtab" onclick="switchTasksSubtab('parking',this)">Parking Lot</button>
-        <button class="tasks-subtab" onclick="switchTasksSubtab('backlog',this)">Backlog</button>
-        <span style="flex:1;"></span>
-        <button class="tasks-cat-mgr-btn" onclick="openCatMgr()" title="Manage categories"><span class="mi" style="font-size:14px;">tune</span></button>
-      </div>
-      <div id="tasksActivePane">
-        <div class="swimlane-add-bar">
-          <input type="text" id="swimlaneAddInput" placeholder="+ Add a task... (Enter for Personal, or pick category)" onkeydown="if(event.key==='Enter')swimlaneQuickAdd()">
+      <div class="tasks-simple-header">
+        <div class="tasks-simple-add-bar">
+          <input type="text" id="swimlaneAddInput" placeholder="+ Add a task..." onkeydown="if(event.key==='Enter')swimlaneQuickAdd()">
           <select id="swimlaneAddCat" class="swimlane-add-cat"></select>
           <select id="swimlaneAddPri" class="swimlane-add-pri">
             <option value="med">Normal</option>
             <option value="high">Urgent</option>
             <option value="low">Low</option>
           </select>
+          <button class="tasks-cat-mgr-btn" onclick="openCatMgr()" title="Manage categories"><span class="mi" style="font-size:14px;">tune</span></button>
         </div>
-        <div class="tasks-board-layout">
-          <div class="tasks-cat-sidebar" id="tasksCatSidebar">
-            <div id="swimlaneContainer"></div>
-          </div>
-          <div class="tasks-main-inbox" id="tasksMainInbox"></div>
-        </div>
-        <div id="swimlaneDoneSection"></div>
       </div>
-      <div id="tasksParkingPane" style="display:none;">
-        <p style="font-size:11px;color:var(--dim);margin-bottom:10px;">Things you don't want to forget but aren't doing right now.</p>
-        <div style="display:flex;gap:4px;margin-bottom:12px;">
-          <input type="text" id="parkingAddInput" placeholder="Add to parking lot..." onkeydown="if(event.key==='Enter')addParkingItem()" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;outline:none;font-family:inherit;">
-          <button onclick="addParkingItem()" style="background:var(--grad);border:none;color:white;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;">+</button>
-        </div>
-        <div id="parkingList"></div>
+      <div id="tasksActivePane">
+        <div id="tasksSimpleToday"></div>
+        <div id="tasksSimpleParked" style="margin-top:20px;"></div>
       </div>
-      <div id="tasksBacklogPane" style="display:none;">
-        <p style="font-size:11px;color:var(--dim);margin-bottom:10px;">Tasks you dropped from overdue — restore or permanently delete them.</p>
-        <div id="backlogList"></div>
-      </div>
+      <!-- Hidden compat containers -->
+      <div id="tasksCatSidebar" style="display:none;"><div id="swimlaneContainer"></div></div>
+      <div id="tasksMainInbox" style="display:none;"></div>
+      <div id="swimlaneDoneSection" style="display:none;"></div>
+      <div id="tasksParkingPane" style="display:none;"><div id="parkingList"></div></div>
+      <div id="tasksBacklogPane" style="display:none;"><div id="backlogList"></div></div>
+      <div id="parkingAddInput" style="display:none;"></div>
     </div>
 
     <!-- BRAIN DUMP TAB -->

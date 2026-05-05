@@ -728,15 +728,15 @@ function exportData(){
 function copyDataToClipboard(){
   const data=localStorage.getItem(SK);
   if(!data){alert('Nothing to copy');return;}
+  // Always try clipboard first, then show fallback either way for reliability
   navigator.clipboard.writeText(data).then(()=>{
-    const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Data copied to clipboard — paste into a .json file on your other computer, or use "Paste from Clipboard" there';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
+    const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Copied to clipboard';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
   }).catch(()=>{
-    // Fallback: show in a textarea for manual copy
     const modal=document.createElement('div');
     modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
     modal.innerHTML=`<div style="background:var(--card);border-radius:12px;padding:20px;max-width:500px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:10px;">
       <h3 style="margin:0;font-size:14px;">📋 Copy this data</h3>
-      <p style="font-size:11px;color:var(--dim);margin:0;">Select all (Ctrl+A) → Copy (Ctrl+C) → paste into a file called backup.json on your work laptop</p>
+      <p style="font-size:11px;color:var(--dim);margin:0;">Select all (Cmd+A) → Copy (Cmd+C) → paste into a .json file</p>
       <textarea style="flex:1;min-height:200px;font-size:10px;font-family:monospace;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;resize:none;" readonly>${data}</textarea>
       <button onclick="this.parentElement.parentElement.remove();" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--blue);color:white;cursor:pointer;">Close</button>
     </div>`;
@@ -744,6 +744,25 @@ function copyDataToClipboard(){
     modal.querySelector('textarea').select();
   });
 }
+
+// Auto-backup: save a .json file to Downloads every hour while the page is open
+let _lastAutoBackup=0;
+function autoBackupCheck(){
+  const now=Date.now();
+  if(now-_lastAutoBackup<3600000)return; // once per hour
+  _lastAutoBackup=now;
+  const data=localStorage.getItem(SK);
+  if(!data)return;
+  try{
+    const blob=new Blob([data],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    a.download='bcc-auto-backup-'+todayStr()+'.json';
+    a.style.display='none';document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
+  }catch(e){}
+}
+// Don't auto-download — just make sure manual backup is easy and reliable
 
 function pasteDataFromClipboard(){
   navigator.clipboard.readText().then(text=>{
@@ -1580,5 +1599,88 @@ function closeEveningModal(){
 // ===== WINDOW RESIZE for week view =====
 let resizeTimer=null;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(D.calView==='week')renderCalendar();},200);});
+
+// ===== EVENT REMINDERS =====
+const _remindedEvents=new Set();
+const REMINDER_MINUTES=10;
+
+function requestNotifPermission(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='default'){
+    Notification.requestPermission().then(p=>updateNotifBtn());
+  }
+  updateNotifBtn();
+}
+function updateNotifBtn(){
+  const btn=document.getElementById('notifToggleBtn');if(!btn)return;
+  if(!('Notification' in window)){btn.style.display='none';return;}
+  if(Notification.permission==='granted'){btn.textContent='🔔';btn.title='Reminders on';btn.style.opacity='1';}
+  else if(Notification.permission==='denied'){btn.textContent='🔕';btn.title='Notifications blocked — enable in browser settings';btn.style.opacity='.5';}
+  else{btn.textContent='🔔';btn.title='Click to enable event reminders';btn.style.opacity='.5';}
+}
+
+function playReminderSound(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const notes=[523.25,659.25,783.99];
+    notes.forEach((freq,i)=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.frequency.value=freq;
+      osc.type='sine';
+      gain.gain.setValueAtTime(0.15,ctx.currentTime+i*0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.15+0.4);
+      osc.start(ctx.currentTime+i*0.15);
+      osc.stop(ctx.currentTime+i*0.15+0.4);
+    });
+  }catch(e){}
+}
+
+function checkEventReminders(){
+  const now=new Date();
+  const dt=todayStr();
+  const tl=getTimeline(dt);
+  if(!tl||!tl.length)return;
+  const nowMin=now.getHours()*60+now.getMinutes();
+
+  tl.forEach((block,i)=>{
+    const blockMin=parseMin(block.t);
+    const diff=blockMin-nowMin;
+    const key=dt+'_'+i+'_'+block.t+'_'+block.text;
+    if(diff>0 && diff<=REMINDER_MINUTES && !_remindedEvents.has(key)){
+      _remindedEvents.add(key);
+      const catInfo=D.cats[block.cls];
+      const icon=catInfo?catInfo.emoji:'📅';
+      const label=block.text||'Event';
+      const timeStr=minToTime(blockMin);
+
+      playReminderSound();
+
+      if('Notification' in window && Notification.permission==='granted'){
+        const n=new Notification('⏰ '+label,{
+          body:'Starting in '+diff+' min at '+timeStr+(block.loc?' — '+block.loc:''),
+          icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">'+encodeURIComponent(icon)+'</text></svg>',
+          tag:key,
+          requireInteraction:false
+        });
+        setTimeout(()=>n.close(),15000);
+      }
+
+      // In-app toast as fallback
+      const toast=document.getElementById('saveToast');
+      if(toast){
+        toast.innerHTML='⏰ <b>'+label+'</b> in '+diff+' min ('+timeStr+')';
+        toast.classList.add('show');
+        clearTimeout(window._reminderToast);
+        window._reminderToast=setTimeout(()=>toast.classList.remove('show'),6000);
+      }
+    }
+  });
+}
+
+setTimeout(updateNotifBtn,500);
+setInterval(checkEventReminders,30000);
+setTimeout(checkEventReminders,2000);
 
 init();
