@@ -20,7 +20,7 @@
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(regs=>{
     regs.forEach(r=>{
-      if(r.active&&r.active.scriptURL&&!r.active.scriptURL.includes('v=10')){
+      if(r.active&&r.active.scriptURL&&!r.active.scriptURL.includes('v=11')){
         r.unregister().then(()=>{
           caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>{
             window.location.reload(true);

@@ -1,4 +1,4 @@
-const CACHE='bcc-v10';
+const CACHE='bcc-v11';
 const ASSETS=[
   './',
   './index.html',
@@ -20,7 +20,6 @@ self.addEventListener('activate',e=>{
   e.waitUntil(
     caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
     .then(()=>self.clients.claim())
-    .then(()=>self.clients.matchAll().then(cls=>cls.forEach(c=>c.navigate(c.url))))
   );
 });
 
