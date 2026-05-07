@@ -509,11 +509,15 @@ function renderCalRightTasks(){
   let bannerHtml='';
   const todayMode=(typeof getTodayMode==='function')?getTodayMode():null;
   const todayPris=(typeof getTodayPriorities==='function')?getTodayPriorities():[];
-  if(isToday&&(todayMode||todayPris.length)){
+  if(isToday){
     const spotPart=todayMode?todayMode.icon+' '+todayMode.label:'';
     const priParts=todayPris.filter(p=>!p.done).slice(0,2).map(p=>p.text).join(' · ');
-    bannerHtml=`<div onclick="switchTab('cal');setTimeout(()=>{const el=document.querySelector('[data-card=mode]');if(el)el.scrollIntoView({behavior:'smooth'});},200);" style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;cursor:pointer;" title="Click to edit your plan">
-      <span style="font-weight:700;color:var(--amber);">Your plan:</span> ${spotPart?spotPart+' ':''}${priParts?'<span style="color:var(--dim);">·</span> '+priParts:''} <span style="font-size:8px;color:var(--dim);">✏️</span>
+    const savedPlan=D.dayPlans&&D.dayPlans[today]||'';
+    const defaultText=[(spotPart||''),(priParts||'')].filter(Boolean).join(' · ');
+    const planText=savedPlan||defaultText;
+    bannerHtml=`<div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
+      <span style="font-weight:700;color:var(--amber);">Your plan:</span>
+      <input type="text" id="todayPlanInput" value="${planText.replace(/"/g,'&quot;')}" placeholder="What's your plan for today?" onchange="if(!D.dayPlans)D.dayPlans={};D.dayPlans[todayStr()]=this.value;save();" style="background:none;border:none;color:var(--text);font-size:10px;font-family:inherit;width:calc(100% - 70px);outline:none;padding:0;">
     </div>`;
   }
 
