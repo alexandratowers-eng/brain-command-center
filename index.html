@@ -15,6 +15,22 @@
 <title>Brain Command Center</title>
 <link rel="stylesheet" href="styles.css">
 <script src="sync-config.js" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<script>
+// Force-nuke old service workers on iOS standalone PWA
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>{
+      if(r.active&&r.active.scriptURL&&!r.active.scriptURL.includes('v=10')){
+        r.unregister().then(()=>{
+          caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>{
+            window.location.reload(true);
+          });
+        });
+      }
+    });
+  });
+}
+</script>
 </head>
 <body>
 <div class="app">
@@ -580,7 +596,7 @@
 <script src="sync.js"></script>
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=9').then(reg=>{
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       nw.addEventListener('statechange',()=>{
