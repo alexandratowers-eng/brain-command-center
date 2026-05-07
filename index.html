@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#6366f1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
@@ -244,10 +247,15 @@
           <button class="tasks-cat-mgr-btn" onclick="openCatMgr()" title="Manage categories"><span class="mi" style="font-size:14px;">tune</span></button>
         </div>
       </div>
+      <div style="display:flex;gap:6px;margin:8px 0 4px;">
+        <button class="tasks-subtab active" id="taskViewList" onclick="switchTaskView('list',this)">📋 List</button>
+        <button class="tasks-subtab" id="taskViewBuckets" onclick="switchTaskView('buckets',this)">🪣 Buckets</button>
+      </div>
       <div id="tasksActivePane">
         <div id="tasksSimpleToday"></div>
         <div id="tasksSimpleParked" style="margin-top:20px;"></div>
       </div>
+      <div id="tasksBucketPane" style="display:none;"></div>
       <!-- Hidden compat containers -->
       <div id="tasksCatSidebar" style="display:none;"><div id="swimlaneContainer"></div></div>
       <div id="tasksMainInbox" style="display:none;"></div>
@@ -571,7 +579,17 @@
 <script src="features.js"></script>
 <script src="sync.js"></script>
 <script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js?v=9').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='activated')window.location.reload();
+      });
+    });
+    reg.update();
+  }).catch(()=>{});
+}
 function mobNav(tab,btn){
   closeMobileMore();
   if(tab==='more'){document.getElementById('mobileMoreMenu').classList.toggle('show');return;}
