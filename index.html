@@ -43,10 +43,8 @@ if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
     <div class="topbar-dropdown" id="dataDropdown">
       <button class="topbar-dropdown-btn" onclick="toggleDataMenu()" title="Data management">⚙ Data ▾</button>
       <div class="topbar-dropdown-menu" id="dataMenu">
-        <button onclick="exportData();toggleDataMenu();">⬇ Download Backup (.json)</button>
+        <button onclick="exportData();toggleDataMenu();">⬇ Download Backup</button>
         <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
-        <button onclick="copyDataToClipboard();toggleDataMenu();">📋 Copy to Clipboard</button>
-        <button onclick="pasteDataFromClipboard();toggleDataMenu();">📥 Paste from Clipboard</button>
       </div>
     </div>
     <button id="syncStatusBtn" data-state="disabled" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Sync status">🔗</button>
