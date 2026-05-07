@@ -128,6 +128,8 @@ function quickAdd(){
 let _slCollapsed=JSON.parse(localStorage.getItem('swimlaneCollapsed')||'{}');
 let _doneCollapsed=localStorage.getItem('doneCollapsed')!=='false';
 let _todayDoneCollapsed=localStorage.getItem('todayDoneCollapsed')!=='false';
+let _parkedCollapsed=localStorage.getItem('parkedCollapsed')!=='false';
+let _todayShowAll=false;
 
 function renderAllTasks(){
   if(window.innerWidth<=900){renderMobileTasks();return;}
@@ -156,25 +158,30 @@ function renderAllTasks(){
     if(!todayActive.length&&!todayDone.length){
       h+=`<div class="simple-tasks-empty">No tasks for today — add one above!</div>`;
     } else {
-      todayActive.forEach(t=>{
+      const SHOW_LIMIT=5;
+      const visibleTasks=_todayShowAll?todayActive:todayActive.slice(0,SHOW_LIMIT);
+      visibleTasks.forEach(t=>{
         const cat=D.cats[t.cat];
         const isOverdue=t.date&&t.date<today;
-        const catColor=cat?cat.color:'var(--blue)';
         const dl=isOverdue?new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
         h+=`<div class="simple-task-row" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
           <div class="p-dot ${t.pri}"></div>
           <input type="checkbox" onchange="togTask(${t.id},this)">
           <div class="simple-task-content">
-            <span class="simple-task-text">${cat?cat.emoji:''} ${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''}${t.text}</span>
+            <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
             ${isOverdue?`<span class="simple-task-overdue">overdue · ${dl}</span>`:''}
           </div>
           <div class="simple-task-actions">
             <button class="defer-btn" onclick="deferToTomorrow(${t.id})" title="Tomorrow">→ tmrw</button>
             <button class="defer-btn later" onclick="deferToLater(${t.id})" title="Park for later">→ later</button>
-            <button class="task-act-btn" onclick="openEdit(${t.id})">edit</button>
           </div>
         </div>`;
       });
+      if(!_todayShowAll&&todayActive.length>SHOW_LIMIT){
+        h+=`<button class="simple-show-more" onclick="_todayShowAll=true;renderAllTasks();">show ${todayActive.length-SHOW_LIMIT} more...</button>`;
+      } else if(_todayShowAll&&todayActive.length>SHOW_LIMIT){
+        h+=`<button class="simple-show-more" onclick="_todayShowAll=false;renderAllTasks();">show less</button>`;
+      }
 
       // Completed tasks greyed out inline
       if(todayDone.length){
@@ -209,12 +216,16 @@ function renderAllTasks(){
   if(parkedEl){
     const totalParked=laterTasks.length+parked.length+backlog.length;
     let h=`<div class="simple-tasks-section parked-section">
-      <div class="simple-tasks-header">
+      <div class="simple-tasks-header" onclick="toggleParkedSection()" style="cursor:pointer;">
         <span class="mi" style="font-size:20px;color:var(--purple);">schedule</span>
         <span class="simple-tasks-title">Parked / Later</span>
         <span class="badge" style="background:rgba(192,132,252,.15);color:#c084fc;">${totalParked}</span>
+        <span class="swimlane-chevron" style="margin-left:auto;">${_parkedCollapsed?'▸':'▾'}</span>
       </div>`;
 
+    if(_parkedCollapsed){
+      h+=`</div>`;parkedEl.innerHTML=h;return;
+    }
     if(!totalParked&&!laterDone.length){
       h+=`<div class="simple-tasks-empty">Nothing parked — your mind is clear!</div>`;
     } else {
@@ -299,6 +310,11 @@ function toggleTodayDone(){
 function toggleLaterDone(){
   _doneCollapsed=!_doneCollapsed;
   localStorage.setItem('doneCollapsed',_doneCollapsed);
+  renderAllTasks();
+}
+function toggleParkedSection(){
+  _parkedCollapsed=!_parkedCollapsed;
+  localStorage.setItem('parkedCollapsed',_parkedCollapsed);
   renderAllTasks();
 }
 

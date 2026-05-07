@@ -11,8 +11,8 @@ function renderWeeklyGoal(){
     return;
   }
   const cur=goal.current;
-  const lo=goal.rangeLow||40;
-  const hi=goal.rangeHigh||45;
+  const lo=goal.rangeLow||20;
+  const hi=goal.rangeHigh||40;
   const pct=Math.min(100,Math.round((cur/hi)*100));
   const loMark=Math.round((lo/hi)*100);
 
@@ -155,8 +155,8 @@ function getCurrentWeeklyGoal(){
 function openWeeklyGoalSetup(){
   const label=prompt('What are you tracking? (e.g. "CHOP Calls"):','CHOP Calls');
   if(!label)return;
-  const lo=parseInt(prompt('Comfortable low end of your range:','40'))||40;
-  const hi=parseInt(prompt('Stretch high end:','45'))||45;
+  const lo=parseInt(prompt('Comfortable low end of your range:','20'))||20;
+  const hi=parseInt(prompt('Stretch high end:','40'))||40;
   const unit=prompt('Unit (calls, attempts, questions, etc.):','calls')||'calls';
   D.weeklyGoals.push({id:Date.now(),label,rangeLow:lo,rangeHigh:hi,target:hi,current:0,unit,sessions:[],created:new Date().toISOString()});
   save();renderWeeklyGoal();
@@ -177,8 +177,8 @@ function logWeeklySession(){
 function newWeeklyGoal(){
   const old=getCurrentWeeklyGoal();
   const label=old?old.label:'CHOP Calls';
-  const lo=old?old.rangeLow:40;
-  const hi=old?old.rangeHigh:45;
+  const lo=old?old.rangeLow:20;
+  const hi=old?old.rangeHigh:40;
   const unit=old?old.unit:'calls';
   D.weeklyGoals.push({id:Date.now(),label,rangeLow:lo,rangeHigh:hi,target:hi,current:0,unit,sessions:[],created:new Date().toISOString()});
   save();renderWeeklyGoal();
@@ -1172,17 +1172,16 @@ function renderTomorrowMode(){
   const customSpots=(D.customSpots||[]);
   const allSpots=[...SPOT_SUGGESTIONS,...customSpots];
 
-  let spotsHtml=`<div style="font-size:9px;color:var(--dim);margin-bottom:5px;">📍 ${hint}</div>`;
-  spotsHtml+=allSpots.map(s=>`<div class="mode-opt ${picked.includes(s.key)?'selected':''}" onclick="toggleSpot('${s.key}')">
-    <span class="mode-icon">${s.icon}</span>
-    <div class="mode-info"><div class="mode-label">${s.label}</div><div class="mode-desc">${s.desc}</div></div>
-  </div>`).join('');
-  spotsHtml+=`<div class="spot-add-row" style="display:flex;gap:4px;margin-top:6px;">
-    <input type="text" id="customSpotInput" class="mode-note-input" placeholder="+ add a spot..." onkeydown="if(event.key==='Enter')addCustomSpot()">
-    <button class="distraction-add-btn" onclick="addCustomSpot()" style="border-color:var(--amber);color:var(--amber);">+</button>
+  let spotsHtml=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">`;
+  spotsHtml+=allSpots.map(s=>`<button class="spot-pill ${picked.includes(s.key)?'selected':''}" onclick="toggleSpot('${s.key}')" title="${s.desc}">${s.icon} ${s.label}</button>`).join('');
+  spotsHtml+=`<button class="spot-pill spot-pill-add" onclick="document.getElementById('customSpotInput').style.display='flex'" title="Add a spot">+</button>`;
+  spotsHtml+=`</div>`;
+  spotsHtml+=`<div id="customSpotInput" style="display:none;gap:4px;margin-top:4px;">
+    <input type="text" class="mode-note-input" id="customSpotText" placeholder="new spot..." onkeydown="if(event.key==='Enter')addCustomSpot()" style="flex:1;">
+    <button class="distraction-add-btn" onclick="addCustomSpot()" style="border-color:var(--amber);color:var(--amber);font-size:10px;">+</button>
   </div>`;
 
-  el.innerHTML=schedHtml+spotsHtml;
+  el.innerHTML=spotsHtml+schedHtml;
   const priWrap=document.getElementById('modePriorities');
   priWrap.style.display='block';
   renderModePriorities();
@@ -1197,7 +1196,7 @@ function toggleSpot(key){
   save();renderTomorrowMode();
 }
 function addCustomSpot(){
-  const inp=document.getElementById('customSpotInput');if(!inp)return;
+  const inp=document.getElementById('customSpotText');if(!inp)return;
   const text=inp.value.trim();if(!text)return;
   if(!D.customSpots)D.customSpots=[];
   const key='custom_'+Date.now();

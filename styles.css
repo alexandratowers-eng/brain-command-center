@@ -158,13 +158,10 @@ button,input,select,textarea{font-family:inherit;}
 .distraction-del:hover{opacity:1;color:var(--red);}
 /* TOMORROW'S MODE PICKER */
 .mode-card{background:linear-gradient(135deg,rgba(251,191,36,.04),rgba(250,204,21,.04)),var(--card);}
-.mode-opt{display:flex;align-items:center;gap:6px;padding:6px 7px;border-radius:6px;cursor:pointer;border:1px solid var(--border);margin-bottom:4px;transition:all .15s;}
-.mode-opt:hover{border-color:var(--amber);background:rgba(251,191,36,.06);}
-.mode-opt.selected{border-color:var(--amber);background:rgba(251,191,36,.12);box-shadow:0 0 0 1px var(--amber);}
-.mode-icon{font-size:16px;flex-shrink:0;}
-.mode-info{flex:1;min-width:0;}
-.mode-label{font-size:10px;font-weight:600;color:var(--text);}
-.mode-desc{font-size:8px;color:var(--dim);line-height:1.3;}
+.spot-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text);font-size:9px;font-weight:500;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.spot-pill:hover{border-color:var(--amber);background:rgba(251,191,36,.06);}
+.spot-pill.selected{border-color:var(--amber);background:rgba(251,191,36,.15);color:var(--amber);font-weight:600;}
+.spot-pill-add{border-style:dashed;color:var(--dim);font-size:10px;padding:3px 10px;}
 .mode-note-input{flex:1;font-size:9px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--fg);font-family:inherit;}
 .mode-note-input:focus{border-color:var(--amber);outline:none;}
 .mode-pri-input-row{display:flex;gap:3px;margin-bottom:4px;}
@@ -772,6 +769,8 @@ button,input,select,textarea{font-family:inherit;}
 .simple-task-text{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .simple-task-overdue{font-size:9px;color:var(--red);font-weight:600;}
 .simple-task-actions{display:flex;gap:3px;flex-shrink:0;align-items:center;opacity:0;transition:opacity .15s;}
+.simple-show-more{display:block;width:100%;background:none;border:none;color:var(--dim);font-size:10px;padding:6px;cursor:pointer;text-align:center;font-family:inherit;transition:color .15s;}
+.simple-show-more:hover{color:var(--text);}
 .simple-done-toggle{display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;font-size:11px;font-weight:600;color:var(--green);border-top:1px solid var(--border);margin-top:8px;}
 .simple-done-toggle:hover{background:rgba(52,211,153,.04);border-radius:6px;}
 :root.light .simple-task-row:hover{background:rgba(0,0,0,.02);}
