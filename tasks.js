@@ -512,8 +512,8 @@ function renderCalRightTasks(){
   if(isToday&&(todayMode||todayPris.length)){
     const spotPart=todayMode?todayMode.icon+' '+todayMode.label:'';
     const priParts=todayPris.filter(p=>!p.done).slice(0,2).map(p=>p.text).join(' · ');
-    bannerHtml=`<div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
-      <span style="font-weight:700;color:var(--amber);">Your plan:</span> ${spotPart?spotPart+' ':''}${priParts?'<span style="color:var(--dim);">·</span> '+priParts:''}
+    bannerHtml=`<div onclick="switchTab('cal');setTimeout(()=>{const el=document.querySelector('[data-card=mode]');if(el)el.scrollIntoView({behavior:'smooth'});},200);" style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;cursor:pointer;" title="Click to edit your plan">
+      <span style="font-weight:700;color:var(--amber);">Your plan:</span> ${spotPart?spotPart+' ':''}${priParts?'<span style="color:var(--dim);">·</span> '+priParts:''} <span style="font-size:8px;color:var(--dim);">✏️</span>
     </div>`;
   }
 
@@ -560,11 +560,11 @@ function renderCalRightTasks(){
     const cat=D.cats[t.cat];
     const catColor=cat?cat.color:'var(--dim)';
     const emoji=cat?cat.emoji:'';
-    const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
     allTaskBlocks.push(renderBlock({
       color:catColor, done:false, isPast:false, isCurrent:false,
-      label:emoji+' '+effortTag+t.text, subtitle:'',
-      toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`
+      label:emoji+' '+t.text, subtitle:'',
+      toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
+      extraBtn:`<button onclick="event.stopPropagation();deferToTomorrow(${t.id})" title="Move to tomorrow" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1';this.style.color='var(--amber)';this.style.borderColor='var(--amber)';" onmouseleave="this.style.opacity='.5';this.style.color='var(--dim)';this.style.borderColor='var(--dim)';">→ tmrw</button>`
     }));
   });
   doneTasks.forEach(t=>{
