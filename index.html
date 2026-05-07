@@ -16,18 +16,17 @@
 <link rel="stylesheet" href="styles.css">
 <script src="sync-config.js" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
-// Force-nuke old service workers on iOS standalone PWA
-if('serviceWorker' in navigator){
+// One-time nuke of old service workers — won't loop
+if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
   navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(r=>{
-      if(r.active&&r.active.scriptURL&&!r.active.scriptURL.includes('v=11')){
-        r.unregister().then(()=>{
-          caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>{
-            window.location.reload(true);
-          });
+    if(regs.length){
+      sessionStorage.setItem('sw_cleared','1');
+      Promise.all(regs.map(r=>r.unregister())).then(()=>{
+        caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>{
+          window.location.reload(true);
         });
-      }
-    });
+      });
+    }
   });
 }
 </script>
@@ -595,17 +594,7 @@ if('serviceWorker' in navigator){
 <script src="features.js"></script>
 <script src="sync.js"></script>
 <script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(reg=>{
-    reg.addEventListener('updatefound',()=>{
-      const nw=reg.installing;
-      nw.addEventListener('statechange',()=>{
-        if(nw.state==='activated')window.location.reload();
-      });
-    });
-    reg.update();
-  }).catch(()=>{});
-}
+// SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){
   closeMobileMore();
   if(tab==='more'){document.getElementById('mobileMoreMenu').classList.toggle('show');return;}
