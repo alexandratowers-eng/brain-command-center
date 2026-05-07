@@ -138,14 +138,15 @@ function parseQuickAdd(raw){
   // --- Category detection ---
   const lc=text.toLowerCase();
   if(/\b(mcat|anki|qbank|uworld|kaplan|content\s*review|cars|p\/s)\b/i.test(lc))result.cat='mcat';
-  else if(/\b(chop|work|cold\s*call|meeting|standup|huddle|touchbase)\b/i.test(lc))result.cat='chop';
+  else if(/\b(meeting|mtg|standup|huddle|touchbase|call|phone|zoom|teams)\b/i.test(lc))result.cat='errands';
+  else if(/\b(chop|cold\s*call)\b/i.test(lc))result.cat='chop';
   else if(/\b(gym|pool|swim|walk|run|jog|dogs?\s*out|exercise|workout|hike|bike)\b/i.test(lc))result.cat='exercise';
   else if(/\b(med\s*app|application|personal\s*statement|secondary|amcas|experience)\b/i.test(lc))result.cat='medapp';
   else if(/\b(brain\s*dump|journal|dump|reflect)\b/i.test(lc))result.cat='braindump';
   else if(/\b(gma|grandma|grandmother|errand|grocery|pharmacy|doctor)\b/i.test(lc))result.cat='personal';
-  else if(/\b(call|phone|zoom|teams|email)\b/i.test(lc))result.cat='chop';
   else if(/\b(lunch|dinner|breakfast|eat|cook|meal)\b/i.test(lc))result.cat='personal';
   else if(/\b(break|rest|nap|chill|relax|free)\b/i.test(lc))result.cat='free';
+  else result.cat='personal';
 
   // --- Clean up title ---
   result.title=text.replace(/\b(at|on|for|from|the)\b/gi,'').replace(/\s+/g,' ').replace(/^[\s,\-–]+|[\s,\-–]+$/g,'').trim();
