@@ -833,6 +833,7 @@ function renderDayView(){
         ${s.sm?`<div style="font-size:10px;color:${catColor};opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(s.sm||'').replace(/</g,'&lt;')}</div>`:''}
         ${itemsHtml}
       </div>`:''}
+      ${heightPx>=30?`<button class="dv-bump-tmrw-btn" onclick="event.preventDefault();event.stopPropagation();sidebarBumpToTomorrow('${dt}',${i});">&rarr; tmrw</button>`:''}
       <div class="dv-resize-handle" data-dt="${dt}" data-sid="${sid}" data-idx="${i}" title="Drag to resize"></div>
     </div>`;
     }
@@ -1918,50 +1919,90 @@ function openMonthPopover(e,dt){
   openWkPopover(e,dt,9);
 }
 
-// ===== MINI CALENDAR =====
-function renderMiniCal(){
-  const year=D.miniYear,month=D.miniMonth;
+// ===== SIDEBAR WEEK STRIP + TOMORROW PREVIEW =====
+function renderSidebarWeek(){
+  const el=document.getElementById('sidebarWeekStrip');
+  if(!el)return;
   const today=todayStr();
-  const first=new Date(year,month,1);
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const startDay=(first.getDay()+6)%7; // Mon=0
-
-  document.getElementById('miniMonthLabel').textContent=first.toLocaleDateString('en-US',{month:'short',year:'numeric'});
-
-  let html='';
-  ['M','T','W','T','F','S','S'].forEach(d=>html+=`<div class="day-hdr">${d}</div>`);
-
-  // Previous month fill
-  const prev=new Date(year,month,0);
-  for(let i=startDay-1;i>=0;i--){
-    const dd=prev.getDate()-i;
-    html+=`<div class="day-cell other-month">${dd}</div>`;
-  }
-
-  // This month
-  for(let d=1;d<=daysInMonth;d++){
-    const dt=dateStr(new Date(year,month,d));
+  const weekDates=getWeekDates(today);
+  let html='<div class="sw-strip">';
+  weekDates.forEach(dt=>{
+    const d=dateObj(dt);
+    const tl=getTimeline(dt);
     const isToday=dt===today;
     const isSel=dt===D.selectedDate;
-    const tl=getTimeline(dt);
-    const tasks=D.tasks.filter(t=>t.date===dt&&!t.done);
-    const hasDots=tl.length||tasks.length;
-
-    html+=`<div class="day-cell ${isToday?'today':''} ${isSel?'selected':''}" onclick="D.selectedDate='${dt}';save();renderCalendar();renderMiniCal();">
-      ${d}
-      ${hasDots?`<div class="dots">${tl.slice(0,3).map(s=>{const c=D.cats[s.cls];return `<span style="background:${c?c.color:'var(--dim)'}"></span>`;}).join('')}</div>`:''}
+    const dayName=['M','T','W','T','F','S','S'][(d.getDay()+6)%7];
+    const dayNum=d.getDate();
+    const MAX_PIPS=6;
+    const pips=tl.slice(0,MAX_PIPS).map(s=>{
+      const color=getBlockColor(s);
+      return `<div class="sw-pip" style="background:${color};opacity:${s.done?0.35:0.85};" title="${s.t} ${s.text}"></div>`;
+    }).join('');
+    const overflow=tl.length>MAX_PIPS?`<div class="sw-pip-more">+${tl.length-MAX_PIPS}</div>`:'';
+    html+=`<div class="sw-day ${isToday?'sw-today':''} ${isSel?'sw-selected':''}" onclick="D.selectedDate='${dt}';save();renderCalendar();renderMiniCal();">
+      <div class="sw-day-name">${dayName}</div>
+      <div class="sw-day-num">${dayNum}</div>
+      <div class="sw-pips">${pips}${overflow}</div>
     </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderSidebarTmrw(){
+  const el=document.getElementById('sidebarTmrwPreview');
+  if(!el)return;
+  const tmrw=dateStr(new Date(dateObj(todayStr()).getTime()+86400000));
+  const tl=getTimeline(tmrw);
+  if(!tl.length){
+    el.innerHTML=`<div class="sw-tmrw-empty">Nothing scheduled yet</div>
+      <button class="t-btn" style="font-size:9px;margin-top:4px;width:100%;" onclick="D.selectedDate='${tmrw}';setCalView('day');">Plan tomorrow</button>`;
+    return;
   }
+  let html='';
+  tl.forEach((s,i)=>{
+    const color=getBlockColor(s);
+    html+=`<div class="sw-tmrw-row ${s.done?'sw-tmrw-done':''}" style="border-left-color:${color};">
+      <div class="sw-tmrw-time">${s.t}</div>
+      <div class="sw-tmrw-text" style="color:${color};">${(s.text||'').replace(/</g,'&lt;')}</div>
+      <button class="sw-bump-btn" title="Move to today" onclick="event.stopPropagation();sidebarBumpToToday('${tmrw}',${i});">&#8592;</button>
+    </div>`;
+  });
+  html+=`<button class="t-btn" style="font-size:9px;margin-top:6px;width:100%;" onclick="D.selectedDate='${tmrw}';setCalView('day');">Open tomorrow &rsaquo;</button>`;
+  el.innerHTML=html;
+}
 
-  // Next month fill
-  const totalCells=startDay+daysInMonth;
-  const remaining=7-(totalCells%7);
-  if(remaining<7){for(let i=1;i<=remaining;i++){html+=`<div class="day-cell other-month">${i}</div>`;}}
+function sidebarBumpToToday(fromDt,idx){
+  const fromTl=getTimeline(fromDt);
+  if(idx<0||idx>=fromTl.length)return;
+  const slot=fromTl.splice(idx,1)[0];
+  setTimeline(fromDt,fromTl);
+  const today=todayStr();
+  const toTl=getTimeline(today)||[];
+  toTl.push(slot);
+  toTl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+  setTimeline(today,toTl);
+  renderCalendar();renderMiniCal();
+}
 
-  document.getElementById('miniCal').innerHTML=html;
+function sidebarBumpToTomorrow(fromDt,idx){
+  const fromTl=getTimeline(fromDt);
+  if(idx<0||idx>=fromTl.length)return;
+  const slot=fromTl.splice(idx,1)[0];
+  setTimeline(fromDt,fromTl);
+  const tmrw=dateStr(new Date(dateObj(fromDt).getTime()+86400000));
+  const toTl=getTimeline(tmrw)||[];
+  toTl.push(slot);
+  toTl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+  setTimeline(tmrw,toTl);
+  renderCalendar();renderMiniCal();
+}
+
+function renderMiniCal(){
+  renderSidebarWeek();
+  renderSidebarTmrw();
 }
 function navMiniMonth(dir){D.miniMonth+=dir;if(D.miniMonth>11){D.miniMonth=0;D.miniYear++;}if(D.miniMonth<0){D.miniMonth=11;D.miniYear--;}save();renderMiniCal();}
-// Make navMonth work for both mini cal and month view
 function navMonth(dir){
   if(D.calView==='month'){
     const d=dateObj(D.selectedDate);

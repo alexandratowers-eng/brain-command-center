@@ -55,16 +55,18 @@
   <div class="sidebar" id="sidebarEl">
     <div class="sidebar-resize" id="sidebarResize"></div>
     <button class="sidebar-close-btn" onclick="if(window.innerWidth<=900){toggleMobileSidebar();}else{toggleSidebar();}" title="Close sidebar">✕</button>
-    <!-- Mini Calendar -->
-    <div class="s-card" data-card="cal">
-      <div class="mini-nav">
-        <button onclick="navMonth(-1)">&lt;</button>
-        <span id="miniMonthLabel"></span>
-        <button onclick="navMonth(1)">&gt;</button>
-        <button class="s-collapse" onclick="toggleCard('cal',this)">▾</button>
+    <!-- This Week Strip -->
+    <div class="s-card" data-card="week-strip">
+      <div class="s-title"><span class="mi" style="font-size:14px;color:var(--blue);">date_range</span> This Week<button class="s-collapse" onclick="toggleCard('week-strip',this)">▾</button></div>
+      <div class="s-body" id="cardBody-week-strip">
+        <div id="sidebarWeekStrip"></div>
       </div>
-      <div class="s-body" id="cardBody-cal">
-        <div class="mini-cal" id="miniCal"></div>
+    </div>
+    <!-- Tomorrow Preview -->
+    <div class="s-card" data-card="tmrw-preview">
+      <div class="s-title" style="color:var(--amber);"><span class="mi" style="font-size:14px;">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('tmrw-preview',this)">▾</button></div>
+      <div class="s-body" id="cardBody-tmrw-preview">
+        <div id="sidebarTmrwPreview"></div>
       </div>
     </div>
 
