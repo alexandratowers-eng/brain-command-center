@@ -1,3 +1,19 @@
+// ===== MEETING/EVENT/CALL COLOR OVERRIDE =====
+function isMeetingBlock(slot){
+  if(!slot||!slot.text)return false;
+  if(slot.cls==='errands')return true;
+  const lc=slot.text.toLowerCase();
+  return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar)\b/i.test(lc);
+}
+function getBlockColor(slot){
+  if(isMeetingBlock(slot))return '#fbbf24';
+  if(slot.cls==='focus')return '#fbbf24';
+  if(slot.cls==='_task')return '#f87171';
+  if(slot.cls==='_todo')return '#60a5fa';
+  const cat=D.cats[slot.cls];
+  return cat?cat.color:'var(--blue)';
+}
+
 // ===== QUICK-ADD AGENT =====
 function parseQuickAdd(raw){
   let text=raw.trim();
@@ -290,7 +306,7 @@ function renderWeekView(){
       const cells=el.querySelectorAll(`.wk-cell[data-date="${dt}"][data-hour="${startM>=60?Math.floor(startM/60):startHr}"]`);
       // Instead, position absolutely within the grid
       const block=document.createElement('div');
-      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''}`;
+      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
       block.style.cssText=`grid-row:${cellRow+1};grid-column:${colIdx};top:${offsetPx}px;height:${durationPx}px;`;
       block.innerHTML=`${slot.text}${slot.sm?`<div class="wk-block-sub">${slot.sm}</div>`:''}`;
       block.title=`${slot.t} - ${slot.text}`;
@@ -376,29 +392,41 @@ function renderWeekBlocks(container, dates, startHr, endHr){
       if(!slot._id){slot._id='s'+Date.now()+'_'+i;}
       const sid=slot._id;
       const block=document.createElement('div');
-      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''}`;
-      block.style.cssText=`position:absolute;top:${topPx}px;left:${leftExpr};width:${widthExpr};height:${heightPx}px;`;
+      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
+      if(slot._locOnly){
+        // loc-only: slim strip at left edge of this day column, behind events
+        const stripLeft=`calc(52px + ${colIdx} * (100% - 54px) / 7 + 1px)`;
+        block.style.cssText=`position:absolute;top:${topPx}px;left:${stripLeft};height:${heightPx}px;`;
+      } else {
+        block.style.cssText=`position:absolute;top:${topPx}px;left:${leftExpr};width:${widthExpr};height:${heightPx}px;`;
+      }
       block.dataset.idx=i;
       block.dataset.dt=dt;
       block.dataset.sid=sid;
-      const fs=heightPx<24?8:heightPx<36?9:heightPx<48?10:11;
-      block.style.fontSize=fs+'px';
-      block.style.lineHeight=heightPx<24?'1.1':'1.3';
-      block.style.padding=heightPx<30?'2px 4px':'4px 6px';
-      const _wkHasNote=(D.meetings||[]).some(m=>m.date===dt&&m.title&&slot.text&&(m.title.toLowerCase().includes(slot.text.toLowerCase().slice(0,10))||slot.text.toLowerCase().includes(m.title.toLowerCase().slice(0,10))));
-      const padV=heightPx<30?4:8;
-      const lineH=heightPx<24?1.1:1.3;
-      const subLines=(heightPx>28&&slot.loc?1:0)+(heightPx>36&&slot.sm?1:0);
-      const availH=heightPx-padV-(subLines*Math.ceil(fs*0.9*1.3));
-      const maxLines=Math.max(1,Math.floor(availH/(fs*lineH)));
-      const titleStyle=maxLines<=1
-        ?'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;'
-        :`overflow:hidden;font-weight:700;display:-webkit-box;-webkit-line-clamp:${maxLines};-webkit-box-orient:vertical;word-break:break-word;`;
-      const doneBtn=heightPx>=24?`<span class="wk-done-btn" title="${slot.done?'Mark not done':'Mark done'}" style="position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:6px;opacity:.5;z-index:10;flex-shrink:0;">${slot.done?'✓':''}</span>`:'';
-      block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
-      block.title=`${slot.t} - ${slot.text}${slot.loc?' @ '+slot.loc:''}${_wkHasNote?' (has notes)':''}`;
-      block.oncontextmenu=(e)=>{e.preventDefault();e.stopPropagation();openWkBlockMenu(e,dt,i);};
+      if(slot._locOnly){
+        block.title=`📍 ${slot.loc||slot.text||'Location'}`;
+        block.innerHTML='';
+      } else {
+        const fs=heightPx<24?8:heightPx<36?9:heightPx<48?10:11;
+        block.style.fontSize=fs+'px';
+        block.style.lineHeight=heightPx<24?'1.1':'1.3';
+        block.style.padding=heightPx<30?'2px 4px':'4px 6px';
+        const _wkHasNote=(D.meetings||[]).some(m=>m.date===dt&&m.title&&slot.text&&(m.title.toLowerCase().includes(slot.text.toLowerCase().slice(0,10))||slot.text.toLowerCase().includes(m.title.toLowerCase().slice(0,10))));
+        const padV=heightPx<30?4:8;
+        const lineH=heightPx<24?1.1:1.3;
+        const subLines=(heightPx>28&&slot.loc?1:0)+(heightPx>36&&slot.sm?1:0);
+        const availH=heightPx-padV-(subLines*Math.ceil(fs*0.9*1.3));
+        const maxLines=Math.max(1,Math.floor(availH/(fs*lineH)));
+        const titleStyle=maxLines<=1
+          ?'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;'
+          :`overflow:hidden;font-weight:700;display:-webkit-box;-webkit-line-clamp:${maxLines};-webkit-box-orient:vertical;word-break:break-word;`;
+        const doneBtn=heightPx>=24?`<span class="wk-done-btn" title="${slot.done?'Mark not done':'Mark done'}" style="position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:6px;opacity:.5;z-index:10;flex-shrink:0;">${slot.done?'✓':''}</span>`:'';
+        block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
+        block.title=`${slot.t} - ${slot.text}${slot.loc?' @ '+slot.loc:''}${_wkHasNote?' (has notes)':''}`;
+      }
+      block.oncontextmenu=(e)=>{e.preventDefault();e.stopPropagation();if(!slot._locOnly)openWkBlockMenu(e,dt,i);};
       block.onmousedown=(e)=>{
+        if(slot._locOnly)return;
         if(e.target.closest('.wk-resize-handle'))return;
         if(e.target.closest('.wk-done-btn')){e.preventDefault();e.stopPropagation();togSlotDone(dt,String(sid));return;}
         e.preventDefault();e.stopPropagation();
@@ -411,12 +439,14 @@ function renderWeekBlocks(container, dates, startHr, endHr){
         block.style.zIndex='20';block.style.opacity='.85';block.style.cursor='grabbing';
         document.body.style.cursor='grabbing';document.body.style.userSelect='none';
       };
-      const resizeHandle=document.createElement('div');
-      resizeHandle.className='wk-resize-handle';
-      resizeHandle.dataset.dt=dt;
-      resizeHandle.dataset.idx=i;
-      resizeHandle.title='Drag to resize';
-      block.appendChild(resizeHandle);
+      if(!slot._locOnly){
+        const resizeHandle=document.createElement('div');
+        resizeHandle.className='wk-resize-handle';
+        resizeHandle.dataset.dt=dt;
+        resizeHandle.dataset.idx=i;
+        resizeHandle.title='Drag to resize';
+        block.appendChild(resizeHandle);
+      }
       grid.appendChild(block);
     });
 
@@ -488,7 +518,7 @@ document.addEventListener('mouseup',(e)=>{
     if(slot&&slot.text&&slot.text.includes('Review parked')&&typeof openParkingReview==='function'){
       openParkingReview();
     } else {
-      openWkBlockMenu(e,d.dt,d.idx);
+      editWkBlock(d.dt,d.idx);
     }
   }
   _wkBlockDrag=null;
@@ -760,7 +790,7 @@ function renderDayView(){
     const dvLh=heightPx<35?'1.1':'1.3';
     const isDone=s.done||false;
     const cat=D.cats[s.cls];
-    const catColor=s.cls==='focus'?'#fbbf24':s.cls==='_task'?'#f87171':s.cls==='_todo'?'#60a5fa':cat?cat.color:'var(--blue)';
+    const catColor=getBlockColor(s);
     const durMin=endM-startM;
     const durLabel=durMin<60?durMin+'m':Math.floor(durMin/60)+'h'+(durMin%60?durMin%60+'m':'');
     const _mtgNotes=(D.meetings||[]).filter(m=>m.date===dt&&m.title&&s.text&&(m.title.toLowerCase().includes(s.text.toLowerCase().slice(0,10))||s.text.toLowerCase().includes(m.title.toLowerCase().slice(0,10))));
@@ -768,8 +798,9 @@ function renderDayView(){
 
     // Overlap positioning — use CSS calc for responsive sizing
     const ov=overlaps[i]||{col:0,totalCols:1};
-    const leftBase=68; // px for time label
-    const rightBase=8;
+    const isMobile=window.innerWidth<=900;
+    const leftBase=isMobile?48:68;
+    const rightBase=isMobile?4:8;
     // Each column is (100% - 76px) / totalCols wide
     const colWidthCalc=`(100% - ${leftBase+rightBase}px) / ${ov.totalCols}`;
     const blockLeft=`calc(${leftBase}px + ${ov.col} * ${colWidthCalc})`;
@@ -786,7 +817,11 @@ function renderDayView(){
       </label>`).join('')}</div>`;
     }
 
-    html+=`<div class="dv-block ${isDone?'dv-block-done':''} ${s._locOnly?'loc-only':''}" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" tabindex="0" oncontextmenu="event.preventDefault();event.stopPropagation();openDvBlockMenu(event,'${dt}',${i});" style="position:absolute;top:${topPx}px;left:${blockLeft};width:${blockWidth};height:${heightPx}px;background:${catColor}25;border:1px solid ${catColor}50;border-left:4px solid ${catColor};border-radius:8px;padding:${dvPad};cursor:grab;z-index:5;display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:opacity .2s,box-shadow .2s;user-select:none;backdrop-filter:blur(2px);justify-content:flex-start;font-size:${dvFs}px;line-height:${dvLh};${isDone?'opacity:.4;text-decoration:line-through;':''}">
+    const locOnlyStyle=s._locOnly?`position:absolute;top:${topPx}px;left:${leftBase}px;height:${heightPx}px;`:`position:absolute;top:${topPx}px;left:${blockLeft};width:${blockWidth};height:${heightPx}px;background:${catColor}25;border:1px solid ${catColor}50;border-left:4px solid ${catColor};border-radius:8px;padding:${dvPad};cursor:grab;z-index:5;display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:opacity .2s,box-shadow .2s;user-select:none;backdrop-filter:blur(2px);justify-content:flex-start;font-size:${dvFs}px;line-height:${dvLh};${isDone?'opacity:.4;text-decoration:line-through;':''}`;
+    if(s._locOnly){
+      html+=`<div class="dv-block loc-only" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" title="📍 ${(s.loc||s.text||'Location').replace(/"/g,'&quot;')}" style="${locOnlyStyle}"></div>`;
+    } else {
+      html+=`<div class="dv-block ${isDone?'dv-block-done':''}" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" tabindex="0" oncontextmenu="event.preventDefault();event.stopPropagation();openDvBlockMenu(event,'${dt}',${i});" style="${locOnlyStyle}">
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:11px;height:11px;min-width:11px;border-radius:50%;border:1.5px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:7px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
@@ -800,6 +835,7 @@ function renderDayView(){
       </div>`:''}
       <div class="dv-resize-handle" data-dt="${dt}" data-sid="${sid}" data-idx="${i}" title="Drag to resize"></div>
     </div>`;
+    }
   });
 
   html+=`</div>`;
@@ -1269,6 +1305,7 @@ function initGridClick(){
   grid.addEventListener('click',e=>{
     const block=e.target.closest('.dv-block');
     if(!block)return;
+    if(block.classList.contains('loc-only'))return;
     if(block._wasDragged){block._wasDragged=false;return;}
     if(e.target.closest('input,button,label'))return;
     e.stopPropagation();
@@ -1278,8 +1315,9 @@ function initGridClick(){
     const slot=tl[idx];
     if(slot&&slot.text&&slot.text.includes('Review parked')&&typeof openParkingReview==='function'){
       openParkingReview();
-    } else {
-      openDvBlockMenu(e,dt,idx);
+    } else if(slot){
+      const mins=parseMin(slot.t);
+      openDvPopover(e,dt,null,mins,idx);
     }
   });
   grid.addEventListener('contextmenu',e=>{
@@ -1299,11 +1337,84 @@ function initGridClick(){
   });
   grid.addEventListener('dblclick',e=>{
     if(e.target.closest('.dv-block'))return;
+    if(_gridDragCreated){_gridDragCreated=false;return;}
     const mins=calcMins(e);
     const dt=grid.dataset.dt;
     if(mins>=7*60&&mins<24*60&&dt)openDvPopover(e,dt,null,mins);
   });
+
+  // Drag-to-create: hold and drag on empty grid to create a new block
+  let _gridDrag=null;
+  grid.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
+    if(e.target.closest('.dv-block'))return;
+    const mins=calcMins(e);
+    const dt=grid.dataset.dt;
+    if(!dt||mins<7*60||mins>=24*60)return;
+    _gridDrag={dt,startMins:mins,curMins:mins,startY:e.clientY,ghost:null,moved:false};
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!_gridDrag)return;
+    if(!_gridDrag.moved&&Math.abs(e.clientY-_gridDrag.startY)<6)return;
+    _gridDrag.moved=true;
+    const grid2=document.querySelector('.dv-grid-wrap');
+    if(!grid2)return;
+    const rect=grid2.getBoundingClientRect();
+    const y=e.clientY-rect.top;
+    const startHr2=parseInt(grid2.dataset.starthr);
+    const rowH2=parseInt(grid2.dataset.rowh);
+    const totalMin=Math.floor(y/rowH2)*60+Math.round((y%rowH2)/rowH2*60/15)*15;
+    _gridDrag.curMins=Math.max(startHr2*60,Math.min(24*60,startHr2*60+totalMin));
+    const topM=Math.min(_gridDrag.startMins,_gridDrag.curMins);
+    const botM=Math.max(_gridDrag.startMins,_gridDrag.curMins);
+    const endM=Math.max(botM,topM+15);
+    if(!_gridDrag.ghost){
+      _gridDrag.ghost=document.createElement('div');
+      _gridDrag.ghost.className='dv-drag-ghost';
+      grid2.appendChild(_gridDrag.ghost);
+    }
+    const topPx=(topM/60-startHr2)*rowH2;
+    const hPx=((endM-topM)/60)*rowH2;
+    _gridDrag.ghost.style.top=topPx+'px';
+    _gridDrag.ghost.style.height=Math.max(14,hPx)+'px';
+    const fmt2=m=>{const h=Math.floor(m/60),mm=m%60,ap=h>=12?'PM':'AM',hh=h%12||12;return hh+':'+(mm<10?'0':'')+mm+' '+ap;};
+    _gridDrag.ghost.textContent=fmt2(topM)+' – '+fmt2(endM);
+    _showResizeTooltip(e,topM,endM);
+    document.body.style.cursor='ns-resize';
+    document.body.style.userSelect='none';
+  });
+  document.addEventListener('mouseup',e=>{
+    if(!_gridDrag)return;
+    const drag=_gridDrag;
+    _gridDrag=null;
+    _hideResizeTooltip();
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    if(drag.ghost){drag.ghost.remove();}
+    if(!drag.moved)return;
+    _gridDragCreated=true;
+    const topM=Math.min(drag.startMins,drag.curMins);
+    const botM=Math.max(drag.startMins,drag.curMins);
+    const endM=Math.max(botM,topM+15);
+    const dt=drag.dt;
+    const tl=getTimeline(dt)||[];
+    const t=minToTime(topM);
+    let idx=tl.length;
+    for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>topM){idx=j;break;}}
+    const sid='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
+    tl.splice(idx,0,{t,text:'',cls:'personal',sm:'',loc:'',end:minToTime(endM),_id:sid});
+    setTimeline(dt,tl);
+    renderCalendar();
+    setTimeout(()=>{
+      const newBlock=document.querySelector(`.dv-block[data-sid="${sid}"]`);
+      if(newBlock){
+        const mainInput=newBlock.querySelector('.dv-main-input');
+        if(mainInput){mainInput.focus();mainInput.select();}
+      }
+    },100);
+  });
 }
+let _gridDragCreated=false;
 
 // Day view popover
 let _dvPopDate=null, _dvPopMins=null, _dvPopEditIdx=null;
@@ -1552,12 +1663,82 @@ function initBlockDrag(){
       if(sl&&sl.text&&sl.text.includes('Review parked')&&typeof openParkingReview==='function'){
         openParkingReview();
       } else if(sl){
-        openDvBlockMenu({clientX:d.block.getBoundingClientRect().left+40,clientY:d.block.getBoundingClientRect().top+10},d.dt,d.idx);
+        const mins=parseMin(sl.t);
+        openDvPopover({clientX:d.block.getBoundingClientRect().left+40,clientY:d.block.getBoundingClientRect().top+10},d.dt,null,mins,d.idx);
       }
     }
     _blockDrag=null;
     document.body.style.cursor='';
     document.body.style.userSelect='';
+  });
+
+  // Touch drag support for mobile
+  let _touchDragTimer=null;
+  grid.addEventListener('touchstart',e=>{
+    const block=e.target.closest('.dv-block');
+    if(!block||block.classList.contains('loc-only'))return;
+    if(e.target.closest('.dv-resize-handle,button,input,label'))return;
+    const touch=e.touches[0];
+    const dt=block.dataset.dt;
+    const sid=block.dataset.sid||null;
+    const tl=getTimeline(dt);
+    const idx=sid!==null?_slotIdx(tl,sid):parseInt(block.dataset.idx);
+    if(idx<0)return;
+    const slot=tl[idx];
+    const startMin=parseMin(slot.t);
+    const endMin=slot.end?parseMin(slot.end):startMin+60;
+    const duration=endMin-startMin;
+    const gridRect=grid.getBoundingClientRect();
+    const ROW_H=56;
+    const startHr=7;
+    const maxMin=24*60-duration;
+    _touchDragTimer=setTimeout(()=>{
+      e.preventDefault();
+      _blockDrag={dt,idx,startY:touch.clientY,startMin,duration,maxMin,gridRect,ROW_H,startHr,block,grid,moved:false,isTouch:true};
+      block.style.zIndex='20';
+      block.style.opacity='.85';
+      block.style.boxShadow='0 4px 16px rgba(0,0,0,.3)';
+      if(navigator.vibrate)navigator.vibrate(30);
+    },300);
+  },{passive:false});
+  grid.addEventListener('touchmove',e=>{
+    if(_touchDragTimer&&!_blockDrag){clearTimeout(_touchDragTimer);_touchDragTimer=null;return;}
+    if(!_blockDrag||!_blockDrag.isTouch)return;
+    e.preventDefault();
+    const touch=e.touches[0];
+    const d=_blockDrag;
+    const dy=touch.clientY-d.startY;
+    if(!d.moved&&Math.abs(dy)<8)return;
+    d.moved=true;
+    const minDelta=Math.round((dy/d.ROW_H)*60/15)*15;
+    const newMin=Math.max(d.startHr*60,Math.min(d.maxMin,d.startMin+minDelta));
+    const topPx=(newMin/60-d.startHr)*d.ROW_H;
+    d.block.style.top=topPx+'px';
+    d.pendingMin=newMin;
+  },{passive:false});
+  grid.addEventListener('touchend',e=>{
+    if(_touchDragTimer){clearTimeout(_touchDragTimer);_touchDragTimer=null;}
+    if(!_blockDrag||!_blockDrag.isTouch)return;
+    const d=_blockDrag;
+    if(d.moved&&d.pendingMin!==undefined){
+      const tl=getTimeline(d.dt);
+      const slot=tl[d.idx];
+      slot.done=false;
+      slot.t=minToTime(d.pendingMin);
+      slot.end=minToTime(d.pendingMin+d.duration);
+      tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+      setTimeline(d.dt,tl);
+      renderCalendar();
+    }
+    d.block.style.zIndex='';d.block.style.opacity='';d.block.style.boxShadow='';
+    _blockDrag=null;
+  });
+  grid.addEventListener('touchcancel',()=>{
+    if(_touchDragTimer){clearTimeout(_touchDragTimer);_touchDragTimer=null;}
+    if(_blockDrag&&_blockDrag.isTouch){
+      _blockDrag.block.style.zIndex='';_blockDrag.block.style.opacity='';_blockDrag.block.style.boxShadow='';
+      _blockDrag=null;
+    }
   });
 
   // Double-click on a block to open edit popover
@@ -1609,9 +1790,11 @@ function initBlockResize(){
     const heightPx=Math.max(28,((newEnd-startM)/60)*pxPerHour);
     block.style.height=heightPx+'px';
     _blockResize.pendingEnd=newEnd;
+    _showResizeTooltip(e,startM,newEnd);
   });
   document.addEventListener('mouseup',()=>{
     if(!_blockResize)return;
+    _hideResizeTooltip();
     const{dt,idx,pendingEnd}=_blockResize;
     if(pendingEnd!==undefined){
       const tl=getTimeline(dt);
@@ -1625,6 +1808,25 @@ function initBlockResize(){
   });
 }
 initBlockResize();
+
+let _resizeTooltip=null;
+function _showResizeTooltip(e,startM,endM){
+  if(!_resizeTooltip){
+    _resizeTooltip=document.createElement('div');
+    _resizeTooltip.className='resize-time-tooltip';
+    document.body.appendChild(_resizeTooltip);
+  }
+  const fmt=m=>{const h=Math.floor(m/60),mm=m%60,ap=h>=12?'PM':'AM',hh=h%12||12;return hh+':'+(mm<10?'0':'')+mm+' '+ap;};
+  const dur=endM-startM;
+  const durLabel=dur>=60?Math.floor(dur/60)+'h'+(dur%60?' '+dur%60+'m':''):dur+'m';
+  _resizeTooltip.innerHTML=fmt(startM)+' – '+fmt(endM)+'<span class="resize-tooltip-dur">'+durLabel+'</span>';
+  _resizeTooltip.style.display='flex';
+  _resizeTooltip.style.left=(e.clientX+14)+'px';
+  _resizeTooltip.style.top=(e.clientY-10)+'px';
+}
+function _hideResizeTooltip(){
+  if(_resizeTooltip){_resizeTooltip.style.display='none';}
+}
 
 // ===== MONTH VIEW =====
 function renderMonthView(){
@@ -1820,4 +2022,48 @@ function updateTimerDisp(){const m=Math.floor(tSec/60),s=tSec%60;document.getEle
 }
 
 function celebrate(){const msgs=['Nice!','Crushed it','Go you!','Yes!'];const el=document.createElement('div');el.textContent=msgs[Math.floor(Math.random()*msgs.length)];el.style.cssText='position:fixed;top:20%;left:50%;transform:translateX(-50%);background:var(--grad);color:white;padding:10px 20px;border-radius:10px;font-size:15px;font-weight:600;z-index:9999;animation:fadeUp 1.5s forwards;pointer-events:none;';document.body.appendChild(el);setTimeout(()=>el.remove(),1500);}
+
+// ===== LOCATION STRIP TOOLTIP =====
+(function(){
+  let _locTip=null;
+  function showLocTip(text,x,y){
+    removeLocTip();
+    const tip=document.createElement('div');
+    tip.className='loc-strip-tip';
+    tip.innerHTML=`<span class="mi">location_on</span><span>${text}</span>`;
+    document.body.appendChild(tip);
+    _locTip=tip;
+    const tw=tip.offsetWidth||180;
+    const th=tip.offsetHeight||36;
+    const left=Math.min(x+14,window.innerWidth-tw-8);
+    const top=Math.min(y-th/2,window.innerHeight-th-8);
+    tip.style.left=left+'px';
+    tip.style.top=top+'px';
+  }
+  function removeLocTip(){
+    if(_locTip){_locTip.remove();_locTip=null;}
+  }
+  document.addEventListener('click',e=>{
+    const block=e.target.closest('.wk-block.loc-only,.dv-block.loc-only');
+    if(block){
+      e.stopPropagation();
+      e.preventDefault();
+      const dt=block.dataset.dt;
+      const sid=block.dataset.sid;
+      const idx=parseInt(block.dataset.idx);
+      const tl=dt?getTimeline(dt):null;
+      let locText='';
+      if(tl){
+        const slot=sid?tl.find(s=>String(s._id)===String(sid)):tl[idx];
+        if(slot)locText=slot.loc||slot.text||'Location';
+      }
+      if(!locText)locText='Location';
+      if(_locTip){removeLocTip();return;}
+      showLocTip(locText,e.clientX,e.clientY);
+      setTimeout(()=>document.addEventListener('click',removeLocTip,{once:true}),10);
+      return;
+    }
+    removeLocTip();
+  },true);
+})();
 

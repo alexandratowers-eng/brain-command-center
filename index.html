@@ -273,7 +273,18 @@
         <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:16px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
             <h3 style="font-size:14px;margin:0;">Worry Notes</h3>
-            <span id="worryTimerDisplay" class="worry-timer" style="display:none;"></span>
+            <div class="worry-timer-bar" id="worryTimerBar">
+              <button class="worry-start-btn" id="worryStartBtn" onclick="startWorryCountdown()"><span class="mi" style="font-size:14px;vertical-align:middle;">timer</span> 10 min</button>
+              <div class="worry-timer-ring" id="worryTimerRing" style="display:none;">
+                <svg viewBox="0 0 36 36" class="worry-ring-svg">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="2"/>
+                  <circle id="worryRingProgress" cx="18" cy="18" r="15.5" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="0" transform="rotate(-90 18 18)"/>
+                </svg>
+                <span id="worryTimerDisplay" class="worry-timer-text">10:00</span>
+              </div>
+              <button class="worry-pause-btn" id="worryPauseBtn" onclick="toggleWorryPause()" style="display:none;" title="Pause/Resume"><span class="mi" style="font-size:14px;">pause</span></button>
+              <button class="worry-reset-btn" id="worryResetBtn" onclick="resetWorryTimer()" style="display:none;" title="Reset timer"><span class="mi" style="font-size:14px;">restart_alt</span></button>
+            </div>
           </div>
           <p style="font-size:11px;color:var(--dim);margin-bottom:8px;">Give yourself 10 minutes. Write what's on your mind — no editing, just flow.</p>
           <textarea class="dump-area" id="worryNotes" placeholder="What's weighing on your mind right now..." oninput="onWorryInput(this)"></textarea>

@@ -1,4 +1,4 @@
-const CACHE='bcc-v7';
+const CACHE='bcc-v8';
 const ASSETS=[
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS=[
   './calendar.js',
   './tasks.js',
   './features.js',
+  './sync.js',
   './manifest.json'
 ];
 

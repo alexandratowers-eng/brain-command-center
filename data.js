@@ -93,6 +93,18 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     if(d.days){Object.values(d.days).forEach(tl=>{if(Array.isArray(tl))tl.forEach(s=>{if(s._mcatDaily&&s.t==='8:00 AM'){s.t='12:30 PM';s.end='12:40 PM';}});});}
     d._mcatTimeFixed=true;
   }
+  // Remove MCAT daily blocks before May 11, keep May 11–31 only
+  if(!d._mcatStartNextWeek){
+    if(d.days){
+      for(let day=1;day<=10;day++){
+        const dt=`2026-05-${String(day).padStart(2,'0')}`;
+        if(d.days[dt]&&Array.isArray(d.days[dt])){
+          d.days[dt]=d.days[dt].filter(s=>!s._mcatDaily);
+        }
+      }
+    }
+    d._mcatStartNextWeek=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];

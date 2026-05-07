@@ -1512,36 +1512,69 @@ function closeDailyMotivation(){
 }
 
 // ===== WORRY NOTES =====
-let _worryTimer=null,_worrySecondsLeft=600,_worryActive=false;
+let _worryTimer=null,_worrySecondsLeft=600,_worryActive=false,_worryPaused=false,_worryTotalSecs=600;
 function onWorryInput(textarea){
   const today=todayStr();
   if(!D.worryLog)D.worryLog={};
   if(!D.worryLog[today])D.worryLog[today]={text:'',startedAt:Date.now()};
   D.worryLog[today].text=textarea.value;
   save();
-  if(!_worryActive){_worryActive=true;_worrySecondsLeft=600;startWorryTimer();}
+}
+function startWorryCountdown(){
+  if(_worryActive)return;
+  _worryActive=true;_worryPaused=false;_worrySecondsLeft=600;_worryTotalSecs=600;
+  const startBtn=document.getElementById('worryStartBtn');if(startBtn)startBtn.style.display='none';
+  const ring=document.getElementById('worryTimerRing');if(ring)ring.style.display='flex';
+  const pauseBtn=document.getElementById('worryPauseBtn');if(pauseBtn)pauseBtn.style.display='inline-flex';
+  const resetBtn=document.getElementById('worryResetBtn');if(resetBtn)resetBtn.style.display='inline-flex';
+  document.getElementById('worryNotes')?.focus();
+  startWorryTimer();
 }
 function startWorryTimer(){
-  const disp=document.getElementById('worryTimerDisplay');
-  if(disp)disp.style.display='inline-flex';
   updateWorryTimerDisplay();
   _worryTimer=setInterval(()=>{
+    if(_worryPaused)return;
     _worrySecondsLeft--;
     updateWorryTimerDisplay();
     if(_worrySecondsLeft<=0){clearInterval(_worryTimer);_worryTimer=null;finishWorryNotes();}
   },1000);
 }
+function toggleWorryPause(){
+  _worryPaused=!_worryPaused;
+  const btn=document.getElementById('worryPauseBtn');
+  if(btn)btn.innerHTML=`<span class="mi" style="font-size:14px;">${_worryPaused?'play_arrow':'pause'}</span>`;
+  const ring=document.getElementById('worryRingProgress');
+  if(ring)ring.style.stroke=_worryPaused?'var(--dim)':'var(--amber)';
+}
+function resetWorryTimer(){
+  if(_worryTimer){clearInterval(_worryTimer);_worryTimer=null;}
+  _worryActive=false;_worryPaused=false;_worrySecondsLeft=600;
+  const startBtn=document.getElementById('worryStartBtn');if(startBtn)startBtn.style.display='inline-flex';
+  const ring=document.getElementById('worryTimerRing');if(ring)ring.style.display='none';
+  const pauseBtn=document.getElementById('worryPauseBtn');if(pauseBtn)pauseBtn.style.display='none';
+  const resetBtn=document.getElementById('worryResetBtn');if(resetBtn)resetBtn.style.display='none';
+  updateWorryTimerDisplay();
+}
 function updateWorryTimerDisplay(){
   const disp=document.getElementById('worryTimerDisplay');if(!disp)return;
-  const m=Math.floor(_worrySecondsLeft/60),s=_worrySecondsLeft%60;
-  disp.textContent=m+':'+String(s).padStart(2,'0');
-  disp.style.color=_worrySecondsLeft<=60?'var(--red)':'var(--amber)';
+  disp.textContent='';
+  disp.style.color='transparent';
+  const ring=document.getElementById('worryRingProgress');
+  if(ring){
+    const pct=(_worryTotalSecs-_worrySecondsLeft)/_worryTotalSecs;
+    ring.style.strokeDashoffset=(pct*97.4).toFixed(1);
+    if(_worrySecondsLeft<=60)ring.style.stroke='var(--red)';
+    else ring.style.stroke='var(--amber)';
+  }
 }
 function finishWorryNotes(){
   if(_worryTimer){clearInterval(_worryTimer);_worryTimer=null;}
-  _worryActive=false;
+  _worryActive=false;_worryPaused=false;
   const disp=document.getElementById('worryTimerDisplay');
   if(disp){disp.textContent='Done';disp.style.color='var(--green)';}
+  const ring=document.getElementById('worryRingProgress');
+  if(ring){ring.style.strokeDashoffset='97.4';ring.style.stroke='var(--green)';}
+  const pauseBtn=document.getElementById('worryPauseBtn');if(pauseBtn)pauseBtn.style.display='none';
   const today=todayStr();
   const text=(D.worryLog&&D.worryLog[today]&&D.worryLog[today].text)||'';
   showWorrySuggestions(text);
@@ -1676,8 +1709,34 @@ function checkEventReminders(){
   });
 }
 
+// Tomorrow preview reminder — fires once per session around 8-10 PM
+let _tomorrowReminderSent=false;
+function checkTomorrowReminder(){
+  if(_tomorrowReminderSent)return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const now=new Date();
+  const hr=now.getHours();
+  if(hr<20||hr>22)return;
+  const tomorrow=new Date(now);
+  tomorrow.setDate(tomorrow.getDate()+1);
+  const tmrwStr=dateStr(tomorrow);
+  const tl=getTimeline(tmrwStr);
+  if(!tl||!tl.length)return;
+  _tomorrowReminderSent=true;
+  const firstThree=tl.slice(0,3).map(b=>`${b.t} — ${b.text}`).join('\n');
+  const more=tl.length>3?`\n+${tl.length-3} more`:'';
+  new Notification('📋 Tomorrow\'s Schedule',{
+    body:firstThree+more,
+    icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>',
+    tag:'tomorrow_preview',
+    requireInteraction:false
+  });
+}
+
 setTimeout(updateNotifBtn,500);
 setInterval(checkEventReminders,30000);
 setTimeout(checkEventReminders,2000);
+setInterval(checkTomorrowReminder,60000);
+setTimeout(checkTomorrowReminder,5000);
 
 init();
