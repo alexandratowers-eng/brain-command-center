@@ -6,7 +6,7 @@ function isMeetingBlock(slot){
   return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar)\b/i.test(lc);
 }
 function getBlockColor(slot){
-  if(isMeetingBlock(slot))return '#fbbf24';
+  if(isMeetingBlock(slot))return '#fde68a';
   if(slot.cls==='focus')return '#fbbf24';
   if(slot.cls==='_task')return '#f87171';
   if(slot.cls==='_todo')return '#60a5fa';
@@ -422,7 +422,9 @@ function renderWeekBlocks(container, dates, startHr, endHr){
           ?'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;'
           :`overflow:hidden;font-weight:700;display:-webkit-box;-webkit-line-clamp:${maxLines};-webkit-box-orient:vertical;word-break:break-word;`;
         const doneBtn=heightPx>=24?`<span class="wk-done-btn" title="${slot.done?'Mark not done':'Mark done'}" style="position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:6px;opacity:.5;z-index:10;flex-shrink:0;">${slot.done?'✓':''}</span>`:'';
-        block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
+        const _isChopMtg=isMeetingBlock(slot)&&(slot.cls==='chop'||/\bchop\b/i.test(slot.text||''));
+        const _chopTag=_isChopMtg?'<span class="meeting-chop-tag">CHOP</span>':'';
+        block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${_chopTag}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
         block.title=`${slot.t} - ${slot.text}${slot.loc?' @ '+slot.loc:''}${_wkHasNote?' (has notes)':''}`;
       }
       block.oncontextmenu=(e)=>{e.preventDefault();e.stopPropagation();if(!slot._locOnly)openWkBlockMenu(e,dt,i);};
@@ -826,7 +828,7 @@ function renderDayView(){
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:11px;height:11px;min-width:11px;border-radius:50%;border:1.5px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:7px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
-        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${(s.text||'').replace(/</g,'&lt;')}</div>
+        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':''}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
       </div>
       ${heightPx>36?`<div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;">
@@ -878,66 +880,44 @@ function copyFromToday(){
 
 const TEMPLATES={
   remote:[
-    {t:'8:30 AM',text:'Meds + coffee',cls:'personal',sm:'Eat, hydrate. No output yet.',end:'9:00 AM'},
-    {t:'9:00 AM',text:'Clock in + setup',cls:'chop',sm:'Email, call list, prep. Setup not output.',end:'9:30 AM'},
-    {t:'9:30 AM',text:'CHOP cold calls',cls:'chop',sm:'Hardest thing first. 2hr max then stop.',end:'11:30 AM'},
-    {t:'11:30 AM',text:'Follow-up calls + notes',cls:'chop',sm:'Easier — ride the momentum.',end:'12:30 PM'},
-    {t:'12:30 PM',text:'Lunch — leave the room',cls:'personal',sm:'Eat somewhere else in the house.',end:'1:30 PM'},
-    {t:'1:30 PM',text:'Med apps',cls:'medapp',sm:'Experiences or PS. Pick one, 90 min.',end:'3:00 PM'},
-    {t:'3:00 PM',text:'Dogs out — then pool if you feel it',cls:'exercise',sm:'Walk is the floor. Pool is the bonus. Both count.',end:'4:00 PM'},
-    {t:'4:00 PM',text:'Gma + personal',cls:'personal',sm:'Check in, errands, whatever needs doing.',end:'5:00 PM'},
-    {t:'5:00 PM',text:'Rest + dinner',cls:'free',sm:'Decompress. Intentional downtime.',end:'7:00 PM'},
-    {t:'7:00 PM',text:'MCAT or med apps — second wind',cls:'mcat',sm:'P/S, QBank, or PS edits. If no second wind, done for the day.',end:'9:00 PM'},
-    {t:'9:30 PM',text:'Wind down',cls:'free',sm:'',end:'10:30 PM'},
+    {t:'8:30 AM',text:'Emails check',cls:'chop',sm:'',end:'9:15 AM'},
+    {t:'9:15 AM',text:'Smoking study recruitment',cls:'chop',sm:'',end:'11:15 AM'},
+    {t:'11:15 AM',text:'Smoking study follow-up',cls:'chop',sm:'',end:'12:15 PM'},
+    {t:'12:15 PM',text:'Lunch',cls:'personal',sm:'',end:'1:00 PM'},
+    {t:'1:00 PM',text:'Virtual driving work',cls:'chop',sm:'',end:'3:00 PM'},
+    {t:'3:00 PM',text:'Nutrition work',cls:'chop',sm:'',end:'4:30 PM'},
+    {t:'4:30 PM',text:'Wind down',cls:'free',sm:'',end:'5:30 PM'},
   ],
   inperson:[
-    {t:'7:30 AM',text:'Commute',cls:'personal',sm:'Meds on the way. Coffee when you arrive.',end:'8:00 AM'},
-    {t:'8:00 AM',text:'Arrive + settle in',cls:'chop',sm:'Email, prep for the day. Ease in.',end:'10:00 AM'},
-    {t:'10:00 AM',text:'RA Call Touchbase',cls:'chop',sm:'Research assistant check-in.',end:'10:30 AM'},
-    {t:'10:30 AM',text:'CHOP work block',cls:'chop',sm:'Data, follow-ups, whatever\'s on the board.',end:'12:00 PM'},
-    {t:'12:00 PM',text:'Lunch — get outside if possible',cls:'personal',sm:'Even 10 min outside resets you.',end:'1:00 PM'},
-    {t:'1:00 PM',text:'TPP meetings',cls:'chop',sm:'Small + larger TPP.',end:'3:00 PM'},
-    {t:'3:00 PM',text:'Wrap up + commute',cls:'personal',sm:'',end:'4:30 PM'},
-    {t:'4:30 PM',text:'Dogs out',cls:'exercise',sm:'Walk first. Pool after if you feel it.',end:'5:30 PM'},
-    {t:'5:30 PM',text:'Gma + dinner',cls:'personal',sm:'',end:'7:00 PM'},
-    {t:'7:00 PM',text:'Med apps (light)',cls:'medapp',sm:'PS or experiences. Don\'t force deep work after a CHOP day.',end:'8:30 PM'},
-    {t:'8:30 PM',text:'MCAT if brain is on',cls:'mcat',sm:'Flashcards or 10 Qs. If not — wind down, no guilt.',end:'9:30 PM'},
-    {t:'9:30 PM',text:'Wind down',cls:'free',sm:'',end:'10:30 PM'},
+    {t:'8:00 AM',text:'Emails check',cls:'chop',sm:'',end:'8:30 AM'},
+    {t:'8:30 AM',text:'Smoking study recruitment',cls:'chop',sm:'',end:'10:30 AM'},
+    {t:'10:30 AM',text:'Smoking study follow-up',cls:'chop',sm:'',end:'12:00 PM'},
+    {t:'12:00 PM',text:'Lunch',cls:'personal',sm:'',end:'1:00 PM'},
+    {t:'1:00 PM',text:'Other work tasks',cls:'chop',sm:'',end:'3:30 PM'},
+    {t:'3:30 PM',text:'Wrap up',cls:'personal',sm:'',end:'4:30 PM'},
   ],
   study:[
-    {t:'9:00 AM',text:'Meds + coffee + slow start',cls:'personal',sm:'No rush. Brain needs fuel before deep work.',end:'10:00 AM'},
-    {t:'10:00 AM',text:'MCAT Study Block 1',cls:'mcat',sm:'Content review. 2hr max then break.',end:'12:00 PM'},
-    {t:'12:00 PM',text:'Lunch',cls:'personal',sm:'Step away from the material.',end:'1:00 PM'},
-    {t:'1:00 PM',text:'MCAT Practice Qs',cls:'mcat',sm:'QBank timed set. Review after.',end:'2:30 PM'},
-    {t:'2:30 PM',text:'Dogs out — then pool if you feel it',cls:'exercise',sm:'Walk is the floor. You just did 4hrs of studying.',end:'3:30 PM'},
-    {t:'3:30 PM',text:'Rest',cls:'free',sm:'Brain needs recovery between study blocks.',end:'5:00 PM'},
-    {t:'5:00 PM',text:'Gma + dinner',cls:'personal',sm:'',end:'7:00 PM'},
-    {t:'7:00 PM',text:'CARS practice',cls:'mcat',sm:'2-3 passages. Evening brain is good for reading.',end:'8:30 PM'},
-    {t:'8:30 PM',text:'Med app work',cls:'medapp',sm:'Experiences or PS — switch gears from MCAT.',end:'10:00 PM'},
-    {t:'10:00 PM',text:'Wind down',cls:'free',sm:'',end:'11:00 PM'},
+    {t:'9:00 AM',text:'Emails check',cls:'chop',sm:'',end:'9:30 AM'},
+    {t:'9:30 AM',text:'MCAT study block',cls:'mcat',sm:'',end:'12:00 PM'},
+    {t:'12:00 PM',text:'Lunch',cls:'personal',sm:'',end:'1:00 PM'},
+    {t:'1:00 PM',text:'MCAT practice Qs',cls:'mcat',sm:'',end:'3:00 PM'},
+    {t:'3:00 PM',text:'Nutrition work',cls:'chop',sm:'',end:'4:30 PM'},
+    {t:'4:30 PM',text:'Wind down',cls:'free',sm:'',end:'5:30 PM'},
   ],
   light:[
-    {t:'9:30 AM',text:'Sleep in + meds + coffee',cls:'personal',sm:'You earned this. No alarm guilt.',end:'10:30 AM'},
-    {t:'10:30 AM',text:'One small task',cls:'personal',sm:'Pick the easiest thing on your list. Just one.',end:'11:30 AM'},
-    {t:'11:30 AM',text:'Dogs out',cls:'exercise',sm:'Walk. That\'s it. Pool only if it sounds fun.',end:'12:15 PM'},
-    {t:'12:15 PM',text:'Lunch',cls:'personal',sm:'',end:'1:00 PM'},
-    {t:'1:00 PM',text:'Gma or errands',cls:'personal',sm:'Whatever actually needs doing today.',end:'2:30 PM'},
-    {t:'2:30 PM',text:'Free time — real rest',cls:'free',sm:'Not "rest but feel guilty." Actual rest.',end:'5:00 PM'},
-    {t:'5:00 PM',text:'Dinner',cls:'personal',sm:'',end:'6:00 PM'},
-    {t:'7:00 PM',text:'MCAT flashcards only',cls:'mcat',sm:'15 min cap. Set a timer. Then stop.',end:'7:15 PM'},
-    {t:'7:15 PM',text:'Relax',cls:'free',sm:'Light days exist so the other days work.',end:'10:00 PM'},
+    {t:'9:30 AM',text:'Emails check',cls:'chop',sm:'',end:'10:00 AM'},
+    {t:'10:00 AM',text:'One work task',cls:'personal',sm:'Pick the easiest thing. Just one.',end:'11:30 AM'},
+    {t:'11:30 AM',text:'Lunch',cls:'personal',sm:'',end:'12:15 PM'},
+    {t:'1:00 PM',text:'Rest / free time',cls:'free',sm:'Actual rest. No guilt.',end:'4:00 PM'},
   ],
   nightowl:[
-    {t:'9:00 AM',text:'Clock in + setup',cls:'chop',sm:'Email, call list — setup not output',end:'9:30 AM'},
-    {t:'10:00 AM',text:'CHOP cold calls',cls:'chop',sm:'Hardest thing first. 2hrs max then stop.',end:'12:00 PM'},
-    {t:'12:00 PM',text:'Lunch — leave the room',cls:'personal',sm:'Eat somewhere else. Change of scenery.',end:'1:00 PM'},
-    {t:'1:00 PM',text:'Follow-up calls + notes',cls:'chop',sm:'Easier than cold calls — ride momentum',end:'2:30 PM'},
-    {t:'2:30 PM',text:'Gma + errands',cls:'personal',sm:'Check in, walk, whatever needs doing',end:'3:30 PM'},
-    {t:'3:30 PM',text:'Dogs out — that\'s the only decision',cls:'exercise',sm:'Walk first. Pool after if you feel it. Both count.',end:'4:15 PM'},
-    {t:'4:15 PM',text:'Rest — guilt-free zone',cls:'free',sm:'Nap, scroll, recharge. Intentional.',end:'5:00 PM'},
-    {t:'5:00 PM',text:'Dinner + decompress',cls:'personal',sm:'',end:'6:30 PM'},
-    {t:'7:00 PM',text:'Med apps (light)',cls:'medapp',sm:'Experiences list or quick PS edits',end:'8:30 PM'},
-    {t:'9:30 PM',text:'MCAT if brain turns on',cls:'mcat',sm:'QBank or P/S content. If not — wind down.',end:'11:00 PM'},
+    {t:'9:00 AM',text:'Emails check',cls:'chop',sm:'',end:'9:30 AM'},
+    {t:'9:30 AM',text:'Smoking study recruitment',cls:'chop',sm:'',end:'12:00 PM'},
+    {t:'12:00 PM',text:'Lunch',cls:'personal',sm:'',end:'1:00 PM'},
+    {t:'1:00 PM',text:'Smoking study follow-up',cls:'chop',sm:'',end:'2:30 PM'},
+    {t:'2:30 PM',text:'Virtual driving work',cls:'chop',sm:'',end:'4:00 PM'},
+    {t:'4:00 PM',text:'Rest',cls:'free',sm:'',end:'5:00 PM'},
+    {t:'7:00 PM',text:'Nutrition work',cls:'chop',sm:'',end:'9:00 PM'},
   ],
 };
 
