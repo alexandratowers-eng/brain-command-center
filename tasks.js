@@ -1383,7 +1383,7 @@ function renderMobileTasks(){
   function taskRow(t,section){
     const cat=D.cats[t.cat];
     const isOverdue=t.date&&t.date<today;
-    const catBadge=cat?`<span style="font-size:10px;color:${cat.color};">${cat.emoji}</span>`:'';
+    const catOpts=Object.entries(D.cats||{}).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     let actions='';
     if(section==='today'){
       actions=`<button onclick="deferToTomorrow(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">tmrw</button>
@@ -1394,13 +1394,16 @@ function renderMobileTasks(){
     } else {
       actions=`<button onclick="laterToToday(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">today</button>`;
     }
-    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;${isOverdue?'border-left:3px solid var(--red);':''}">
-      <input type="checkbox" onchange="togTask(${t.id},this)" style="width:20px;height:20px;flex-shrink:0;">
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;${isOverdue?'border-left:3px solid var(--red);':''}">
+      <input type="checkbox" onchange="togTask(${t.id},this)" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.text}</div>
-        <div style="font-size:10px;color:var(--dim);margin-top:2px;display:flex;gap:6px;align-items:center;">${catBadge}${isOverdue?'<span style="color:var(--red);">overdue</span>':''}</div>
+        <div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <select onchange="(function(el){var tk=D.tasks.find(function(x){return x.id===${t.id};});if(tk){tk.cat=el.value;save();renderMobileTasks();}})(this)" style="font-size:10px;padding:2px 4px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);max-width:110px;">${catOpts}</select>
+          ${isOverdue?'<span style="font-size:10px;color:var(--red);">overdue</span>':''}
+        </div>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;">${actions}</div>
+      <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;margin-top:2px;">${actions}</div>
     </div>`;
   }
 
