@@ -264,12 +264,14 @@ if('serviceWorker' in navigator){
       <div style="display:flex;gap:6px;margin:8px 0 4px;">
         <button class="tasks-subtab active" id="taskViewList" onclick="switchTaskView('list',this)">📋 List</button>
         <button class="tasks-subtab" id="taskViewBuckets" onclick="switchTaskView('buckets',this)">🪣 Buckets</button>
+        <button class="tasks-subtab" id="taskViewLists" onclick="switchTaskView('lists',this)">✅ Lists</button>
       </div>
       <div id="tasksActivePane">
         <div id="tasksSimpleToday"></div>
         <div id="tasksSimpleParked" style="margin-top:20px;"></div>
       </div>
       <div id="tasksBucketPane" style="display:none;"></div>
+      <div id="tasksListsPane" style="display:none;"></div>
       <!-- Hidden compat containers -->
       <div id="tasksCatSidebar" style="display:none;"><div id="swimlaneContainer"></div></div>
       <div id="tasksMainInbox" style="display:none;"></div>

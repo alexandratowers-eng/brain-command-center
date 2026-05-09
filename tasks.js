@@ -415,6 +415,148 @@ function switchTasksSubtab(tab,btn){
   if(tab==='backlog'&&typeof renderBacklog==='function')renderBacklog();
 }
 
+// switchTaskView: used by the List / Buckets / Lists sub-tab buttons in index.html
+function switchTaskView(tab,btn){
+  document.querySelectorAll('.tasks-subtab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const activePane=document.getElementById('tasksActivePane');
+  const bucketPane=document.getElementById('tasksBucketPane');
+  const listsPane=document.getElementById('tasksListsPane');
+  if(activePane)activePane.style.display=tab==='list'?'':'none';
+  if(bucketPane)bucketPane.style.display=tab==='buckets'?'':'none';
+  if(listsPane)listsPane.style.display=tab==='lists'?'':'none';
+  if(tab==='buckets')renderBuckets();
+  if(tab==='lists')renderLists();
+  if(tab==='list')renderAllTasks();
+}
+
+// ===== BUCKETS VIEW =====
+function renderBuckets(){
+  const el=document.getElementById('tasksBucketPane');if(!el)return;
+  const cats=D.cats;
+  const today=todayStr();
+  const activeTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump');
+  const buckets=Object.entries(cats).filter(([k])=>k!=='braindump');
+  if(!buckets.length){el.innerHTML='<p style="color:var(--dim);text-align:center;padding:24px;font-size:12px;">No categories yet.</p>';return;}
+  let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:4px 0;">';
+  buckets.forEach(([k,cat])=>{
+    const tasks=activeTasks.filter(t=>t.cat===k).sort((a,b)=>{const p={high:0,med:1,low:2};return p[a.pri]-p[b.pri];});
+    const done=D.tasks.filter(t=>t.done&&t.cat===k&&t.date&&t.date<=today);
+    h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;"
+          ondragover="event.preventDefault();" ondrop="taskDropOnCat(event,'${k}')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <span style="font-size:16px;">${cat.emoji}</span>
+        <span style="font-size:12px;font-weight:600;color:${cat.color};">${cat.label}</span>
+        <span style="font-size:10px;color:var(--dim);margin-left:auto;">${tasks.length}${done.length?' · '+done.length+'✓':''}</span>
+        <button onclick="bucketInlineAdd('${k}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;" title="Add task">+</button>
+      </div>
+      <div id="bucket-tasks-${k}">
+        ${tasks.map(t=>`<div class="simple-task-row" draggable="true" ondragstart="taskDragStart(event,${t.id})" ondragend="taskDragEnd(event)" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});" style="margin-bottom:4px;padding:5px 6px;">
+          <div class="p-dot ${t.pri}"></div>
+          <input type="checkbox" onchange="togTask(${t.id},this)">
+          <span class="simple-task-text" style="flex:1;font-size:12px;">${t.text}</span>
+          <button class="task-act-btn" onclick="openEdit(${t.id})" style="font-size:9px;opacity:.5;">edit</button>
+        </div>`).join('')||'<p style="font-size:11px;color:var(--dim);text-align:center;padding:6px 0;">Empty</p>'}
+      </div>
+      <div id="bucket-add-${k}" style="display:none;margin-top:4px;">
+        <input type="text" placeholder="New task..." style="width:100%;padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')bucketInlineCommit('${k}',this);if(event.key==='Escape'){document.getElementById('bucket-add-${k}').style.display='none';}"
+          onblur="setTimeout(()=>{const d=document.getElementById('bucket-add-${k}');if(d)d.style.display='none';},150)">
+      </div>
+    </div>`;
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+function bucketInlineAdd(cat){
+  const d=document.getElementById('bucket-add-'+cat);if(!d)return;
+  d.style.display='';
+  const inp=d.querySelector('input');if(inp){inp.value='';inp.focus();}
+}
+function bucketInlineCommit(cat,inp){
+  const text=inp.value.trim();if(!text)return;
+  D.tasks.push({id:D.nextId++,text,cat,pri:'med',done:false,date:todayStr()});
+  save();renderBuckets();renderCalTasks();updateStats();
+}
+
+// ===== CUSTOM LISTS =====
+function _initLists(){if(!D.lists)D.lists=[];}
+
+function renderLists(){
+  const el=document.getElementById('tasksListsPane');if(!el)return;
+  _initLists();
+  let h=`<div style="padding:4px 0;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <input type="text" id="newListNameInput" placeholder="New list name..." style="flex:1;padding:8px 10px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;"
+        onkeydown="if(event.key==='Enter')createList()">
+      <button onclick="createList()" style="padding:8px 14px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;">+ New List</button>
+    </div>`;
+  if(!D.lists.length){
+    h+='<p style="color:var(--dim);text-align:center;padding:24px;font-size:12px;">No lists yet — create one above!</p>';
+  } else {
+    D.lists.forEach(list=>{
+      const items=list.items||[];
+      const done=items.filter(i=>i.done).length;
+      h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span style="font-size:14px;font-weight:600;">${list.name}</span>
+          <span style="font-size:10px;color:var(--dim);margin-left:4px;">${done}/${items.length}</span>
+          <button onclick="deleteList(${list.id})" style="margin-left:auto;background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;opacity:.5;" title="Delete list">✕</button>
+        </div>
+        <div>
+          ${items.map(item=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" ${item.done?'checked':''} onchange="toggleListItem(${list.id},${item.id},this)" style="flex-shrink:0;">
+            <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;color:var(--dim);':''}">${item.text}</span>
+            <button onclick="deleteListItem(${list.id},${item.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:11px;opacity:.5;">✕</button>
+          </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input type="text" placeholder="+ Add item..." id="listItemInput-${list.id}"
+            style="flex:1;padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;font-family:inherit;"
+            onkeydown="if(event.key==='Enter')addListItem(${list.id})">
+          <button onclick="addListItem(${list.id})" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;cursor:pointer;">Add</button>
+        </div>
+      </div>`;
+    });
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+function createList(){
+  _initLists();
+  const inp=document.getElementById('newListNameInput');if(!inp)return;
+  const name=inp.value.trim();if(!name)return;
+  D.lists.push({id:Date.now(),name,items:[]});
+  inp.value='';save();renderLists();
+}
+function deleteList(id){
+  _initLists();
+  if(!confirm('Delete this list?'))return;
+  D.lists=D.lists.filter(l=>l.id!==id);
+  save();renderLists();
+}
+function addListItem(listId){
+  _initLists();
+  const inp=document.getElementById('listItemInput-'+listId);if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  const list=D.lists.find(l=>l.id===listId);if(!list)return;
+  if(!list.items)list.items=[];
+  list.items.push({id:Date.now(),text,done:false});
+  inp.value='';save();renderLists();
+}
+function toggleListItem(listId,itemId,el){
+  _initLists();
+  const list=D.lists.find(l=>l.id===listId);if(!list||!list.items)return;
+  const item=list.items.find(i=>i.id===itemId);if(!item)return;
+  item.done=el.checked;save();renderLists();
+}
+function deleteListItem(listId,itemId){
+  _initLists();
+  const list=D.lists.find(l=>l.id===listId);if(!list||!list.items)return;
+  list.items=list.items.filter(i=>i.id!==itemId);
+  save();renderLists();
+}
+
 // ===== PARKING LOT =====
 function addParkingItem(){
   const inp=document.getElementById('parkingAddInput');
