@@ -1184,13 +1184,6 @@ function renderWinsTab(){
         <button onclick="addManualWin('${dt}')" style="background:var(--green);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;font-weight:600;">+</button>
       </div>
 
-      <div style="border-top:1px solid var(--border);margin-top:28px;padding-top:22px;">
-        <div class="ref-field">
-          <label style="font-size:11px;margin-bottom:8px;">Small win for today</label>
-          <textarea id="refSmallWin" placeholder="Even tiny wins count..." oninput="saveReflection('${dt}')" style="min-height:64px;padding:12px 14px;font-size:13px;">${ref.smallWin||''}</textarea>
-        </div>
-      </div>
-
       <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:22px;">
         <div class="ref-field" style="margin-bottom:12px;">
           <label style="font-size:11px;margin-bottom:8px;">Focus for tomorrow</label>

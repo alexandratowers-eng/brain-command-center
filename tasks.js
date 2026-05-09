@@ -126,8 +126,8 @@ function quickAdd(){
 
 // ===== ALL TASKS (SIMPLIFIED: Today + Parked/Later) =====
 let _slCollapsed=JSON.parse(localStorage.getItem('swimlaneCollapsed')||'{}');
-let _doneCollapsed=localStorage.getItem('doneCollapsed')!=='false';
-let _todayDoneCollapsed=localStorage.getItem('todayDoneCollapsed')!=='false';
+let _doneCollapsed=localStorage.getItem('doneCollapsed')==='true';
+let _todayDoneCollapsed=localStorage.getItem('todayDoneCollapsed')==='true';
 let _parkedCollapsed=localStorage.getItem('parkedCollapsed')!=='false';
 let _todayShowAll=false;
 
@@ -185,17 +185,18 @@ function renderAllTasks(){
 
       // Completed tasks greyed out inline
       if(todayDone.length){
-        h+=`<div class="simple-done-toggle" onclick="toggleTodayDone()">
+        const sortedDoneDisplay=todayDone.sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+        h+=`<div class="simple-done-toggle" onclick="toggleTodayDone()" style="background:rgba(52,211,153,.08);border-radius:8px;padding:6px 8px;margin-top:4px;">
           <span class="mi" style="font-size:14px;color:var(--green);">check_circle</span>
-          <span>${todayDone.length} completed</span>
+          <span style="color:var(--green);font-weight:600;">${sortedDoneDisplay.length} completed</span>
           <span class="swimlane-chevron">${_todayDoneCollapsed?'▸':'▾'}</span>
         </div>`;
         if(!_todayDoneCollapsed){
-          todayDone.forEach(t=>{
+          sortedDoneDisplay.forEach(t=>{
             const cat=D.cats[t.cat];
-            h+=`<div class="simple-task-row done">
+            h+=`<div class="simple-task-row done" style="background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.2);">
               <input type="checkbox" checked onchange="togTask(${t.id},this)">
-              <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
+              <span class="simple-task-text" style="color:var(--green);opacity:.8;">${cat?cat.emoji:''} ${t.text}</span>
               <button class="task-act-btn" onclick="delTask(${t.id})" style="opacity:.4;">x</button>
             </div>`;
           });
@@ -431,20 +432,35 @@ function switchTaskView(tab,btn){
 }
 
 // ===== BUCKETS VIEW =====
+let _bucketDragKey=null;
+function _getBucketOrder(){
+  const cats=D.cats||{};
+  const allKeys=Object.keys(cats).filter(k=>k!=='braindump');
+  const saved=D.catOrder||[];
+  const ordered=saved.filter(k=>allKeys.includes(k));
+  allKeys.forEach(k=>{if(!ordered.includes(k))ordered.push(k);});
+  return ordered;
+}
 function renderBuckets(){
   const el=document.getElementById('tasksBucketPane');if(!el)return;
   const cats=D.cats;
   const today=todayStr();
   const activeTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump');
-  const buckets=Object.entries(cats).filter(([k])=>k!=='braindump');
+  const orderedKeys=_getBucketOrder();
+  const buckets=orderedKeys.map(k=>[k,cats[k]]).filter(([,c])=>c);
   if(!buckets.length){el.innerHTML='<p style="color:var(--dim);text-align:center;padding:24px;font-size:12px;">No categories yet.</p>';return;}
   let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:4px 0;">';
   buckets.forEach(([k,cat])=>{
     const tasks=activeTasks.filter(t=>t.cat===k).sort((a,b)=>{const p={high:0,med:1,low:2};return p[a.pri]-p[b.pri];});
     const done=D.tasks.filter(t=>t.done&&t.cat===k&&t.date&&t.date<=today);
-    h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;"
-          ondragover="event.preventDefault();" ondrop="taskDropOnCat(event,'${k}')">
+    h+=`<div data-bucketkey="${k}" draggable="true"
+          ondragstart="_bucketDragKey='${k}';event.dataTransfer.effectAllowed='move';"
+          ondragover="event.preventDefault();this.style.outline='2px solid var(--blue)';"
+          ondragleave="this.style.outline='';"
+          ondrop="event.preventDefault();this.style.outline='';if(_bucketDragKey&&_bucketDragKey!=='${k}'){const o=_getBucketOrder();const fi=o.indexOf(_bucketDragKey);const ti=o.indexOf('${k}');if(fi>-1&&ti>-1){o.splice(fi,1);o.splice(ti,0,_bucketDragKey);}D.catOrder=o;save();renderBuckets();}_bucketDragKey=null;if(!event.dataTransfer.getData('text/plain').match(/^[0-9]+$/))return;taskDropOnCat(event,'${k}');"
+          style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;cursor:grab;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <span style="font-size:13px;color:var(--dim);cursor:grab;" title="Drag to reorder">⠿</span>
         <span style="font-size:16px;">${cat.emoji}</span>
         <span style="font-size:12px;font-weight:600;color:${cat.color};">${cat.label}</span>
         <span style="font-size:10px;color:var(--dim);margin-left:auto;">${tasks.length}${done.length?' · '+done.length+'✓':''}</span>
