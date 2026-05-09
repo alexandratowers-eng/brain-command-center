@@ -465,8 +465,77 @@ function renderBuckets(){
       </div>
     </div>`;
   });
+  // Custom lists as additional bucket cards
+  _initLists();
+  if(D.lists.length){
+    D.lists.forEach(list=>{
+      const items=list.items||[];
+      const doneCount=items.filter(i=>i.done).length;
+      const activeItems=items.filter(i=>!i.done);
+      h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span style="font-size:16px;">✅</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">${list.name}</span>
+          <span style="font-size:10px;color:var(--dim);margin-left:auto;">${doneCount}/${items.length}</span>
+          <button onclick="bucketListInlineAdd('list-${list.id}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;" title="Add item">+</button>
+        </div>
+        <div>
+          ${items.map(item=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" ${item.done?'checked':''} onchange="toggleListItem(${list.id},${item.id},this)" style="flex-shrink:0;">
+            <span style="flex:1;font-size:12px;${item.done?'text-decoration:line-through;color:var(--dim);':''}">${item.text}</span>
+            <button onclick="deleteListItem(${list.id},${item.id});renderBuckets();" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;opacity:.4;">✕</button>
+          </div>`).join('')||'<p style="font-size:11px;color:var(--dim);text-align:center;padding:6px 0;">Empty</p>'}
+        </div>
+        <div id="bucket-add-list-${list.id}" style="display:none;margin-top:4px;">
+          <input type="text" placeholder="New item..." style="width:100%;padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter')bucketListItemCommit(${list.id},this);if(event.key==='Escape'){document.getElementById('bucket-add-list-${list.id}').style.display='none';}"
+            onblur="setTimeout(()=>{const d=document.getElementById('bucket-add-list-${list.id}');if(d)d.style.display='none';},150)">
+        </div>
+      </div>`;
+    });
+    // "New list" card
+    h+=`<div style="background:var(--card);border:2px dashed var(--border);border-radius:12px;padding:12px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;" onclick="document.getElementById('bucketNewListWrap').style.display='';document.getElementById('bucketNewListInput').focus();">
+      <span style="font-size:22px;color:var(--dim);">+</span>
+      <span style="font-size:11px;color:var(--dim);">New list</span>
+      <div id="bucketNewListWrap" style="display:none;width:100%;" onclick="event.stopPropagation()">
+        <input type="text" id="bucketNewListInput" placeholder="List name..." style="width:100%;padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')createListFromBucket(this);if(event.key==='Escape')this.closest('[onclick]').style.display='none';"
+          onblur="setTimeout(()=>{const w=document.getElementById('bucketNewListWrap');if(w)w.style.display='none';},150)">
+      </div>
+    </div>`;
+  } else {
+    // No lists yet — just show a "New list" card
+    h+=`<div style="background:var(--card);border:2px dashed var(--border);border-radius:12px;padding:12px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;" onclick="document.getElementById('bucketNewListWrap').style.display='';document.getElementById('bucketNewListInput').focus();">
+      <span style="font-size:22px;color:var(--dim);">+</span>
+      <span style="font-size:11px;color:var(--dim);">New list</span>
+      <div id="bucketNewListWrap" style="display:none;width:100%;" onclick="event.stopPropagation()">
+        <input type="text" id="bucketNewListInput" placeholder="List name..." style="width:100%;padding:6px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')createListFromBucket(this);if(event.key==='Escape')this.closest('[onclick]').style.display='none';"
+          onblur="setTimeout(()=>{const w=document.getElementById('bucketNewListWrap');if(w)w.style.display='none';},150)">
+      </div>
+    </div>`;
+  }
   h+='</div>';
   el.innerHTML=h;
+}
+function bucketListInlineAdd(wrapperId){
+  const d=document.getElementById('bucket-add-'+wrapperId);if(!d)return;
+  d.style.display='';
+  const inp=d.querySelector('input');if(inp){inp.value='';inp.focus();}
+}
+function bucketListItemCommit(listId,inp){
+  const text=inp.value.trim();if(!text)return;
+  _initLists();
+  const list=D.lists.find(l=>l.id===listId);if(!list)return;
+  if(!list.items)list.items=[];
+  list.items.push({id:Date.now(),text,done:false});
+  save();renderBuckets();
+}
+function createListFromBucket(inp){
+  const name=inp.value.trim();if(!name)return;
+  _initLists();
+  D.lists.push({id:Date.now(),name,items:[]});
+  save();renderBuckets();
 }
 function bucketInlineAdd(cat){
   const d=document.getElementById('bucket-add-'+cat);if(!d)return;
@@ -548,13 +617,19 @@ function toggleListItem(listId,itemId,el){
   _initLists();
   const list=D.lists.find(l=>l.id===listId);if(!list||!list.items)return;
   const item=list.items.find(i=>i.id===itemId);if(!item)return;
-  item.done=el.checked;save();renderLists();
+  item.done=el.checked;save();_refreshListViews();
 }
 function deleteListItem(listId,itemId){
   _initLists();
   const list=D.lists.find(l=>l.id===listId);if(!list||!list.items)return;
   list.items=list.items.filter(i=>i.id!==itemId);
-  save();renderLists();
+  save();_refreshListViews();
+}
+function _refreshListViews(){
+  const bp=document.getElementById('tasksBucketPane');
+  const lp=document.getElementById('tasksListsPane');
+  if(bp&&bp.style.display!=='none')renderBuckets();
+  if(lp&&lp.style.display!=='none')renderLists();
 }
 
 // ===== PARKING LOT =====
