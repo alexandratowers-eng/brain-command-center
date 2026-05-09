@@ -30,6 +30,20 @@ function renderWeeklyGoal(){
   const followupTotal=allSessions.filter(s=>s.type==='followup').reduce((a,s)=>a+s.count,0);
   const untypedTotal=allSessions.filter(s=>!s.type).reduce((a,s)=>a+s.count,0);
 
+  // Today's total
+  const todayS=todayStr();
+  const todaySessions=allSessions.filter(s=>{return s.when&&s.when.startsWith(todayS);});
+  const todayTotal=todaySessions.reduce((a,s)=>a+s.count,0);
+
+  // Daily breakdown for current week
+  const weekDates=getWeekDates(todayS);
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dailyCounts=weekDates.map(dt=>{
+    return allSessions.filter(s=>s.when&&s.when.startsWith(dt)).reduce((a,s)=>a+s.count,0);
+  });
+  const daysElapsed=weekDates.filter(dt=>dt<=todayS).length;
+  const dailyAvg=daysElapsed>0?Math.round((cur/daysElapsed)*10)/10:0;
+
   // Session log (last 6)
   const sessions=allSessions.slice(-6).reverse();
   let sessionHtml='';
@@ -83,20 +97,39 @@ function renderWeeklyGoal(){
       </div>
     </div>`:'';
 
+  // Daily breakdown HTML
+  let dailyHtml=`<div style="display:flex;gap:2px;margin-bottom:6px;align-items:flex-end;">`;
+  dailyCounts.forEach((c,i)=>{
+    const isToday=weekDates[i]===todayS;
+    const barH=Math.max(2,Math.min(20,c*2));
+    dailyHtml+=`<div style="flex:1;text-align:center;${isToday?'font-weight:700;':''}">
+      <div style="font-size:7px;color:${c?'var(--green)':'var(--dim)'};margin-bottom:1px;">${c||''}</div>
+      <div style="height:${barH}px;background:${isToday?'var(--green)':c?'rgba(52,211,153,.4)':'var(--border)'};border-radius:2px;margin:0 1px;"></div>
+      <div style="font-size:7px;color:${isToday?'var(--text)':'var(--dim)'};margin-top:1px;">${dayNames[i]}</div>
+    </div>`;
+  });
+  dailyHtml+=`</div>`;
+
+  // Edit last entry button
+  const lastSession=allSessions.length?allSessions[allSessions.length-1]:null;
+  const editLastHtml=lastSession?`<button class="t-btn" onclick="editLastWeeklySession()" style="font-size:8px;padding:2px 6px;color:var(--dim);margin-left:auto;" title="Edit last entry">✏️ last: +${lastSession.count}</button>`:'';
+
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
       <span style="font-size:11px;font-weight:600;">${goal.label}</span>
       <span style="font-size:9px;color:var(--dim);cursor:pointer;" onclick="editWeeklyGoal()" title="Edit">✏️</span>
     </div>
+    ${todayTotal?`<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">Today: ${todayTotal} ${goal.unit||'calls'}</div>`:''}
     <div style="font-size:10px;color:${msgColor};margin-bottom:6px;font-style:italic;">${msg}</div>
     <div style="position:relative;height:10px;background:var(--border);border-radius:5px;overflow:visible;margin-bottom:2px;">
       <div style="position:absolute;left:${loMark}%;right:0;top:0;bottom:0;background:rgba(52,211,153,.12);border-radius:0 5px 5px 0;"></div>
       <div style="width:${pct}%;height:100%;background:${cur>=lo?'var(--green)':cur>=lo*0.5?'var(--blue)':'var(--blue)'};border-radius:5px;transition:width .4s cubic-bezier(.4,0,.2,1);position:relative;z-index:1;opacity:${cur>=lo?1:0.7};"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:6px;">
-      <span>${cur} done</span>
-      <span style="margin-left:${loMark-5}%;">${lo}-${hi} zone</span>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:4px;">
+      <span>${cur} done · ~${dailyAvg}/day avg</span>
+      <span>${lo}-${hi} zone</span>
     </div>
+    ${dailyHtml}
     ${breakdownHtml}
     <div style="display:flex;gap:3px;margin-bottom:8px;align-items:center;">
       <span style="font-size:8px;color:var(--dim);margin-right:2px;">Quick add:</span>
@@ -109,9 +142,10 @@ function renderWeeklyGoal(){
     <button class="t-btn" onclick="_wgLogOpen=!_wgLogOpen;renderWeeklyGoal();" style="font-size:9px;padding:4px 12px;width:100%;margin-bottom:8px;border-color:var(--green);color:var(--green);${_wgLogOpen?'background:rgba(52,211,153,.1);':''}">📝 Log a Session</button>
     ${logFormHtml}
     ${sessions.length?`<div style="margin-top:2px;"><div style="font-size:8px;color:var(--dim);margin-bottom:3px;font-weight:600;">RECENT SESSIONS</div>${sessionHtml}</div>`:''}
-    <div style="display:flex;gap:4px;margin-top:6px;">
+    <div style="display:flex;gap:4px;margin-top:6px;align-items:center;">
       <button class="t-btn" onclick="newWeeklyGoal()" style="font-size:8px;padding:2px 6px;">New Week</button>
       <button class="t-btn" onclick="archiveWeeklyGoal()" style="font-size:8px;padding:2px 6px;color:var(--dim);">Archive</button>
+      ${editLastHtml}
     </div>`;
 }
 
@@ -165,6 +199,10 @@ function openWeeklyGoalSetup(){
 function bumpWeeklyGoal(n){
   const goal=getCurrentWeeklyGoal();
   if(!goal)return;
+  if(!goal.sessions)goal.sessions=[];
+  if(n>0){
+    goal.sessions.push({when:new Date().toISOString(),where:'',count:n,type:'recruit'});
+  }
   goal.current=Math.max(0,goal.current+n);
   save();renderWeeklyGoal();
 }
@@ -172,6 +210,19 @@ function bumpWeeklyGoal(n){
 function logWeeklySession(){
   _wgLogOpen=true;
   renderWeeklyGoal();
+}
+function editLastWeeklySession(){
+  const goal=getCurrentWeeklyGoal();
+  if(!goal||!goal.sessions||!goal.sessions.length)return;
+  const last=goal.sessions[goal.sessions.length-1];
+  const newCount=prompt('Edit last entry count (was +'+last.count+'):',last.count);
+  if(newCount===null)return;
+  const n=parseInt(newCount);
+  if(isNaN(n)||n<0)return;
+  const diff=n-last.count;
+  last.count=n;
+  goal.current=Math.max(0,goal.current+diff);
+  save();renderWeeklyGoal();
 }
 
 function newWeeklyGoal(){
@@ -877,7 +928,7 @@ function generateCoachSuggestions(){
   const timeOfDay=hour<12?'morning':hour<17?'afternoon':hour<21?'evening':'night';
   const dayOfWeek=now.getDay();
 
-  const pendingTasks=D.tasks.filter(t=>t.date===today&&!t.done)
+  const pendingTasks=D.tasks.filter(t=>t.date===today&&!t.done&&!(typeof isSnoozed==='function'&&isSnoozed(t)))
     .sort((a,b)=>({high:0,med:1,low:2})[a.pri]-({high:0,med:1,low:2})[b.pri]);
   const doneTasks=D.tasks.filter(t=>t.date===today&&t.done);
   const laterPool=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
@@ -955,6 +1006,10 @@ function generateCoachSuggestions(){
         <span class="coach-s-text">${priDot}${shortText}</span>
         <button class="coach-s-btn" style="border-color:${catColor};color:${catColor};" onclick="event.stopPropagation();coachAddBlock('${t.cat}',${mainDur},'${safe}')">${mainLabel}</button>
       </div>${backupHtml}
+      <div style="display:flex;align-items:center;gap:4px;margin-top:2px;padding-left:22px;">
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToTomorrow(${t.id});generateCoachSuggestions();">→ tmrw</button>
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToLater(${t.id});generateCoachSuggestions();">→ later</button>
+      </div>
     </div>`;
   }
 
@@ -1259,47 +1314,171 @@ function renderTomorrowView(){
   const d=dateObj(tmrw);
   const dayLabel=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   D.selectedDate=tmrw;
-  renderDayView();
 
   const el=document.getElementById('calDayView');if(!el)return;
+  const tl=getTimeline(tmrw)||[];
+  const tmrwTasks=D.tasks.filter(t=>t.date===tmrw&&!t.done&&t.cat!=='braindump');
   if(!D.daySpots)D.daySpots={};
   const picked=D.daySpots[tmrw]||[];
   const customSpots=(D.customSpots||[]);
   const allSpots=[...SPOT_SUGGESTIONS,...customSpots];
 
-  const spotHtml=allSpots.map(s=>
-    `<div class="mode-opt ${picked.includes(s.key)?'selected':''}" onclick="toggleSpot('${s.key}');renderTomorrowView();" style="display:inline-flex;margin-right:4px;padding:4px 10px;cursor:pointer;">
-      <span class="mode-icon">${s.icon}</span>
-      <div class="mode-info"><div class="mode-label">${s.label}</div></div>
-    </div>`
-  ).join('');
-
   const priorities=(D.dayPriorities&&D.dayPriorities[tmrw])||[];
-  const priHtml=priorities.map(p=>
-    `<div class="mode-pri-item ${p.done?'done':''}">
-      <button class="distraction-check" onclick="toggleModePri('${tmrw}',${p.id});renderTomorrowView();" style="color:var(--amber);">${p.done?'✓':'○'}</button>
-      <span class="mode-pri-text">${p.text}</span>
-      <button class="distraction-del" onclick="removeModePri('${tmrw}',${p.id});renderTomorrowView();">×</button>
-    </div>`
-  ).join('');
+  const dow=d.getDay();
+  const isWeekend=dow===0||dow===6;
 
-  const planHeader=`<div style="margin-bottom:16px;padding:14px 16px;background:var(--card);border:1px solid rgba(251,191,36,.2);border-radius:10px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <span class="mi" style="color:var(--amber);font-size:18px;">wb_sunny</span>
-      <h3 style="font-size:15px;font-weight:600;color:var(--amber);margin:0;">Tomorrow — ${dayLabel}</h3>
-    </div>
-    <div style="font-size:9px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Spot ideas</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">${spotHtml}</div>
-    <div style="font-size:9px;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">Top priorities</div>
-    <div>${priHtml||'<p style="font-size:10px;color:var(--dim);margin:2px 0;">No priorities set yet</p>'}</div>
-    <div style="display:flex;gap:4px;margin-top:6px;">
-      <input type="text" id="tmrwPriInput" class="mode-note-input" placeholder="add a priority..."
-        style="flex:1;" onkeydown="if(event.key==='Enter'){addTmrwPriority();renderTomorrowView();}">
-      <button class="distraction-add-btn" onclick="addTmrwPriority();renderTomorrowView();" style="border-color:var(--amber);color:var(--amber);">+</button>
+  // --- Build the page ---
+  let html=`<div style="max-width:800px;margin:0 auto;">`;
+
+  // Header
+  html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <span class="mi" style="color:var(--amber);font-size:28px;">wb_sunny</span>
+    <div>
+      <h2 style="margin:0;font-size:18px;font-weight:700;color:var(--amber);">${dayLabel}</h2>
+      <div style="font-size:11px;color:var(--dim);">${isWeekend?'Weekend':'Weekday'} · ${tl.length} block${tl.length!==1?'s':''} · ${tmrwTasks.length} task${tmrwTasks.length!==1?'s':''}</div>
     </div>
   </div>`;
-  el.innerHTML=planHeader+el.innerHTML;
+
+  // Two-column layout
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">`;
+
+  // LEFT: Schedule + Tasks
+  html+=`<div>`;
+
+  // Schedule blocks
+  html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Schedule</div>`;
+  if(tl.length){
+    tl.forEach((s,i)=>{
+      if(!s._id)s._id='s'+Date.now()+'_'+i;
+      const sid=s._id;
+      const cat=D.cats[s.cls];
+      const color=s.cls==='_task'?'#f87171':s.cls==='_todo'?'#60a5fa':cat?cat.color:'var(--blue)';
+      const endLabel=s.end?' – '+s.end:'';
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);${s.done?'opacity:.4;text-decoration:line-through;':''}">
+        <button onmousedown="event.stopPropagation();" onclick="togSlotDone('${tmrw}','${sid}');renderTomorrowView();" style="width:14px;height:14px;border-radius:50%;border:2px solid ${color};background:${s.done?color:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:7px;color:${s.done?'#fff':color};padding:0;flex-shrink:0;">${s.done?'✓':''}</button>
+        <span style="font-size:11px;font-weight:600;color:${color};min-width:75px;">${s.t}${endLabel}</span>
+        <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.text}</span>
+        ${s.loc?`<span style="font-size:9px;color:var(--dim);">📍${s.loc}</span>`:''}
+        <div style="display:flex;gap:3px;">
+          <button onclick="shrinkSlot('${tmrw}','${sid}');renderTomorrowView();" class="defer-btn" style="font-size:8px;" title="Shrink">-15m</button>
+          <button onclick="removeSlot('${tmrw}','${sid}');renderTomorrowView();" class="defer-btn" style="font-size:8px;color:var(--red);border-color:var(--red);" title="Remove">✕</button>
+        </div>
+      </div>`;
+    });
+  } else {
+    html+=`<div style="font-size:11px;color:var(--dim);padding:12px;text-align:center;">No blocks yet — add from quick-add or use a template</div>`;
+  }
+  // Quick-add for tomorrow
+  html+=`<div style="margin-top:8px;">
+    <input type="text" id="tmrwQuickAdd" placeholder="+ add a block (e.g. 'MCAT 10am for 2hr')" style="width:100%;padding:8px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter'){tmrwQuickAddBlock(this);}">
+  </div>`;
+  // Templates
+  html+=`<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">
+    <span style="font-size:9px;color:var(--dim);align-self:center;">Templates:</span>
+    <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('remote');renderTomorrowView();" style="font-size:9px;">🏠 Remote</button>
+    <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('inperson');renderTomorrowView();" style="font-size:9px;">🏢 Office</button>
+    <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('study');renderTomorrowView();" style="font-size:9px;">📚 Study</button>
+    <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('light');renderTomorrowView();" style="font-size:9px;">🌿 Light</button>
+  </div>`;
+  html+=`</div>`;
+
+  // Tasks due tomorrow
+  html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;">
+    <div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Tasks Due <span class="badge" style="font-size:9px;">${tmrwTasks.length}</span></div>`;
+  if(tmrwTasks.length){
+    tmrwTasks.forEach(t=>{
+      const cat=D.cats[t.cat];
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">
+        <input type="checkbox" onchange="togTask(${t.id},this);renderTomorrowView();">
+        <span style="flex:1;font-size:12px;">${cat?cat.emoji:''} ${t.text}</span>
+        <button class="defer-btn" onclick="deferToLater(${t.id});renderTomorrowView();">→ later</button>
+      </div>`;
+    });
+  } else {
+    html+=`<div style="font-size:11px;color:var(--dim);padding:8px;text-align:center;">No tasks scheduled for tomorrow</div>`;
+  }
+  html+=`</div>`;
+  html+=`</div>`; // end left column
+
+  // RIGHT: Planning tools
+  html+=`<div>`;
+
+  // Top priorities
+  html+=`<div style="background:var(--card);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎯 Top Priorities</div>`;
+  if(priorities.length){
+    priorities.forEach(p=>{
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);${p.done?'opacity:.4;text-decoration:line-through;':''}">
+        <button onclick="toggleModePri('${tmrw}',${p.id});renderTomorrowView();" style="background:none;border:1.5px solid var(--amber);border-radius:50%;width:14px;height:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--amber);padding:0;${p.done?'background:var(--amber);color:#fff;':''}">${p.done?'✓':'○'}</button>
+        <span style="flex:1;font-size:12px;">${p.text}</span>
+        <button onclick="removeModePri('${tmrw}',${p.id});renderTomorrowView();" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;">✕</button>
+      </div>`;
+    });
+  }
+  html+=`<div style="display:flex;gap:4px;margin-top:6px;">
+    <input type="text" id="tmrwPriInput" class="mode-note-input" placeholder="+ add a priority..." style="flex:1;padding:6px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter'){addTmrwPriority();renderTomorrowView();}">
+    <button onclick="addTmrwPriority();renderTomorrowView();" style="background:none;border:1px solid var(--amber);border-radius:6px;color:var(--amber);cursor:pointer;padding:4px 10px;font-size:11px;font-family:inherit;">+</button>
+  </div>`;
+  html+=`</div>`;
+
+  // Where to work
+  html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📍 Where to work</div>`;
+  allSpots.forEach(s=>{
+    const sel=picked.includes(s.key);
+    html+=`<div onclick="toggleSpot('${s.key}');renderTomorrowView();" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;margin-bottom:3px;border:1px solid ${sel?'var(--amber)':'var(--border)'};background:${sel?'rgba(251,191,36,.08)':'transparent'};transition:all .15s;">
+      <span style="font-size:16px;">${s.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:600;">${s.label}</div>
+        ${s.desc?`<div style="font-size:9px;color:var(--dim);">${s.desc}</div>`:''}
+      </div>
+      ${sel?'<span style="color:var(--amber);font-size:12px;">✓</span>':''}
+    </div>`;
+  });
+  html+=`<div style="margin-top:6px;">
+    <input type="text" id="customSpotInput" class="mode-note-input" placeholder="+ add a spot..." style="width:100%;padding:6px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter'){addCustomSpot();renderTomorrowView();}">
+  </div>`;
+  html+=`</div>`;
+
+  // Notes for tomorrow
+  const ref=D.reflections&&D.reflections[todayStr()]||{};
+  html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;">
+    <div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📝 Notes for tomorrow</div>
+    <textarea id="tmrwNotes" placeholder="Anything to remember..." style="width:100%;min-height:60px;padding:8px 10px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;outline:none;resize:vertical;" oninput="saveTmrwNotes(this.value)">${ref.focusTomorrow||''}</textarea>
+  </div>`;
+
+  html+=`</div>`; // end right column
+  html+=`</div>`; // end grid
+  html+=`</div>`; // end max-width wrapper
+
+  el.innerHTML=html;
 }
+
+function tmrwQuickAddBlock(inp){
+  const text=inp.value.trim();if(!text)return;
+  const tmrw=getTomorrowStr();
+  const p=parseQuickAdd(text);
+  if(!p){inp.value='';return;}
+  p.date=tmrw;
+  const t=minToTime(p.time);
+  const endTime=minToTime(Math.min(24*60,p.time+p.duration));
+  const tl=getTimeline(tmrw)||[];
+  let idx=tl.length;
+  for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>p.time){idx=j;break;}}
+  tl.splice(idx,0,{t,text:p.title,cls:p.cat,sm:'',end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+  setTimeline(tmrw,tl);
+  inp.value='';renderTomorrowView();
+}
+
+function saveTmrwNotes(val){
+  const today=todayStr();
+  if(!D.reflections)D.reflections={};
+  if(!D.reflections[today])D.reflections[today]={};
+  D.reflections[today].focusTomorrow=val;
+  save();
+}
+
 function addTmrwPriority(){
   const inp=document.getElementById('tmrwPriInput');if(!inp)return;
   const text=inp.value.trim();if(!text)return;
@@ -1310,10 +1489,59 @@ function addTmrwPriority(){
   inp.value='';save();
 }
 
+// ===== LATER ITEMS RESURFACE (PM next day) =====
+function surfaceLaterItems(){
+  const now=new Date();
+  if(now.getHours()<12)return;
+  const today=todayStr();
+  const lastSurface=D._lastLaterSurface||'';
+  if(lastSurface===today)return;
+  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
+  const parked=D.parkingItems||[];
+  const total=laterTasks.length+parked.length;
+  if(!total)return;
+  D._lastLaterSurface=today;save();
+  const old=document.getElementById('laterSurfaceModal');if(old)old.remove();
+  const modal=document.createElement('div');
+  modal.id='laterSurfaceModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);';
+  let itemsHtml='';
+  laterTasks.slice(0,8).forEach(t=>{
+    const cat=D.cats[t.cat];
+    itemsHtml+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;">${cat?.emoji||'📋'}</span>
+      <span style="flex:1;font-size:12px;">${t.text}</span>
+      <button onclick="laterToToday(${t.id});this.closest('.later-row').remove();" class="t-btn" style="font-size:9px;padding:2px 6px;border-color:var(--green);color:var(--green);">→ today</button>
+      <button onclick="deferToTomorrow(${t.id});this.closest('.later-row').remove();" class="t-btn" style="font-size:9px;padding:2px 6px;border-color:var(--blue);color:var(--blue);">→ tmrw</button>
+    </div>`;
+    itemsHtml=itemsHtml.replace('<div style=','<div class="later-row" style=');
+  });
+  parked.slice(0,4).forEach(p=>{
+    itemsHtml+=`<div class="later-row" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;">📌</span>
+      <span style="flex:1;font-size:12px;">${p.text}</span>
+      <button onclick="promoteParkingItem(${p.id});this.closest('.later-row').remove();" class="t-btn" style="font-size:9px;padding:2px 6px;">↑ task</button>
+    </div>`;
+  });
+  modal.innerHTML=`<div style="background:var(--card);border-radius:12px;padding:20px;max-width:480px;width:90%;max-height:70vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:15px;">🔔 Later Items Check-in</h3>
+      <button onclick="document.getElementById('laterSurfaceModal').remove()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;">✕</button>
+    </div>
+    <p style="font-size:11px;color:var(--dim);margin:0 0 12px;">You have <b>${total}</b> item${total>1?'s':''} in your Later list. Want to pull any to today or tomorrow?</p>
+    ${itemsHtml}
+    <div style="text-align:right;margin-top:12px;">
+      <button onclick="document.getElementById('laterSurfaceModal').remove()" class="t-btn" style="padding:6px 16px;">Done</button>
+    </div>
+  </div>`;
+  modal.onclick=(e)=>{if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
+
 // ===== OVERDUE TASK FORWARDING =====
 function checkOverdueTasks(){
   const today=todayStr();
-  const overdue=D.tasks.filter(t=>t.date&&t.date<today&&!t.done);
+  const overdue=D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&!(typeof isSnoozed==='function'&&isSnoozed(t)));
   const card=document.getElementById('overdueCard');
   if(!card)return;
   if(!overdue.length){card.style.display='none';return;}
