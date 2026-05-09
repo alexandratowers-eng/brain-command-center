@@ -59,7 +59,7 @@ function addSidebarTask(inp){
   D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:todayStr()});
   inp.value='';save();renderCalTasks();updateStats();
 }
-function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){celebrate();autoAddWin(t.text,t.date||todayStr());}save();setTimeout(()=>{renderCalTasks();renderAllTasks();updateStats();},300);}
+function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());}else{delete t.doneAt;}save();setTimeout(()=>{renderCalTasks();renderAllTasks();updateStats();},300);}
 function moveTaskDate(id,dir){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   const d=new Date((t.date||todayStr())+'T12:00:00');
@@ -1363,21 +1363,21 @@ function renderMobileTasks(){
   else h+=`<div style="font-size:12px;color:var(--dim);padding:12px;text-align:center;">Nothing stashed</div>`;
   h+=`</div>`;
 
-  // Done (collapsed by default)
+  // Done — shown right after today, newest first
   if(done.length){
+    const sortedDone=done.sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     h+=`<div style="margin-bottom:16px;">
-      <div onclick="document.getElementById('mobDoneList').style.display=document.getElementById('mobDoneList').style.display==='none'?'':'none'" style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:6px;cursor:pointer;">
-        <span class="mi" style="font-size:18px;">check_circle</span> Done <span style="font-size:11px;font-weight:500;color:var(--dim);">${done.length}</span>
-      </div>
-      <div id="mobDoneList" style="display:none;">`;
-    done.forEach(t=>{
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <span class="mi" style="font-size:18px;">check_circle</span> Done today <span style="font-size:11px;font-weight:500;color:var(--dim);">${sortedDone.length}</span>
+      </div>`;
+    sortedDone.forEach(t=>{
       const cat=D.cats[t.cat];
       h+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:4px;opacity:.5;">
         <input type="checkbox" checked onchange="togTask(${t.id},this)" style="width:20px;height:20px;">
         <span style="font-size:13px;text-decoration:line-through;flex:1;">${cat?cat.emoji:''} ${t.text}</span>
       </div>`;
     });
-    h+=`</div></div>`;
+    h+=`</div>`;
   }
   h+=`</div>`;
 

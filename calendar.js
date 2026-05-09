@@ -1674,8 +1674,9 @@ function initBlockDrag(){
     document.body.style.userSelect='';
   });
 
-  // Touch drag support for mobile
+  // Touch support for mobile: tap to edit, long-press to drag
   let _touchDragTimer=null;
+  let _touchTapBlock=null;
   grid.addEventListener('touchstart',e=>{
     const block=e.target.closest('.dv-block');
     if(!block||block.classList.contains('loc-only'))return;
@@ -1694,16 +1695,26 @@ function initBlockDrag(){
     const ROW_H=56;
     const startHr=7;
     const maxMin=24*60-duration;
+    _touchTapBlock={dt,idx,block,touch:{x:touch.clientX,y:touch.clientY},moved:false};
     _touchDragTimer=setTimeout(()=>{
+      _touchTapBlock=null;
       e.preventDefault();
       _blockDrag={dt,idx,startY:touch.clientY,startMin,duration,maxMin,gridRect,ROW_H,startHr,block,grid,moved:false,isTouch:true};
       block.style.zIndex='20';
       block.style.opacity='.85';
       block.style.boxShadow='0 4px 16px rgba(0,0,0,.3)';
       if(navigator.vibrate)navigator.vibrate(30);
-    },300);
+    },400);
   },{passive:false});
   grid.addEventListener('touchmove',e=>{
+    if(_touchTapBlock){
+      const t=e.touches[0];
+      if(Math.abs(t.clientX-_touchTapBlock.touch.x)>8||Math.abs(t.clientY-_touchTapBlock.touch.y)>8){
+        _touchTapBlock.moved=true;
+        if(_touchDragTimer){clearTimeout(_touchDragTimer);_touchDragTimer=null;}
+        _touchTapBlock=null;
+      }
+    }
     if(_touchDragTimer&&!_blockDrag){clearTimeout(_touchDragTimer);_touchDragTimer=null;return;}
     if(!_blockDrag||!_blockDrag.isTouch)return;
     e.preventDefault();
@@ -1720,6 +1731,20 @@ function initBlockDrag(){
   },{passive:false});
   grid.addEventListener('touchend',e=>{
     if(_touchDragTimer){clearTimeout(_touchDragTimer);_touchDragTimer=null;}
+    // Quick tap — open edit popover
+    if(_touchTapBlock&&!_touchTapBlock.moved){
+      const tb=_touchTapBlock;
+      _touchTapBlock=null;
+      const tl=getTimeline(tb.dt)||[];
+      const slot=tl[tb.idx];
+      if(slot){
+        const mins=parseMin(slot.t);
+        const rect=tb.block.getBoundingClientRect();
+        openDvPopover({clientX:rect.left+40,clientY:rect.top+10},tb.dt,null,mins,tb.idx);
+      }
+      return;
+    }
+    _touchTapBlock=null;
     if(!_blockDrag||!_blockDrag.isTouch)return;
     const d=_blockDrag;
     if(d.moved&&d.pendingMin!==undefined){
@@ -1737,6 +1762,7 @@ function initBlockDrag(){
   });
   grid.addEventListener('touchcancel',()=>{
     if(_touchDragTimer){clearTimeout(_touchDragTimer);_touchDragTimer=null;}
+    _touchTapBlock=null;
     if(_blockDrag&&_blockDrag.isTouch){
       _blockDrag.block.style.zIndex='';_blockDrag.block.style.opacity='';_blockDrag.block.style.boxShadow='';
       _blockDrag=null;
