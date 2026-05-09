@@ -16,17 +16,18 @@
 <link rel="stylesheet" href="styles.css">
 <script src="sync-config.js" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
-// One-time nuke of old service workers — won't loop
-if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    if(regs.length){
-      sessionStorage.setItem('sw_cleared','1');
-      Promise.all(regs.map(r=>r.unregister())).then(()=>{
-        caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>{
-          window.location.reload(true);
-        });
-      });
+// Nuke old service workers + caches — uses localStorage to prevent reload loop
+if('serviceWorker' in navigator){
+  var _swNuked=localStorage.getItem('sw_nuked_v2');
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    if(regs.length&&!_swNuked){
+      localStorage.setItem('sw_nuked_v2','1');
+      Promise.all(regs.map(function(r){return r.unregister();})).then(function(){
+        return caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k);}));});
+      }).then(function(){window.location.reload(true);});
+      return;
     }
+    if(!regs.length&&_swNuked){/* already clean */}
   });
 }
 </script>

@@ -142,13 +142,15 @@ window.SyncEngine=(function(){
 
   function autoPairFromURL(){
     const h=window.location.hash;
-    if(!h||!h.startsWith('#BCC:'))return false;
+    if(!h)return false;
     const val=decodeURIComponent(h.slice(1));
-    const parts=val.split(':');
-    if(parts.length<3)return false;
-    const gistId=parts[1];
-    const token=parts.slice(2).join(':');
-    localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId,token}));
+    if(val.startsWith('BCC:')){
+      const parts=val.split(':');
+      if(parts.length<3)return false;
+      localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId:parts[1],token:parts.slice(2).join(':')}));
+    } else if(val.startsWith('ghp_')){
+      localStorage.setItem('bcc_sync_token',val);
+    } else {return false;}
     window.location.hash='';
     history.replaceState(null,'',window.location.pathname+window.location.search);
     return true;
