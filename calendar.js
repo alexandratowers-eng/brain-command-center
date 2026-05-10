@@ -6,8 +6,9 @@ function isMeetingBlock(slot){
   return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar)\b/i.test(lc);
 }
 function getBlockColor(slot){
-  if(isMeetingBlock(slot))return '#fde68a';
-  if(slot.cls==='focus')return '#fbbf24';
+  if(slot.cls==='deadline')return '#ef4444';
+  if(isMeetingBlock(slot))return '#eab308';
+  if(slot.cls==='focus')return '#a78bfa';
   if(slot.cls==='_task')return '#f87171';
   if(slot.cls==='_todo')return '#60a5fa';
   const cat=D.cats[slot.cls];
@@ -147,6 +148,8 @@ function parseQuickAdd(raw){
   else if(/\b(lunch|dinner|breakfast|eat|cook|meal)\b/i.test(lc))result.cat='personal';
   else if(/\b(break|rest|nap|chill|relax|free)\b/i.test(lc))result.cat='free';
   else result.cat='personal';
+
+  text=text.replace(/\b(mcat|anki|qbank|uworld|kaplan|content\s*review|cars|p\/s|chop|work|cold\s*call|meeting|standup|huddle|touchbase|gym|pool|swim|walk|run|jog|dogs?\s*out|exercise|workout|hike|bike|med\s*app|application|personal\s*statement|secondary|amcas|experience|brain\s*dump|journal|dump|reflect|gma|grandma|grandmother|errand|grocery|pharmacy|doctor|call|phone|zoom|teams|email|lunch|dinner|breakfast|eat|cook|meal|break|rest|nap|chill|relax|free)\b/gi,'');
 
   // --- Clean up title ---
   result.title=text.replace(/\b(at|on|for|from|the)\b/gi,'').replace(/\s+/g,' ').replace(/^[\s,\-–]+|[\s,\-–]+$/g,'').trim();
@@ -548,8 +551,17 @@ function openWkBlockMenu(e,dt,idx){
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();setTimeout(()=>editWkBlock('${dt}',${idx}),0);">
       <span class="mi" style="font-size:14px;">edit</span> Edit block
     </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();shrinkSlot('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">compress</span> Shrink 15m
+    </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();dupeSlot('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">content_copy</span> Duplicate
+    </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToTomorrow('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">arrow_forward</span> → Tomorrow
+    </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToLater('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">inventory_2</span> → Later
     </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();D.selectedDate='${dt}';setCalView('day');renderMiniCal();">
       <span class="mi" style="font-size:14px;">open_in_full</span> Open in Day View
@@ -821,13 +833,16 @@ function renderDayView(){
       </label>`).join('')}</div>`;
     }
 
-    const locOnlyStyle=s._locOnly?`position:absolute;top:${topPx}px;left:${leftBase}px;height:${heightPx}px;`:`position:absolute;top:${topPx}px;left:${blockLeft};width:${blockWidth};height:${heightPx}px;background:${catColor}25;border:1px solid ${catColor}50;border-left:4px solid ${catColor};border-radius:8px;padding:${dvPad};cursor:grab;z-index:5;display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:opacity .2s,box-shadow .2s;user-select:none;backdrop-filter:blur(2px);justify-content:flex-start;font-size:${dvFs}px;line-height:${dvLh};${isDone?'opacity:.4;text-decoration:line-through;':''}`;
+    const isLight=document.documentElement.classList.contains('light');
+    const bgAlpha=isLight?'30':'25';
+    const borderAlpha=isLight?'80':'50';
+    const locOnlyStyle=s._locOnly?`position:absolute;top:${topPx}px;left:${leftBase}px;height:${heightPx}px;`:`position:absolute;top:${topPx}px;left:${blockLeft};width:${blockWidth};height:${heightPx}px;background:${catColor}${bgAlpha};border:1px solid ${catColor}${borderAlpha};border-left:4px solid ${catColor};border-radius:8px;padding:${dvPad};cursor:grab;z-index:5;display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:opacity .2s,box-shadow .2s;user-select:none;backdrop-filter:blur(2px);justify-content:flex-start;font-size:${dvFs}px;line-height:${dvLh};${isDone?'opacity:.4;text-decoration:line-through;':''}`;
     if(s._locOnly){
       html+=`<div class="dv-block loc-only" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" title="📍 ${(s.loc||s.text||'Location').replace(/"/g,'&quot;')}" style="${locOnlyStyle}"></div>`;
     } else {
       html+=`<div class="dv-block ${isDone?'dv-block-done':''}" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" tabindex="0" oncontextmenu="event.preventDefault();event.stopPropagation();openDvBlockMenu(event,'${dt}',${i});" style="${locOnlyStyle}">
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="dv-done-btn" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:11px;height:11px;min-width:11px;border-radius:50%;border:1.5px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:7px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
+        <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
         <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':''}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
@@ -997,8 +1012,17 @@ function openDvBlockMenu(e,dt,idx){
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();setTimeout(()=>openDvPopover({clientX:window.innerWidth/2-150,clientY:window.innerHeight/3},'${dt}',null,${parseMin(slot.t)},${idx}),0);">
       <span class="mi" style="font-size:14px;">edit</span> Edit block
     </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();shrinkSlot('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">compress</span> Shrink 15m
+    </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();dupeSlot('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">content_copy</span> Duplicate
+    </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToTomorrow('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">arrow_forward</span> → Tomorrow
+    </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToLater('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">inventory_2</span> → Later
     </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();removeSlot('${dt}','${sid}');" style="color:var(--red);">
       <span class="mi" style="font-size:14px;">delete</span> Delete block
@@ -1016,6 +1040,50 @@ function editSlotSm(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid
 function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 function removeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl.splice(i,1);setTimeline(dt,tl);renderCalendar();}
 function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const orig=tl[i];const newT=parseMin(orig.t)+30;tl.splice(i+1,0,{t:minToTime(newT),text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});setTimeline(dt,tl);renderCalendar();}
+
+function shrinkSlot(dt,sid){
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
+  const slot=tl[i];
+  const startM=parseMin(slot.t);
+  const endM=slot.end?parseMin(slot.end):startM+60;
+  const dur=endM-startM;
+  const newDur=Math.max(5,dur-15);
+  slot.end=minToTime(startM+newDur);
+  setTimeline(dt,tl);renderCalendar();
+  if(typeof renderCalRightTasks==='function')renderCalRightTasks();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML=`Shrunk to ${newDur}m`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
+}
+
+function blockToLater(dt,sid){
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
+  const slot=tl[i];
+  const catKey=(slot.cls&&D.cats[slot.cls])?slot.cls:'personal';
+  D.tasks.push({id:D.nextId++,text:slot.text,cat:catKey,pri:'med',done:false,date:'',effort:''});
+  tl.splice(i,1);setTimeline(dt,tl);
+  renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();
+  if(typeof renderCalRightStash==='function')renderCalRightStash();
+  if(typeof renderAllTasks==='function')renderAllTasks();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='📌 Moved to Later';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
+
+function blockToTomorrow(dt,sid){
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
+  const slot=tl[i];
+  const d=new Date(todayStr()+'T12:00:00');d.setDate(d.getDate()+1);
+  const tmrw=dateStr(d);
+  const tmrwTl=getTimeline(tmrw)||[];
+  const newSlot=JSON.parse(JSON.stringify(slot));
+  newSlot._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
+  tmrwTl.push(newSlot);
+  tmrwTl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+  setTimeline(tmrw,tmrwTl);
+  tl.splice(i,1);setTimeline(dt,tl);
+  renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='→ Moved to tomorrow';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
 function editSlotLoc(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].loc=val.trim();setTimeline(dt,tl);}
 function editSlotCls(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].cls=val;setTimeline(dt,tl);renderCalendar();}
 
