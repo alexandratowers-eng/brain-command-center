@@ -4,7 +4,7 @@
   --bg:#0e0e14;--bg2:#131319;--card:#1a1a24;--border:#242430;
   --text:#e8e8f0;--dim:#6b6b80;
   --blue:#6366f1;--indigo:#818cf8;--rose:#f472b6;--green:#34d399;
-  --amber:#fbbf24;--red:#f87171;--teal:#2dd4bf;--purple:#a78bfa;
+  --amber:#e8e8f0;--red:#f87171;--teal:#2dd4bf;--purple:#a78bfa;
   --grad:linear-gradient(135deg,#6366f1,#a78bfa);
 }
 /* Light / Day theme */
@@ -12,7 +12,7 @@
   --bg:#ededf2;--bg2:#f2f2f6;--card:#f7f7fa;--border:#dcdce8;
   --text:#0f0f14;--dim:#64648a;
   --blue:#4f46e5;--indigo:#6366f1;--rose:#db2777;--green:#059669;
-  --amber:#d97706;--red:#dc2626;--teal:#0d9488;--purple:#7c3aed;
+  --amber:#0f0f14;--red:#dc2626;--teal:#0d9488;--purple:#7c3aed;
   --grad:linear-gradient(135deg,#4f46e5,#7c3aed);
 }
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:12px;}
@@ -144,32 +144,32 @@ button,input,select,textarea{font-family:inherit;}
 .distraction-section{margin-top:8px;border-top:1px solid var(--border);padding-top:6px;}
 .distraction-input-row{display:flex;gap:3px;margin-bottom:4px;}
 .distraction-input-row input{flex:1;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--fg);font-family:inherit;}
-.distraction-input-row input:focus{border-color:var(--yellow);outline:none;box-shadow:0 0 0 2px rgba(250,204,21,.15);}
-.distraction-add-btn{font-size:13px;width:24px;height:24px;border-radius:5px;border:1px solid var(--yellow);background:transparent;color:var(--yellow);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
-.distraction-add-btn:hover{background:var(--yellow);color:var(--bg);}
-.distraction-item{display:flex;align-items:center;gap:4px;padding:3px 4px;border-radius:4px;font-size:10px;transition:all .15s;background:rgba(250,204,21,.05);margin-bottom:2px;border:1px solid transparent;}
-.distraction-item:hover{border-color:var(--yellow);background:rgba(250,204,21,.1);}
+.distraction-input-row input:focus{border-color:var(--dim);outline:none;box-shadow:0 0 0 2px rgba(180,180,200,.15);}
+.distraction-add-btn{font-size:13px;width:24px;height:24px;border-radius:5px;border:1px solid var(--dim);background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.distraction-add-btn:hover{background:var(--dim);color:var(--bg);}
+.distraction-item{display:flex;align-items:center;gap:4px;padding:3px 4px;border-radius:4px;font-size:10px;transition:all .15s;background:rgba(180,180,200,.05);margin-bottom:2px;border:1px solid transparent;}
+.distraction-item:hover{border-color:var(--dim);background:rgba(180,180,200,.1);}
 .distraction-item.done{opacity:.45;}
 .distraction-item.done .distraction-text{text-decoration:line-through;}
-.distraction-check{background:none;border:none;cursor:pointer;font-size:10px;color:var(--yellow);padding:0 2px;flex-shrink:0;}
+.distraction-check{background:none;border:none;cursor:pointer;font-size:10px;color:var(--dim);padding:0 2px;flex-shrink:0;}
 .distraction-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .distraction-time{font-size:8px;color:var(--dim);flex-shrink:0;}
 .distraction-del{background:none;border:none;cursor:pointer;font-size:11px;color:var(--dim);padding:0 2px;flex-shrink:0;opacity:.4;transition:opacity .15s;}
 .distraction-del:hover{opacity:1;color:var(--red);}
 /* TOMORROW'S MODE PICKER */
-.mode-card{background:linear-gradient(135deg,rgba(251,191,36,.04),rgba(250,204,21,.04)),var(--card);}
+.mode-card{background:linear-gradient(135deg,rgba(180,180,200,.04),rgba(180,180,200,.04)),var(--card);}
 .spot-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text);font-size:9px;font-weight:500;font-family:inherit;transition:all .15s;white-space:nowrap;}
-.spot-pill:hover{border-color:var(--amber);background:rgba(251,191,36,.06);}
-.spot-pill.selected{border-color:var(--amber);background:rgba(251,191,36,.15);color:var(--amber);font-weight:600;}
+.spot-pill:hover{border-color:var(--amber);background:rgba(180,180,200,.06);}
+.spot-pill.selected{border-color:var(--amber);background:rgba(180,180,200,.15);color:var(--amber);font-weight:600;}
 .spot-pill-add{border-style:dashed;color:var(--dim);font-size:10px;padding:3px 10px;}
 .mode-note-input{flex:1;font-size:9px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--fg);font-family:inherit;}
 .mode-note-input:focus{border-color:var(--amber);outline:none;}
 .mode-pri-input-row{display:flex;gap:3px;margin-bottom:4px;}
 .mode-pri-item{display:flex;align-items:center;gap:4px;padding:2px 4px;border-radius:4px;font-size:10px;margin-bottom:1px;transition:all .15s;}
-.mode-pri-item:hover{background:rgba(251,191,36,.06);}
+.mode-pri-item:hover{background:rgba(180,180,200,.06);}
 .mode-pri-item.done .mode-pri-text{text-decoration:line-through;opacity:.45;}
 .mode-pri-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mode-today-recap{margin-bottom:8px;padding:6px 8px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:6px;}
+.mode-today-recap{margin-bottom:8px;padding:6px 8px;background:rgba(180,180,200,.06);border:1px solid rgba(180,180,200,.15);border-radius:6px;}
 /* WEEKLY RHYTHM */
 .rhythm-meetings{margin-bottom:8px;padding:6px 8px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:6px;}
 .rhythm-header{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
@@ -177,15 +177,15 @@ button,input,select,textarea{font-family:inherit;}
 .rhythm-badge{font-size:8px;padding:1px 5px;border-radius:8px;font-weight:600;}
 .rhythm-badge.office{background:rgba(34,197,94,.15);color:#22c55e;}
 .rhythm-badge.remote{background:rgba(99,102,241,.15);color:#818cf8;}
-.rhythm-badge.clear{background:rgba(251,191,36,.12);color:var(--amber);}
+.rhythm-badge.clear{background:rgba(180,180,200,.12);color:var(--amber);}
 .rhythm-mtg{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:9px;}
 .rhythm-time{color:var(--dim);min-width:52px;font-variant-numeric:tabular-nums;}
 .rhythm-label{flex:1;color:var(--text);font-weight:500;}
 .rhythm-loc{font-size:8px;padding:1px 4px;border-radius:4px;font-weight:600;}
 .rhythm-loc.office{background:rgba(34,197,94,.12);color:#22c55e;}
 .rhythm-loc.remote{background:rgba(99,102,241,.1);color:#818cf8;}
-.rhythm-suggestion{display:flex;align-items:center;gap:5px;padding:5px 7px;margin:6px 0 4px;border-radius:6px;background:rgba(251,191,36,.08);border:1px dashed rgba(251,191,36,.25);cursor:pointer;transition:all .15s;}
-.rhythm-suggestion:hover{background:rgba(251,191,36,.14);border-color:var(--amber);}
+.rhythm-suggestion{display:flex;align-items:center;gap:5px;padding:5px 7px;margin:6px 0 4px;border-radius:6px;background:rgba(180,180,200,.08);border:1px dashed rgba(180,180,200,.25);cursor:pointer;transition:all .15s;}
+.rhythm-suggestion:hover{background:rgba(180,180,200,.14);border-color:var(--amber);}
 .rhythm-suggest-icon{font-size:12px;}
 .rhythm-suggest-text{font-size:9px;color:var(--amber);font-weight:500;line-height:1.3;}
 :root.light .rhythm-meetings{background:rgba(99,102,241,.05);border-color:rgba(99,102,241,.12);}
@@ -193,10 +193,10 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .rhythm-badge.remote{background:rgba(99,102,241,.1);color:#6366f1;}
 :root.light .rhythm-loc.office{color:#16a34a;}
 :root.light .rhythm-loc.remote{color:#6366f1;}
-:root.light .rhythm-suggestion{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.2);}
+:root.light .rhythm-suggestion{background:rgba(180,180,200,.06);border-color:rgba(180,180,200,.2);}
 /* OVERDUE TASKS */
-.overdue-card{background:linear-gradient(135deg,rgba(251,191,36,.06),rgba(239,68,68,.04)),var(--card);border-color:rgba(251,191,36,.3)!important;}
-.overdue-item{display:flex;align-items:center;gap:4px;padding:4px 5px;border-radius:4px;font-size:10px;margin-bottom:2px;background:rgba(251,191,36,.04);border:1px solid transparent;transition:all .15s;}
+.overdue-card{background:linear-gradient(135deg,rgba(180,180,200,.06),rgba(239,68,68,.04)),var(--card);border-color:rgba(180,180,200,.3)!important;}
+.overdue-item{display:flex;align-items:center;gap:4px;padding:4px 5px;border-radius:4px;font-size:10px;margin-bottom:2px;background:rgba(180,180,200,.04);border:1px solid transparent;transition:all .15s;}
 .overdue-item:hover{border-color:var(--amber);}
 .overdue-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .overdue-dot.high{background:var(--red);}
@@ -266,7 +266,7 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block.deadline{background:rgba(248,113,113,.22);border-color:#f87171;color:#fca5a5;}
 .wk-block.health{background:rgba(52,211,153,.18);border-color:#34d399;color:#86efac;}
 .wk-block.is-meeting{background:rgba(253,230,138,.18)!important;border-color:#fde68a!important;color:#fef3c7!important;}
-.meeting-chop-tag{display:inline-block;font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.4);color:#78350f;margin-right:3px;letter-spacing:.3px;vertical-align:middle;}
+.meeting-chop-tag{display:inline-block;font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(180,180,200,.4);color:#78350f;margin-right:3px;letter-spacing:.3px;vertical-align:middle;}
 .dv-block .meeting-chop-tag{font-size:8px;padding:1px 5px;border-radius:4px;margin-right:4px;}
 /* Location-only blocks — slim glowing vertical strip */
 .wk-block.loc-only{
@@ -977,7 +977,7 @@ button,input,select,textarea{font-family:inherit;}
 .mtg-notion-btn:hover{background:rgba(96,165,250,.18);border-color:var(--blue);}
 .mtg-notion-badge{font-size:9px;font-weight:600;padding:2px 8px;border-radius:5px;white-space:nowrap;}
 .mtg-notion-badge.synced{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.2);}
-.mtg-notion-badge.pending{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2);}
+.mtg-notion-badge.pending{background:rgba(180,180,200,.1);color:var(--amber);border:1px solid rgba(180,180,200,.2);}
 .mtg-notion-save-btn{border-color:rgba(96,165,250,.3)!important;color:var(--blue)!important;display:flex;align-items:center;gap:3px;}
 .mtg-notion-save-btn:hover{background:rgba(96,165,250,.1)!important;border-color:var(--blue)!important;}
 @media(max-width:900px){.mtg-block-time{min-width:60px;font-size:9px;}.mtg-block{padding:6px 10px;}.mtg-hub-header{flex-direction:column;}}
@@ -1020,7 +1020,7 @@ button,input,select,textarea{font-family:inherit;}
 #syncStatusBtn[data-state="disabled"]{opacity:.4;}
 #syncStatusBtn[data-state="idle"]{opacity:.7;}
 @keyframes syncSpin{to{transform:rotate(360deg);}}
-.worry-timer{display:inline-flex;align-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);border-radius:5px;padding:2px 8px;letter-spacing:.5px;transition:color .3s;}
+.worry-timer{display:inline-flex;align-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber);background:rgba(180,180,200,.1);border:1px solid rgba(180,180,200,.2);border-radius:5px;padding:2px 8px;letter-spacing:.5px;transition:color .3s;}
 
 /* ====== DRAG-TO-CREATE GHOST ====== */
 .dv-drag-ghost{
@@ -1050,11 +1050,11 @@ button,input,select,textarea{font-family:inherit;}
 .worry-start-btn{
   display:inline-flex;align-items:center;gap:4px;
   padding:5px 12px;border-radius:6px;
-  border:1px solid rgba(251,191,36,.3);background:rgba(251,191,36,.08);
+  border:1px solid rgba(180,180,200,.3);background:rgba(180,180,200,.08);
   color:var(--amber);font-size:11px;font-weight:600;cursor:pointer;
   font-family:inherit;transition:all .15s;
 }
-.worry-start-btn:hover{background:rgba(251,191,36,.18);border-color:var(--amber);}
+.worry-start-btn:hover{background:rgba(180,180,200,.18);border-color:var(--amber);}
 .worry-timer-ring{position:relative;width:32px;height:32px;flex-shrink:0;}
 .worry-ring-svg{width:100%;height:100%;}
 .worry-timer-text{

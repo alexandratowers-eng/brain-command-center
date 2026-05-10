@@ -1388,7 +1388,7 @@ function renderTomorrowView(){
   html+=`<div>`;
 
   // Top priorities
-  html+=`<div style="background:var(--card);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:14px;margin-bottom:12px;">
+  html+=`<div style="background:var(--card);border:1px solid rgba(180,180,200,.2);border-radius:10px;padding:14px;margin-bottom:12px;">
     <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎯 Top Priorities</div>`;
   if(priorities.length){
     priorities.forEach(p=>{
@@ -1410,7 +1410,7 @@ function renderTomorrowView(){
     <div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📍 Where to work</div>`;
   allSpots.forEach(s=>{
     const sel=picked.includes(s.key);
-    html+=`<div onclick="toggleSpot('${s.key}');renderTomorrowView();" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;margin-bottom:3px;border:1px solid ${sel?'var(--amber)':'var(--border)'};background:${sel?'rgba(251,191,36,.08)':'transparent'};transition:all .15s;">
+    html+=`<div onclick="toggleSpot('${s.key}');renderTomorrowView();" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;margin-bottom:3px;border:1px solid ${sel?'var(--amber)':'var(--border)'};background:${sel?'rgba(180,180,200,.08)':'transparent'};transition:all .15s;">
       <span style="font-size:16px;">${s.icon}</span>
       <div style="flex:1;">
         <div style="font-size:12px;font-weight:600;">${s.label}</div>
