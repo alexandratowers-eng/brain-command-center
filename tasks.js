@@ -996,6 +996,7 @@ function renderCalRightTasks(){
     const cat=D.cats[t.cat];
     const catColor=cat?cat.color:'var(--dim)';
     const emoji=cat?cat.emoji:'';
+    const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
     allTaskBlocks.push(renderBlock({
       color:catColor, done:false, isPast:false, isCurrent:false,
       label:emoji+' '+effortTag+t.text, subtitle:'',
