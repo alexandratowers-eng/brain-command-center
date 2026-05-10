@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Mother's Day</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1318;
+      font-family: 'Inter', sans-serif;
+      padding: 2rem 1rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(219, 130, 150, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 60%, rgba(240, 180, 170, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ── EDIT BANNER ── */
+    .edit-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(210, 130, 140, 0.15);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(210, 130, 140, 0.25);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 100;
+      font-size: 0.75rem;
+      color: #e8c0c0;
+      transition: transform 0.3s;
+    }
+    .edit-banner button {
+      background: rgba(210, 130, 140, 0.3);
+      border: 1px solid rgba(210, 130, 140, 0.4);
+      color: #f0d0d0;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-banner button:hover {
+      background: rgba(210, 130, 140, 0.5);
+    }
+    .edit-banner.hidden { transform: translateY(-100%); }
+
+    .scene {
+      width: min(520px, 92vw);
+      height: min(740px, 90vh);
+      perspective: 1200px;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .scene.flipped .card {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    /* ── FRONT ── */
+    .front {
+      background: linear-gradient(155deg, #fdf2f0 0%, #fff8f6 40%, #faf0ee 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+    .front-border {
+      position: absolute;
+      inset: 16px;
+      border: 1.5px solid rgba(210, 130, 140, 0.25);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .front-corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: #d4868e;
+      border-style: solid;
+      opacity: 0.4;
+    }
+    .front-corner.tl { top: 24px; left: 24px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+    .front-corner.tr { top: 24px; right: 24px; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+    .front-corner.bl { bottom: 24px; left: 24px; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+    .front-corner.br { bottom: 24px; right: 24px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+
+    .front-sketch { margin-bottom: 2rem; }
+
+    .front-tag {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #c07080;
+      margin-bottom: 1rem;
+    }
+
+    .front-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: #3a2028;
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 0.6rem;
+    }
+
+    .front-divider {
+      width: 50px;
+      height: 1.5px;
+      background: linear-gradient(to right, transparent, #d4868e, transparent);
+      margin: 1rem auto;
+    }
+
+    .front-subtitle {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: #9a5a65;
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.5;
+    }
+
+    .front-hint {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: #caa0a8;
+      text-transform: uppercase;
+      position: absolute;
+      bottom: 34px;
+    }
+
+    /* ── BACK ── */
+    .back {
+      background: linear-gradient(155deg, #2a1820 0%, #1e1218 50%, #281820 100%);
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 2.8rem;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .back-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #d4868e, #e8a0a0, #d4868e);
+      background-size: 200% 100%;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      from { background-position: 0% 0%; }
+      to   { background-position: 200% 0%; }
+    }
+
+    .back-quote {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.2rem;
+      color: #e8c0c0;
+      line-height: 1.55;
+      margin-bottom: 0.5rem;
+    }
+
+    .back-attribution {
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      color: #8a5a60;
+      text-transform: uppercase;
+      margin-bottom: 1.8rem;
+    }
+
+    .back-divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(210, 130, 140, 0.3);
+      margin-bottom: 1.6rem;
+    }
+
+    .back-message {
+      font-size: 1.02rem;
+      color: #d8b8b8;
+      line-height: 1.7;
+      font-weight: 300;
+      margin-bottom: 1.5rem;
+    }
+
+    .back-message strong {
+      color: #f0d0d0;
+      font-weight: 500;
+    }
+
+    /* ── LUCY SECTION ── */
+    .lucy-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(210, 130, 140, 0.06);
+      border: 1px solid rgba(210, 130, 140, 0.12);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .lucy-paw {
+      flex-shrink: 0;
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .lucy-text {
+      color: #c8a0a8;
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+
+    .lucy-text strong {
+      color: #e8c0c0;
+      font-weight: 600;
+    }
+
+    .lucy-text .youre-welcome {
+      display: block;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: #e8c0c0;
+      margin-top: 0.3rem;
+    }
+
+    /* ── FOOTER ── */
+    .back-footer {
+      padding-top: 1.2rem;
+      border-top: 1px solid rgba(210, 130, 140, 0.15);
+    }
+
+    .back-sign {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.3rem;
+      color: #e0b8b8;
+      margin-bottom: 0.3rem;
+    }
+
+    .back-sign-sub {
+      font-size: 0.72rem;
+      color: #8a6068;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .flip-label {
+      text-align: center;
+      margin-top: 1.2rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.2);
+      text-transform: uppercase;
+    }
+
+    /* ── EDITABLE HIGHLIGHT ── */
+    [contenteditable="true"] {
+      outline: none;
+      border-radius: 4px;
+      transition: box-shadow 0.2s;
+    }
+    [contenteditable="true"]:focus {
+      box-shadow: 0 0 0 2px rgba(210, 130, 140, 0.4);
+    }
+    body.editing [contenteditable="true"] {
+      box-shadow: 0 0 0 1px rgba(210, 130, 140, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <div class="scene" id="scene">
+      <div class="card">
+
+        <!-- FRONT -->
+        <div class="face front">
+          <div class="front-border"></div>
+          <div class="front-corner tl"></div>
+          <div class="front-corner tr"></div>
+          <div class="front-corner bl"></div>
+          <div class="front-corner br"></div>
+
+          <div class="front-sketch">
+            <svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="15" y="30" width="90" height="55" rx="6" stroke="#c07080" stroke-width="1.8" fill="none"/>
+              <path d="M10 32 C10 26, 16 20, 22 20 L98 20 C104 20, 110 26, 110 32 L110 34 L10 34 Z" stroke="#c07080" stroke-width="1.8" fill="none"/>
+              <line x1="60" y1="20" x2="60" y2="85" stroke="#d4868e" stroke-width="1.5"/>
+              <line x1="15" y1="52" x2="105" y2="52" stroke="#d4868e" stroke-width="1.5"/>
+              <ellipse cx="52" cy="16" rx="10" ry="6" stroke="#d4868e" stroke-width="1.5" fill="none" transform="rotate(-15 52 16)"/>
+              <ellipse cx="68" cy="16" rx="10" ry="6" stroke="#d4868e" stroke-width="1.5" fill="none" transform="rotate(15 68 16)"/>
+              <circle cx="60" cy="17" r="2.5" fill="#d4868e"/>
+              <circle cx="38" cy="40" r="5" stroke="#c07080" stroke-width="1.2" fill="none" stroke-dasharray="2 2"/>
+              <circle cx="60" cy="42" r="5" stroke="#c07080" stroke-width="1.2" fill="none" stroke-dasharray="2 2"/>
+              <circle cx="82" cy="40" r="5" stroke="#c07080" stroke-width="1.2" fill="none" stroke-dasharray="2 2"/>
+              <text x="60" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="7" font-weight="500" letter-spacing="2" fill="#c07080">BISCUITS</text>
+            </svg>
+          </div>
+
+          <div class="front-tag" data-editable>Biscuits with the Boss</div>
+          <div class="front-title" data-editable>Happy<br>Mother's Day</div>
+          <div class="front-divider"></div>
+          <div class="front-subtitle" data-editable>"Be a goldfish."<br>— Ted Lasso</div>
+          <div class="front-hint">click to open</div>
+        </div>
+
+        <!-- BACK -->
+        <div class="face back">
+          <div class="back-accent"></div>
+
+          <div class="back-quote" data-editable>
+            "FYI, the ETA is ASAP PP — As Soon As Possible, Pretty Please."
+          </div>
+          <div class="back-attribution" data-editable>— Ted Lasso, Season 4 Trailer</div>
+
+          <div class="back-divider"></div>
+
+          <div class="back-message" data-editable>
+            Mom — you run a house where <strong>nothing goes according to plan</strong>, everyone needs something at the same time, and somehow you're still standing at the end of it. That's not parenting, that's <strong>elite-level coaching</strong>. Honestly, I don't know if Ted could do it.
+          </div>
+
+          <!-- LUCY + AKUFO -->
+          <div class="lucy-section">
+            <div class="lucy-paw">🐾</div>
+            <div class="lucy-text" data-editable>
+              <strong>Lucy</strong> will be on house duty. In the words of Edwin Akufo, she will <strong>"take a sh*t in every room."</strong>
+              <span class="youre-welcome">You're welcome.</span>
+            </div>
+          </div>
+
+          <div class="back-footer">
+            <div class="back-sign" data-editable>Happy Mother's Day, Boss.</div>
+            <div class="back-sign-sub">B E L I E V E</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="flip-label" style="text-align:center;margin-top:1.2rem;">tap to open</div>
+  </div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    scene.addEventListener('click', function() {
+      this.classList.toggle('flipped');
+    });
+  </script>
+
+</body>
+</html>
