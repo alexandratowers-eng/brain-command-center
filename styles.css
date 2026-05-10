@@ -265,7 +265,7 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block.focus::before{content:'💡 ';font-style:normal;}
 .wk-block.deadline{background:rgba(248,113,113,.22);border-color:#f87171;color:#fca5a5;}
 .wk-block.health{background:rgba(52,211,153,.18);border-color:#34d399;color:#86efac;}
-.wk-block.is-meeting{background:rgba(234,179,8,.2)!important;border-color:#eab308!important;color:#fde68a!important;}
+.wk-block.is-meeting{background:rgba(253,230,138,.18)!important;border-color:#fde68a!important;color:#fef3c7!important;}
 .meeting-chop-tag{display:inline-block;font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.4);color:#78350f;margin-right:3px;letter-spacing:.3px;vertical-align:middle;}
 .dv-block .meeting-chop-tag{font-size:8px;padding:1px 5px;border-radius:4px;margin-right:4px;}
 /* Location-only blocks — slim glowing vertical strip */
@@ -963,8 +963,8 @@ button,input,select,textarea{font-family:inherit;}
 .dv-add-check-btn:hover{opacity:1;color:var(--blue);}
 
 /* Smoother block hover */
-.dv-block{transition:opacity .2s,box-shadow .2s,transform .1s !important;}
-.dv-block:hover{box-shadow:0 2px 12px rgba(0,0,0,.2);z-index:8 !important;}
+.dv-block{transition:opacity .2s,box-shadow .2s,transform .1s !important;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+.dv-block:hover{box-shadow:0 2px 12px rgba(0,0,0,.35);z-index:8 !important;}
 .wk-block{transition:opacity .15s,box-shadow .15s,transform .08s !important;border-radius:6px !important;}
 .wk-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:5 !important;transform:scale(1.01);}
 

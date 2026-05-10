@@ -7,7 +7,7 @@ function isMeetingBlock(slot){
 }
 function getBlockColor(slot){
   if(slot.cls==='deadline')return '#ef4444';
-  if(isMeetingBlock(slot))return '#eab308';
+  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#eab308':'#fde68a';
   if(slot.cls==='focus')return '#a78bfa';
   if(slot.cls==='_task')return '#f87171';
   if(slot.cls==='_todo')return '#60a5fa';
