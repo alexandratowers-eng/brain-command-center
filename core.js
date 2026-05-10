@@ -45,6 +45,7 @@ function init(){
   renderDistractions();
   renderTomorrowMode();
   checkOverdueTasks();
+  surfaceLaterItems();
   renderSidebarTasks();
   updateDynamicBlockCSS();
   renderCalendar();
@@ -56,7 +57,8 @@ function init(){
   if(typeof renderWeeklyGoal==='function')renderWeeklyGoal();
   restoreCollapsed();
   if(typeof checkDailyMotivation==='function')checkDailyMotivation();
-  setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();},60000);
+  if(typeof checkReminders==='function')checkReminders();
+  setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();if(typeof checkReminders==='function')checkReminders();},60000);
   // On mobile, default to day view for easier use
   if(window.innerWidth<=900&&D.calView==='week'){setCalView('day');}
 }
@@ -361,6 +363,45 @@ function toggleRightPanel(){
   }
 })();
 
+// ===== RIGHT PANEL CARD TITLE EDITING =====
+(function(){
+  const saved=JSON.parse(localStorage.getItem('rpCardTitles')||'{}');
+  document.querySelectorAll('#cal-right-panel .s-card').forEach(card=>{
+    const cardId=card.dataset.card;if(!cardId)return;
+    const title=card.querySelector('.s-title');if(!title)return;
+    // Apply saved title
+    if(saved[cardId]){
+      const textNodes=[...title.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());
+      if(textNodes.length)textNodes[0].textContent=' '+saved[cardId]+' ';
+    }
+    // Add edit button if not already there
+    if(!title.querySelector('.rp-title-edit')){
+      const btn=document.createElement('span');
+      btn.className='mi rp-title-edit';
+      btn.style.cssText='font-size:11px;color:var(--dim);cursor:pointer;opacity:0;transition:opacity .15s;margin-left:2px;';
+      btn.textContent='edit';
+      btn.title='Rename this section';
+      btn.onclick=function(e){
+        e.stopPropagation();
+        const textNodes=[...title.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());
+        const currentText=textNodes.length?textNodes[0].textContent.trim():'';
+        const newName=prompt('Rename card:',currentText);
+        if(newName!==null&&newName.trim()){
+          if(textNodes.length)textNodes[0].textContent=' '+newName.trim()+' ';
+          const titles=JSON.parse(localStorage.getItem('rpCardTitles')||'{}');
+          titles[cardId]=newName.trim();
+          localStorage.setItem('rpCardTitles',JSON.stringify(titles));
+        }
+      };
+      const collapse=title.querySelector('.s-collapse');
+      if(collapse)title.insertBefore(btn,collapse);
+      else title.appendChild(btn);
+      title.addEventListener('mouseenter',()=>{btn.style.opacity='1';});
+      title.addEventListener('mouseleave',()=>{btn.style.opacity='0';});
+    }
+  });
+})();
+
 // ===== COLLAPSIBLE CARDS =====
 function toggleCard(id,btn){
   const body=document.getElementById('cardBody-'+id);
@@ -427,5 +468,6 @@ function renderCalendar(){
   if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();
   if(typeof renderCalRightParking==='function')renderCalRightParking();
   if(typeof renderCalRightBacklog==='function')renderCalRightBacklog();
+  if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();
 }
 

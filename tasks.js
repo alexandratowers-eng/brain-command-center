@@ -2,7 +2,7 @@
 function renderTasksForDate(containerId,dt){
   const el=document.getElementById(containerId);
   if(!el)return;
-  const tasks=D.tasks.filter(t=>t.date===dt&&t.cat!=='braindump').sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;const p={high:0,med:1,low:2};return p[a.pri]-p[b.pri];});
+  const tasks=D.tasks.filter(t=>t.date===dt&&t.cat!=='braindump'&&!isSnoozed(t)).sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;const p={high:0,med:1,low:2};return p[a.pri]-p[b.pri];});
   const done=tasks.filter(t=>t.done).length;
   const collapsed=el.dataset.collapsed==='true';
 
@@ -21,6 +21,7 @@ function renderTasksForDate(containerId,dt){
         <input type="checkbox" ${t.done?'checked':''} onchange="togTask(${t.id},this)">
         <div class="t-label" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''}${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''} ${t.text}</div>
         <div class="task-defer-btns">
+          <button class="defer-btn" onclick="openRemindPicker(event,${t.id})" title="Remind later">⏰</button>
           <button class="defer-btn" onclick="deferToTomorrow(${t.id})" title="Move to tomorrow">→ tmrw</button>
           <button class="defer-btn later" onclick="deferToLater(${t.id})" title="Stash for later">→ stash</button>
         </div>
@@ -50,6 +51,7 @@ function renderCalTasks(){
   renderCalRightCompleted();
   renderCalRightStash();
   renderQuickWins();
+  if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();
 }
 
 // ===== SIDEBAR TASKS (delegates to calendar panels) =====
@@ -137,7 +139,7 @@ function renderAllTasks(){
   const today=todayStr();
 
   // --- TODAY section: tasks dated today or overdue, active first then done ---
-  const todayActive=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&t.date&&t.date<=today).sort((a,b)=>{
+  const todayActive=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&t.date&&t.date<=today&&!isSnoozed(t)).sort((a,b)=>{
     if(a.date!==b.date){if(a.date<today&&b.date>=today)return -1;if(b.date<today&&a.date>=today)return 1;}
     return priOrd[a.pri]-priOrd[b.pri];
   });
@@ -172,6 +174,7 @@ function renderAllTasks(){
             ${isOverdue?`<span class="simple-task-overdue">overdue · ${dl}</span>`:''}
           </div>
           <div class="simple-task-actions">
+            <button class="defer-btn" onclick="openRemindPicker(event,${t.id})" title="Remind later">⏰</button>
             <button class="defer-btn" onclick="deferToTomorrow(${t.id})" title="Tomorrow">→ tmrw</button>
             <button class="defer-btn later" onclick="deferToLater(${t.id})" title="Park for later">→ later</button>
           </div>
@@ -207,8 +210,39 @@ function renderAllTasks(){
     todayEl.innerHTML=h;
   }
 
+  // --- SNOOZED section ---
+  const snoozedTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&isSnoozed(t));
+  if(snoozedTasks.length){
+    let sh=`<div class="simple-tasks-section" style="margin-top:16px;">
+      <div class="simple-tasks-header" style="cursor:pointer;" onclick="toggleSnoozedView()">
+        <span class="mi" style="font-size:20px;color:var(--amber);">snooze</span>
+        <span class="simple-tasks-title">Snoozed</span>
+        <span class="badge" style="background:rgba(251,191,36,.15);color:var(--amber);">${snoozedTasks.length}</span>
+        <span class="swimlane-chevron">${_snoozedCollapsed?'▸':'▾'}</span>
+      </div>`;
+    if(!_snoozedCollapsed){
+      snoozedTasks.forEach(t=>{
+        const cat=D.cats[t.cat];
+        const remindDate=new Date(t.remindAt);
+        const label=remindDate.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+        sh+=`<div class="simple-task-row" style="opacity:.6;">
+          <div class="p-dot ${t.pri}"></div>
+          <div class="simple-task-content">
+            <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
+            <span style="font-size:9px;color:var(--amber);">⏰ ${label}</span>
+          </div>
+          <div class="simple-task-actions">
+            <button class="defer-btn" onclick="unsnooze(${t.id})" title="Bring back now">↑ now</button>
+          </div>
+        </div>`;
+      });
+    }
+    sh+=`</div>`;
+    if(todayEl){todayEl.innerHTML+=sh;}
+  }
+
   // --- PARKED / LATER section: undated tasks + parking items + backlog ---
-  const laterTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&(!t.date||t.date>today)).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
+  const laterTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&(!t.date||t.date>today)&&!isSnoozed(t)).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
   const laterDone=D.tasks.filter(t=>t.done&&t.cat!=='braindump'&&(!t.date||t.date>today));
   const parked=D.parkingItems||[];
   const backlog=D.backlog||[];
@@ -242,6 +276,7 @@ function renderAllTasks(){
             ${dl?`<span style="font-size:9px;color:var(--dim);">${dl}</span>`:''}
           </div>
           <div class="simple-task-actions">
+            <button class="defer-btn" onclick="openRemindPicker(event,${t.id})" title="Remind later">⏰</button>
             <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today">→ today</button>
             <button class="task-act-btn" onclick="openEdit(${t.id})">edit</button>
           </div>
@@ -403,6 +438,170 @@ function swimlaneInlineCommit(ck,inp){
   save();renderAllTasks();renderCalTasks();updateStats();
 }
 function delTask(id){D.tasks=D.tasks.filter(t=>t.id!==id);save();renderSidebarTasks();renderAllTasks();updateStats();}
+
+// ===== TASK VIEW TOGGLE (List vs Buckets) =====
+let _taskView='list';
+function switchTaskView(view,btn){
+  _taskView=view;
+  document.querySelectorAll('#p-tasks .tasks-subtab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('tasksActivePane').style.display=view==='list'?'':'none';
+  document.getElementById('tasksBucketPane').style.display=view==='buckets'?'':'none';
+  if(view==='buckets')renderBucketView();
+}
+
+function renderBucketView(){
+  const el=document.getElementById('tasksBucketPane');if(!el)return;
+  const today=todayStr();
+  const allActive=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&!isSnoozed(t));
+  const buckets={
+    quick:{label:'⚡ Easy but annoying',desc:'Quick wins you keep putting off',color:'var(--green)',tasks:[]},
+    focus:{label:'🧠 Longer / Focus',desc:'Need a real block of time',color:'var(--purple)',tasks:[]},
+    call:{label:'📞 Call-based',desc:'During business hours only',color:'var(--blue)',tasks:[]},
+    errand:{label:'🚗 Errands',desc:'Out-of-house tasks',color:'var(--amber)',tasks:[]},
+    low:{label:'😴 Low energy ok',desc:'Good for wind-down time',color:'var(--dim)',tasks:[]},
+    untagged:{label:'📋 Unsorted',desc:'Drag here or tag with an effort type',color:'var(--text)',tasks:[]}
+  };
+  allActive.forEach(t=>{
+    const key=t.effort&&buckets[t.effort]?t.effort:'untagged';
+    buckets[key].tasks.push(t);
+  });
+  let html='';
+  Object.entries(buckets).forEach(([key,bucket])=>{
+    const count=bucket.tasks.length;
+    html+=`<div class="effort-bucket" data-bucket="${key}" ondragover="event.preventDefault();this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault();this.classList.remove('drag-over');dropOnBucket(event,'${key}');" style="margin-bottom:16px;border:1px solid var(--border);border-radius:10px;padding:12px;border-left:3px solid ${bucket.color};">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;">${bucket.label}</span>
+        <span class="badge" style="font-size:10px;">${count}</span>
+        <span style="font-size:10px;color:var(--dim);margin-left:auto;">${bucket.desc}</span>
+      </div>`;
+    if(!count){
+      html+=`<div style="font-size:11px;color:var(--dim);padding:8px;text-align:center;">No tasks</div>`;
+    } else {
+      bucket.tasks.forEach(t=>{
+        const cat=D.cats[t.cat];
+        const isOverdue=t.date&&t.date<today;
+        const dateLabel=!t.date?'later':t.date===today?'today':t.date<=today?'overdue':new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        html+=`<div class="simple-task-row" draggable="true" ondragstart="bucketDragStart(event,${t.id})" style="cursor:grab;${isOverdue?'border-left:3px solid var(--red);':''}" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+          <div class="p-dot ${t.pri}"></div>
+          <input type="checkbox" onchange="togTask(${t.id},this);renderBucketView();">
+          <div class="simple-task-content" style="flex:1;">
+            <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
+            <span style="font-size:9px;color:var(--dim);">${dateLabel}</span>
+          </div>
+          <div class="simple-task-actions">
+            <button class="defer-btn" onclick="openRemindPicker(event,${t.id})" title="Remind later">⏰</button>
+            <button class="defer-btn" onclick="deferToTomorrow(${t.id});renderBucketView();">→ tmrw</button>
+            <button class="defer-btn later" onclick="deferToLater(${t.id});renderBucketView();">→ later</button>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
+
+let _bucketDragId=null;
+function bucketDragStart(e,id){
+  _bucketDragId=id;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',id);
+  e.target.style.opacity='.5';
+  setTimeout(()=>{if(e.target)e.target.style.opacity='';},300);
+}
+function dropOnBucket(e,bucketKey){
+  const id=_bucketDragId||parseInt(e.dataTransfer.getData('text/plain'));
+  if(!id)return;
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  t.effort=bucketKey==='untagged'?'':bucketKey;
+  save();renderBucketView();renderAllTasks();renderCalTasks();
+  const toast=document.getElementById('saveToast');
+  const bucket=EFFORT_TAGS[bucketKey];
+  if(toast){toast.innerHTML=`✓ Tagged as ${bucket?bucket.emoji+' '+bucket.label:'Unsorted'}`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+  _bucketDragId=null;
+}
+
+// ===== REMIND LATER =====
+function isSnoozed(t){return t.remindAt&&new Date(t.remindAt)>new Date();}
+let _snoozedCollapsed=true;
+function toggleSnoozedView(){_snoozedCollapsed=!_snoozedCollapsed;renderAllTasks();}
+
+function openRemindPicker(e,id){
+  e.stopPropagation();
+  const old=document.getElementById('remindPickerMenu');if(old)old.remove();
+  const menu=document.createElement('div');
+  menu.id='remindPickerMenu';
+  menu.style.cssText=`position:fixed;left:${Math.min(e.clientX,window.innerWidth-160)}px;top:${Math.min(e.clientY,window.innerHeight-200)}px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:150px;`;
+  const now=new Date();const hr=now.getHours();
+  let btns=`<div style="padding:4px 10px;font-size:10px;font-weight:600;color:var(--dim);border-bottom:1px solid var(--border);margin-bottom:2px;">Remind me...</div>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('remindPickerMenu').remove();setReminder(${id},60);"><span style="font-size:12px;margin-right:4px;">⏰</span> In 1 hour</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('remindPickerMenu').remove();setReminder(${id},120);"><span style="font-size:12px;margin-right:4px;">⏰</span> In 2 hours</button>`;
+  if(hr<18)btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('remindPickerMenu').remove();setReminderTonight(${id});"><span style="font-size:12px;margin-right:4px;">🌆</span> Tonight 6 PM</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('remindPickerMenu').remove();setReminderTomorrow9(${id});"><span style="font-size:12px;margin-right:4px;">🌅</span> Tomorrow 9 AM</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('remindPickerMenu').remove();remindCustom(${id});"><span class="mi" style="font-size:14px;">event</span> Pick date...</button>`;
+  menu.innerHTML=btns;
+  document.body.appendChild(menu);
+  const dismiss=(ev)=>{if(!menu.contains(ev.target)){menu.remove();document.removeEventListener('mousedown',dismiss);}};
+  setTimeout(()=>document.addEventListener('mousedown',dismiss),10);
+}
+
+function setReminder(id,mins){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  t.remindAt=new Date(Date.now()+mins*60000).toISOString();
+  save();renderCalTasks();renderAllTasks();updateStats();
+  if(typeof renderBucketView==='function'&&_taskView==='buckets')renderBucketView();
+  const label=mins<60?mins+'m':Math.round(mins/60)+'h';
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML=`⏰ Reminder set · ${label}`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
+
+function setReminderTonight(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const tonight=new Date();tonight.setHours(18,0,0,0);
+  if(tonight<=new Date())tonight.setDate(tonight.getDate()+1);
+  t.remindAt=tonight.toISOString();
+  save();renderCalTasks();renderAllTasks();updateStats();
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · 6 PM';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
+
+function setReminderTomorrow9(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const tmrw=new Date();tmrw.setDate(tmrw.getDate()+1);tmrw.setHours(9,0,0,0);
+  t.remindAt=tmrw.toISOString();
+  save();renderCalTasks();renderAllTasks();updateStats();
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · tomorrow 9 AM';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
+
+function remindCustom(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const dt=prompt('Remind date & time (YYYY-MM-DD HH:MM):',todayStr()+' 17:00');
+  if(!dt)return;
+  const parsed=new Date(dt.replace(' ','T'));
+  if(isNaN(parsed.getTime())){alert('Invalid date/time format');return;}
+  t.remindAt=parsed.toISOString();
+  save();renderCalTasks();renderAllTasks();updateStats();
+  const label=parsed.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · '+label;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2000);}
+}
+
+function unsnooze(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  delete t.remindAt;
+  save();renderCalTasks();renderAllTasks();updateStats();
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='✓ Task resurfaced';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
+}
+
+function checkReminders(){
+  const now=new Date();let surfaced=0;
+  D.tasks.forEach(t=>{if(t.remindAt&&new Date(t.remindAt)<=now){delete t.remindAt;surfaced++;}});
+  if(surfaced){
+    save();renderCalTasks();renderAllTasks();updateStats();
+    if(typeof generateCoachSuggestions==='function')generateCoachSuggestions();
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML=`🔔 ${surfaced} task${surfaced>1?'s':''} resurfaced!`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2500);}
+    if(typeof playReminderSound==='function')playReminderSound();
+  }
+}
 
 // ===== TASKS SUB-TABS =====
 function switchTasksSubtab(tab,btn){
@@ -704,8 +903,8 @@ function renderCalRightTasks(){
   const isToday=dt===today;
 
   // Include ALL tasks for this date + overdue — active + done (done shown greyed inline)
-  const overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&t.cat!=='braindump'):[];
-  const todayActiveTasks=D.tasks.filter(t=>t.date===dt&&!t.done&&t.cat!=='braindump').sort((a,b)=>{const p={high:0,med:1,low:2};return (p[a.pri]||1)-(p[b.pri]||1);});
+  const overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)):[];
+  const todayActiveTasks=D.tasks.filter(t=>t.date===dt&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)).sort((a,b)=>{const p={high:0,med:1,low:2};return (p[a.pri]||1)-(p[b.pri]||1);});
   const activeTasks=[...overdueTasks,...todayActiveTasks];
   const doneTasks=D.tasks.filter(t=>t.date===dt&&t.done&&t.cat!=='braindump');
   const activeSlots=tl.filter(s=>!s.done);
@@ -797,11 +996,12 @@ function renderCalRightTasks(){
     const cat=D.cats[t.cat];
     const catColor=cat?cat.color:'var(--dim)';
     const emoji=cat?cat.emoji:'';
+    const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
     allTaskBlocks.push(renderBlock({
       color:catColor, done:false, isPast:false, isCurrent:false,
-      label:emoji+' '+t.text, subtitle:'',
+      label:emoji+' '+effortTag+t.text, subtitle:'',
       toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
-      extraBtn:`<button onclick="event.stopPropagation();deferToTomorrow(${t.id})" title="Move to tomorrow" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1';this.style.color='var(--amber)';this.style.borderColor='var(--amber)';" onmouseleave="this.style.opacity='.5';this.style.color='var(--dim)';this.style.borderColor='var(--dim)';">→ tmrw</button>`
+      extraBtn:`<button onclick="event.stopPropagation();openRemindPicker(event,${t.id})" title="Remind later" style="font-size:10px;border:1px solid var(--amber);border-radius:3px;background:none;color:var(--amber);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.6;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.6'">⏰</button>`
     }));
   });
   doneTasks.forEach(t=>{
@@ -841,6 +1041,95 @@ function addCalRightTask(inp){
 }
 // Completed tasks are now shown inline in renderCalRightTasks — this is a no-op for compat
 function renderCalRightCompleted(){}
+
+// ===== WINS & DONE CARD =====
+function renderCalRightWinsDone(){
+  const el=document.getElementById('calRightWinsDoneList');if(!el)return;
+  const today=todayStr();
+  const weekDates=getWeekDates(today);
+
+  function gatherDay(dt){
+    const doneTasks=D.tasks.filter(t=>t.done&&t.date===dt&&t.cat!=='braindump');
+    const doneSlots=(getTimeline(dt)||[]).filter(s=>s.done);
+    const manualWins=(D.reflections&&D.reflections[dt]&&D.reflections[dt].manualWins)||[];
+    const items=[];
+    doneTasks.forEach(t=>{
+      const cat=D.cats[t.cat];
+      items.push({text:t.text,emoji:cat?cat.emoji:'',cat:t.cat,color:cat?cat.color:'var(--dim)',type:'task'});
+    });
+    doneSlots.forEach(s=>{
+      const cat=D.cats&&D.cats[s.cls];
+      items.push({text:s.text,emoji:cat?cat.emoji:'📅',cat:s.cls||'event',color:cat?cat.color:'var(--blue)',type:'block'});
+    });
+    manualWins.forEach(w=>{
+      items.push({text:w,emoji:'✨',cat:'_win',color:'var(--green)',type:'win'});
+    });
+    return items;
+  }
+
+  const todayItems=gatherDay(today);
+  const badge=document.getElementById('calRightWinsBadge');
+  if(badge)badge.textContent=todayItems.length;
+
+  if(!todayItems.length){
+    el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing completed yet — you got this!</p>';
+    return;
+  }
+
+  // Group by category
+  const groups={};
+  todayItems.forEach(item=>{
+    const key=item.cat||'other';
+    if(!groups[key])groups[key]={emoji:item.emoji,color:item.color,items:[]};
+    groups[key].items.push(item);
+  });
+  const sorted=Object.entries(groups).sort((a,b)=>b[1].items.length-a[1].items.length);
+
+  let html='<div style="font-size:9px;font-weight:700;color:var(--green);margin-bottom:4px;">TODAY — '+todayItems.length+' completed</div>';
+  sorted.forEach(([key,g])=>{
+    html+=`<div style="margin-bottom:4px;">`;
+    html+=`<div style="font-size:8px;color:var(--dim);font-weight:600;margin-bottom:2px;">${g.emoji} ${g.items.length}</div>`;
+    g.items.forEach(item=>{
+      html+=`<div style="display:flex;align-items:center;gap:4px;padding:2px 0;opacity:.85;">
+        <span style="color:var(--green);font-size:10px;">✓</span>
+        <span style="font-size:10px;text-decoration:line-through;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.text}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+
+  // Earlier this week
+  const earlierDates=weekDates.filter(d=>d<today);
+  let earlierTotal=0;
+  const earlierByDay=[];
+  earlierDates.forEach(dt=>{
+    const items=gatherDay(dt);
+    if(items.length){earlierTotal+=items.length;earlierByDay.push({dt,items});}
+  });
+  if(earlierTotal){
+    const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    html+=`<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px;">
+      <div class="wins-earlier-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('span').textContent=this.nextElementSibling.style.display==='none'?'▸':'▾';" style="font-size:9px;color:var(--dim);cursor:pointer;font-weight:600;">
+        <span>▸</span> Earlier this week · ${earlierTotal} wins
+      </div>
+      <div style="display:none;">`;
+    earlierByDay.reverse().forEach(({dt,items})=>{
+      const d=new Date(dt+'T12:00:00');
+      const dayLabel=dayNames[d.getDay()];
+      html+=`<div style="font-size:8px;color:var(--dim);font-weight:600;margin:4px 0 2px;">${dayLabel} — ${items.length}</div>`;
+      items.slice(0,5).forEach(item=>{
+        html+=`<div style="display:flex;align-items:center;gap:4px;padding:1px 0;opacity:.6;">
+          <span style="color:var(--green);font-size:9px;">✓</span>
+          <span style="font-size:9px;text-decoration:line-through;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.text}</span>
+        </div>`;
+      });
+      if(items.length>5) html+=`<div style="font-size:8px;color:var(--dim);padding-left:14px;">+${items.length-5} more</div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  el.innerHTML=html;
+}
 // Legacy compat — redirect old calls to unified stash
 function renderCalRightLater(){renderCalRightStash();}
 function renderCalRightParking(){renderCalRightStash();}
@@ -849,15 +1138,18 @@ function renderCalRightBacklog(){renderCalRightStash();}
 function renderCalRightStash(){
   const el=document.getElementById('calRightStashList');if(!el)return;
   const today=todayStr();
-  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
+  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t));
   const parked=D.parkingItems||[];
   const backlog=D.backlog||[];
   const total=laterTasks.length+parked.length+backlog.length;
+  const snoozedTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&isSnoozed(t)&&t.remindAt);
+  const snoozedToday=snoozedTasks.filter(t=>{const rd=new Date(t.remindAt);const td=new Date();return rd.toDateString()===td.toDateString();});
+  const totalWithSnoozed=total+snoozedTasks.length;
   const badge=document.getElementById('calRightStashBadge');
-  if(badge)badge.textContent=total;
-  if(!total){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing parked — your mind is clear</p>';return;}
+  if(badge){badge.textContent=totalWithSnoozed;badge.classList.toggle('stash-pulse',totalWithSnoozed>5);}
+  if(!total&&!snoozedTasks.length){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing parked — your mind is clear</p>';return;}
 
-  const STASH_LIMIT=3;
+  const STASH_LIMIT=6;
   const allItems=[];
 
   laterTasks.forEach(t=>{
@@ -890,11 +1182,41 @@ function renderCalRightStash(){
     </div>`});
   });
 
-  let html=allItems.slice(0,STASH_LIMIT).map(i=>i.html).join('');
+  let html='';
+
+  // Snoozed reminders sub-section
+  if(snoozedTasks.length){
+    html+=`<div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:6px;padding:4px 6px;margin-bottom:6px;">
+      <div style="font-size:8px;font-weight:700;color:var(--amber);margin-bottom:2px;">⏰ ${snoozedToday.length?snoozedToday.length+' reminder'+(snoozedToday.length>1?'s':'')+' coming back today':''}${snoozedToday.length&&(snoozedTasks.length-snoozedToday.length)?' · ':''}${(snoozedTasks.length-snoozedToday.length)?(snoozedTasks.length-snoozedToday.length)+' snoozed':''}</div>`;
+    snoozedTasks.slice(0,3).forEach(t=>{
+      const cat=D.cats[t.cat];
+      const rd=new Date(t.remindAt);
+      const timeLabel=rd.toDateString()===new Date().toDateString()?rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):rd.toLocaleDateString([],{month:'short',day:'numeric'});
+      html+=`<div style="display:flex;align-items:center;gap:4px;padding:1px 0;font-size:9px;color:var(--dim);">
+        <span>⏰</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</span><span style="font-size:8px;color:var(--amber);">${timeLabel}</span>
+      </div>`;
+    });
+    if(snoozedTasks.length>3) html+=`<div style="font-size:8px;color:var(--dim);padding-left:14px;">+${snoozedTasks.length-3} more</div>`;
+    html+=`</div>`;
+  }
+
+  // Weekly stash nudge
+  const dayOfWeek=new Date().getDay();
+  if((dayOfWeek===0||dayOfWeek===1)&&total>3){
+    html+=`<div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:9px;color:var(--indigo);">
+      <b>📋 Weekly check-in:</b> You have ${total} stashed items. <span onclick="openParkingReview()" style="text-decoration:underline;cursor:pointer;font-weight:600;">Review & schedule them?</span>
+    </div>`;
+  }
+
+  html+=allItems.slice(0,STASH_LIMIT).map(i=>i.html).join('');
   if(allItems.length>STASH_LIMIT){
     html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">Show all ${allItems.length} items</button>`;
     html+=`<div id="stashOverflow" style="display:none;">${allItems.slice(STASH_LIMIT).map(i=>i.html).join('')}</div>`;
   }
+
+  // Review Stash button
+  html+=`<button class="t-btn" onclick="openParkingReview()" style="font-size:9px;width:100%;margin-top:6px;border-color:var(--purple);color:var(--purple);">📋 Review Stash</button>`;
+
   el.innerHTML=html;
 }
 
@@ -1133,6 +1455,9 @@ function openTaskCtx(e,id){
     <div style="padding:4px 10px;font-size:10px;font-weight:600;color:var(--dim);border-bottom:1px solid var(--border);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${t.text}</div>
     <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();openEdit(${id});">
       <span class="mi" style="font-size:14px;">edit</span> Edit
+    </button>
+    <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();openRemindPicker(event,${id});">
+      <span class="mi" style="font-size:14px;">snooze</span> Remind later
     </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();deferToTomorrow(${id});">
       <span class="mi" style="font-size:14px;">arrow_forward</span> Move to tomorrow
@@ -1389,7 +1714,7 @@ function renderMobileTasks(){
   const today=todayStr();
   const tmrw=dateStr(new Date(new Date().getTime()+86400000));
   const priOrd={high:0,med:1,low:2};
-  const active=D.tasks.filter(t=>!t.done&&t.cat!=='braindump');
+  const active=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&!isSnoozed(t));
   const done=D.tasks.filter(t=>t.done&&t.cat!=='braindump');
 
   const todayTasks=active.filter(t=>t.date===today||t.date<today&&t.date).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
@@ -1402,7 +1727,8 @@ function renderMobileTasks(){
     const catOpts=Object.entries(D.cats||{}).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     let actions='';
     if(section==='today'){
-      actions=`<button onclick="deferToTomorrow(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">tmrw</button>
+      actions=`<button onclick="openRemindPicker(event,${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--amber);cursor:pointer;">⏰</button>
+        <button onclick="deferToTomorrow(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">tmrw</button>
         <button onclick="deferToLater(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">later</button>`;
     } else if(section==='tomorrow'){
       actions=`<button onclick="laterToToday(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">today</button>

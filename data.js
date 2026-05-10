@@ -1,10 +1,11 @@
 // ===== DATA =====
 const SK='alex_planner_v6';
 const EFFORT_TAGS={
-  quick:{emoji:'⚡',label:'5-min',color:'var(--green)'},
-  call:{emoji:'📞',label:'Biz hrs',color:'var(--blue)'},
-  focus:{emoji:'🧠',label:'Focus',color:'var(--purple)'},
-  low:{emoji:'😴',label:'Low energy ok',color:'var(--dim)'}
+  quick:{emoji:'⚡',label:'Easy but annoying',color:'var(--green)'},
+  call:{emoji:'📞',label:'Call-based',color:'var(--blue)'},
+  focus:{emoji:'🧠',label:'Longer / Focus',color:'var(--purple)'},
+  low:{emoji:'😴',label:'Low energy ok',color:'var(--dim)'},
+  errand:{emoji:'🚗',label:'Errands',color:'var(--amber)'}
 };
 let D=load();
 function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(!d.days)d.days={};if(!d.selectedDate)d.selectedDate=todayStr();
@@ -140,6 +141,7 @@ function renderAll(){
   if(typeof renderCalRightTasks==='function')renderCalRightTasks();
   if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();
   if(typeof renderCalRightStash==='function')renderCalRightStash();
+  if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();
   if(typeof renderSidebarWins==='function')renderSidebarWins();
   if(typeof checkWeeklyReview==='function')checkWeeklyReview();
   if(typeof renderWeeklyGoal==='function')renderWeeklyGoal();
