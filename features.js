@@ -1358,6 +1358,7 @@ function renderTomorrowView(){
     <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('inperson');renderTomorrowView();" style="font-size:9px;">🏢 Office</button>
     <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('study');renderTomorrowView();" style="font-size:9px;">📚 Study</button>
     <button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('light');renderTomorrowView();" style="font-size:9px;">🌿 Light</button>
+    ${isWeekend?`<button class="defer-btn" onclick="D.selectedDate='${tmrw}';applyTemplate('weekend');renderTomorrowView();" style="font-size:9px;">🛋️ Weekend</button>`:''}
   </div>`;
   html+=`</div>`;
 
@@ -1374,8 +1375,12 @@ function renderTomorrowView(){
       </div>`;
     });
   } else {
-    html+=`<div style="font-size:11px;color:var(--dim);padding:8px;text-align:center;">No tasks scheduled for tomorrow</div>`;
+    html+=`<div style="font-size:11px;color:var(--dim);padding:8px 8px 4px;text-align:center;">No tasks scheduled for tomorrow</div>`;
   }
+  html+=`<div style="display:flex;gap:4px;margin-top:8px;">
+    <input type="text" id="tmrwTaskInput" placeholder="+ add a task for tomorrow..." style="flex:1;padding:6px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter'){addTmrwTask();renderTomorrowView();}">
+    <button onclick="addTmrwTask();renderTomorrowView();" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:4px 10px;font-size:14px;font-family:inherit;">+</button>
+  </div>`;
   html+=`</div>`;
   html+=`</div>`; // end left column
 
@@ -1465,6 +1470,14 @@ function addTmrwPriority(){
   if(!D.dayPriorities[tmrw])D.dayPriorities[tmrw]=[];
   D.dayPriorities[tmrw].push({id:Date.now(),text,done:false});
   inp.value='';save();
+}
+
+function addTmrwTask(){
+  const inp=document.getElementById('tmrwTaskInput');if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  const tmrw=getTomorrowStr();
+  D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:tmrw});
+  inp.value='';save();updateStats();
 }
 
 // ===== LATER ITEMS RESURFACE (PM next day) =====
