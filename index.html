@@ -442,6 +442,10 @@ if('serviceWorker' in navigator){
     <input type="checkbox" id="dpLocOnly" style="width:14px;height:14px;cursor:pointer;">
     Location-only block (transparent background)
   </label>
+  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
+    <input type="checkbox" id="dpIsMeeting" style="width:14px;height:14px;cursor:pointer;">
+    <span style="color:var(--amber);">groups</span> Mark as meeting block (CHOP/meeting styling)
+  </label>
   <div class="wp-btns">
     <button class="t-btn" onclick="closeDvPopover()">Cancel</button>
     <button class="t-btn" id="dpDeleteBtn" onclick="dvPopoverDelete()" style="display:none;color:var(--red);border-color:var(--red);">Delete</button>
@@ -467,6 +471,10 @@ if('serviceWorker' in navigator){
   <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
     <input type="checkbox" id="wpLocOnly" style="width:14px;height:14px;cursor:pointer;">
     Location-only block (transparent background)
+  </label>
+  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
+    <input type="checkbox" id="wpIsMeeting" style="width:14px;height:14px;cursor:pointer;">
+    <span style="color:var(--amber);">groups</span> Mark as meeting block (CHOP/meeting styling)
   </label>
   <div class="wp-btns">
     <button class="t-btn" onclick="closeWkPopover()">Cancel</button>

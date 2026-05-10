@@ -2,8 +2,9 @@
 function isMeetingBlock(slot){
   if(!slot||!slot.text)return false;
   if(slot.cls==='errands')return true;
+  if(slot._isMeeting)return true;
   const lc=slot.text.toLowerCase();
-  return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar)\b/i.test(lc);
+  return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar|chop|tpp|debrief|consult)\b/i.test(lc);
 }
 function getBlockColor(slot){
   if(slot.cls==='deadline')return '#ef4444';
@@ -633,6 +634,7 @@ function wkPopoverSave(){
   const details=document.getElementById('wpDetails').value.trim();
   const loc=document.getElementById('wpLoc').value.trim();
   const locOnly=document.getElementById('wpLocOnly')?.checked||false;
+  const isMtg=document.getElementById('wpIsMeeting')?.checked||false;
   const cat=D.cats[catKey];
   const text=title||(locOnly&&loc?'📍 '+loc:(cat?cat.emoji+' '+cat.label:'Break'));
   const tl=getTimeline(newDate)||[];
@@ -640,7 +642,7 @@ function wkPopoverSave(){
   let idx=tl.length;
   for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>newMin){idx=j;break;}}
   const endTime=minToTime(Math.min(24*60,newMin+30));
-  tl.splice(idx,0,{t, text, cls:catKey, sm:details, loc, _locOnly:locOnly, end:endTime, _id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+  tl.splice(idx,0,{t, text, cls:catKey, sm:details, loc, _locOnly:locOnly, _isMeeting:isMtg, end:endTime, _id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
   setTimeline(newDate, tl);
   closeWkPopover();
   renderCalendar(); renderMiniCal();
@@ -844,7 +846,7 @@ function renderDayView(){
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
-        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':''}${(s.text||'').replace(/</g,'&lt;')}</div>
+        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':(s._isMeeting&&!isMeetingBlock({...s,_isMeeting:false})?'<span class="meeting-chop-tag is-meeting" style="background:rgba(253,230,138,.4);color:#78350f;">MTG</span>':'')}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
       </div>
       ${heightPx>36?`<div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;">
@@ -1514,6 +1516,11 @@ function openDvPopover(e,dt,hr,mins,editIdx){
     if(isEdit){const tl2=getTimeline(dt)||[];const sl=tl2[_dvPopEditIdx];locOnlyCb.checked=sl&&sl._locOnly||false;}
     else locOnlyCb.checked=false;
   }
+  const mtgCb=document.getElementById('dpIsMeeting');
+  if(mtgCb){
+    if(isEdit){const tl3=getTimeline(dt)||[];const sl2=tl3[_dvPopEditIdx];mtgCb.checked=sl2&&(sl2._isMeeting||isMeetingBlock(sl2))||false;}
+    else mtgCb.checked=false;
+  }
   pop.classList.add('show');
   setTimeout(()=>document.getElementById('dpTitle').focus(),50);
 }
@@ -1540,6 +1547,7 @@ function dvPopoverSave(){
   const details=document.getElementById('dpDetails').value.trim();
   const loc=document.getElementById('dpLoc').value.trim();
   const locOnly=document.getElementById('dpLocOnly')?.checked||false;
+  const isMtg=document.getElementById('dpIsMeeting')?.checked||false;
   const cat=D.cats[catKey];
   const text=title||(locOnly&&loc?'📍 '+loc:(cat?cat.emoji+' '+cat.label:'Break'));
   const tl=getTimeline(_dvPopDate)||[];
@@ -1558,7 +1566,7 @@ function dvPopoverSave(){
       const newTl=getTimeline(newDate)||[];
       let idx=newTl.length;
       for(let j=0;j<newTl.length;j++){if(parseMin(newTl[j].t)>newMin){idx=j;break;}}
-      newTl.splice(idx,0,{t,text,cls:catKey,sm:details,loc,end:minToTime(Math.min(24*60,newMin+(dur>0?dur:30))),_id:slot._id||'s'+Date.now()+'_'+idx});
+      newTl.splice(idx,0,{t,text,cls:catKey,sm:details,loc,_isMeeting:isMtg,end:minToTime(Math.min(24*60,newMin+(dur>0?dur:30))),_id:slot._id||'s'+Date.now()+'_'+idx});
       setTimeline(newDate,newTl);
     } else {
       slot.t=t;
@@ -1567,6 +1575,7 @@ function dvPopoverSave(){
       slot.sm=details;
       slot.loc=loc;
       slot._locOnly=locOnly;
+      slot._isMeeting=isMtg;
       slot.end=minToTime(Math.min(24*60,newMin+(dur>0?dur:30)));
       slot.done=false;
       tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
@@ -1578,7 +1587,7 @@ function dvPopoverSave(){
     let idx=destTl.length;
     for(let j=0;j<destTl.length;j++){if(parseMin(destTl[j].t)>newMin){idx=j;break;}}
     const endTime=minToTime(Math.min(24*60,newMin+30));
-    destTl.splice(idx,0,{t,text,cls:catKey,sm:details,loc,_locOnly:locOnly,end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+    destTl.splice(idx,0,{t,text,cls:catKey,sm:details,loc,_locOnly:locOnly,_isMeeting:isMtg,end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
     setTimeline(newDate,destTl);
   }
   closeDvPopover();

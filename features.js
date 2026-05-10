@@ -483,8 +483,8 @@ function toggleMtgCompose(){
 
 function getMeetingBlocks(dt){
   const tl=getTimeline(dt)||[];
-  const meetingKeywords=/\b(meeting|call|zoom|teams|standup|huddle|touchbase|check-?in|sync|1[:-]1|one.on.one|tpp|debrief|interview|consult)\b/i;
-  const matches=tl.map((s,i)=>({...s,_dayIdx:i,_date:dt})).filter(s=>meetingKeywords.test(s.text));
+  const meetingKeywords=/\b(meeting|call|zoom|teams|standup|huddle|touchbase|check-?in|sync|1[:-]1|one.on.one|tpp|debrief|interview|consult|chop)\b/i;
+  const matches=tl.map((s,i)=>({...s,_dayIdx:i,_date:dt})).filter(s=>s._isMeeting||meetingKeywords.test(s.text));
   const seen=new Set();
   return matches.filter(s=>{const key=s.t+'|'+s.text;if(seen.has(key))return false;seen.add(key);return true;});
 }
