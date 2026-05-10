@@ -30,23 +30,6 @@ function renderWeeklyGoal(){
   const followupTotal=allSessions.filter(s=>s.type==='followup').reduce((a,s)=>a+s.count,0);
   const untypedTotal=allSessions.filter(s=>!s.type).reduce((a,s)=>a+s.count,0);
 
-  // Session log (last 6)
-  const sessions=allSessions.slice(-6).reverse();
-  let sessionHtml='';
-  if(sessions.length){
-    sessionHtml=sessions.map(s=>{
-      const d=new Date(s.when);
-      const day=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
-      const timeStr=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-      const typeTag=s.type==='recruit'?'<span style="background:var(--blue);color:white;padding:0 4px;border-radius:3px;font-size:7px;font-weight:700;margin-right:3px;">NEW</span>'
-        :s.type==='followup'?'<span style="background:var(--amber);color:#1a1a2e;padding:0 4px;border-radius:3px;font-size:7px;font-weight:700;margin-right:3px;">F/U</span>':'';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;padding:3px 0;border-bottom:1px solid var(--border);">
-        <span style="color:var(--dim);">${day} ${timeStr}</span>
-        <span style="display:flex;align-items:center;">${typeTag}${s.where?'<span style="color:var(--dim);margin-right:3px;">'+s.where+'</span>':''}<b style="color:var(--green);">+${s.count}</b></span>
-      </div>`;
-    }).join('');
-  }
-
   // Breakdown line
   let breakdownHtml='';
   if(recruitTotal||followupTotal){
@@ -83,32 +66,42 @@ function renderWeeklyGoal(){
       </div>
     </div>`:'';
 
+  // Last 3 sessions only, compact
+  const recentSessions=allSessions.slice(-3).reverse();
+  let recentHtml='';
+  if(recentSessions.length){
+    recentHtml=recentSessions.map(s=>{
+      const d=new Date(s.when);
+      const day=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+      const typeTag=s.type==='recruit'?'NEW':s.type==='followup'?'F/U':'';
+      return `<div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0;color:var(--dim);">
+        <span>${day}${typeTag?' · <span style="color:var(--blue);">'+typeTag+'</span>':''}</span>
+        <b style="color:var(--text);">+${s.count}</b>
+      </div>`;
+    }).join('');
+  }
+
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
       <span style="font-size:11px;font-weight:600;">${goal.label}</span>
       <span style="font-size:9px;color:var(--dim);cursor:pointer;" onclick="editWeeklyGoal()" title="Edit">✏️</span>
     </div>
-    <div style="font-size:10px;color:${msgColor};margin-bottom:6px;font-style:italic;">${msg}</div>
-    <div style="position:relative;height:10px;background:var(--border);border-radius:5px;overflow:visible;margin-bottom:2px;">
-      <div style="position:absolute;left:${loMark}%;right:0;top:0;bottom:0;background:rgba(52,211,153,.12);border-radius:0 5px 5px 0;"></div>
-      <div style="width:${pct}%;height:100%;background:${cur>=lo?'var(--green)':cur>=lo*0.5?'var(--blue)':'var(--blue)'};border-radius:5px;transition:width .4s cubic-bezier(.4,0,.2,1);position:relative;z-index:1;opacity:${cur>=lo?1:0.7};"></div>
+    <div style="position:relative;height:8px;background:var(--border);border-radius:4px;overflow:visible;margin-bottom:3px;">
+      <div style="position:absolute;left:${loMark}%;right:0;top:0;bottom:0;background:rgba(52,211,153,.12);border-radius:0 4px 4px 0;"></div>
+      <div style="width:${pct}%;height:100%;background:${cur>=lo?'var(--green)':'var(--blue)'};border-radius:4px;transition:width .4s cubic-bezier(.4,0,.2,1);position:relative;z-index:1;opacity:${cur>=lo?1:0.7};"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:6px;">
-      <span>${cur} done</span>
-      <span style="margin-left:${loMark-5}%;">${lo}-${hi} zone</span>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:7px;">
+      <span style="color:${msgColor};">${cur} done · ${msg}</span>
+      <span>${lo}–${hi}</span>
     </div>
-    ${breakdownHtml}
-    <div style="display:flex;gap:3px;margin-bottom:8px;align-items:center;">
-      <span style="font-size:8px;color:var(--dim);margin-right:2px;">Quick add:</span>
+    <div style="display:flex;gap:3px;margin-bottom:7px;flex-wrap:wrap;">
       <button class="t-btn" onclick="bumpWeeklyGoal(1)" style="font-size:9px;padding:3px 8px;">+1</button>
-      <button class="t-btn" onclick="bumpWeeklyGoal(2)" style="font-size:9px;padding:3px 8px;">+2</button>
       <button class="t-btn" onclick="bumpWeeklyGoal(3)" style="font-size:9px;padding:3px 8px;">+3</button>
       <button class="t-btn" onclick="bumpWeeklyGoal(5)" style="font-size:9px;padding:3px 8px;">+5</button>
-      <button class="t-btn" onclick="bumpWeeklyGoal(-1)" style="font-size:9px;padding:3px 6px;color:var(--dim);margin-left:auto;">-1</button>
+      <button class="t-btn" onclick="_wgLogOpen=!_wgLogOpen;renderWeeklyGoal();" style="font-size:9px;padding:3px 10px;border-color:var(--green);color:var(--green);margin-left:auto;${_wgLogOpen?'background:rgba(52,211,153,.1);':''}">📝 Log</button>
     </div>
-    <button class="t-btn" onclick="_wgLogOpen=!_wgLogOpen;renderWeeklyGoal();" style="font-size:9px;padding:4px 12px;width:100%;margin-bottom:8px;border-color:var(--green);color:var(--green);${_wgLogOpen?'background:rgba(52,211,153,.1);':''}">📝 Log a Session</button>
     ${logFormHtml}
-    ${sessions.length?`<div style="margin-top:2px;"><div style="font-size:8px;color:var(--dim);margin-bottom:3px;font-weight:600;">RECENT SESSIONS</div>${sessionHtml}</div>`:''}
+    ${recentHtml?`<div>${recentHtml}</div>`:''}
     <div style="display:flex;gap:4px;margin-top:6px;">
       <button class="t-btn" onclick="newWeeklyGoal()" style="font-size:8px;padding:2px 6px;">New Week</button>
       <button class="t-btn" onclick="archiveWeeklyGoal()" style="font-size:8px;padding:2px 6px;color:var(--dim);">Archive</button>

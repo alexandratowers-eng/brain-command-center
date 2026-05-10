@@ -746,6 +746,7 @@ function renderDayView(){
         <button onclick="applyTemplate('study');document.getElementById('templateMenu').classList.remove('open');">📚 Study</button>
         <button onclick="applyTemplate('light');document.getElementById('templateMenu').classList.remove('open');">🌿 Light</button>
         <button onclick="applyTemplate('nightowl');document.getElementById('templateMenu').classList.remove('open');">🌙 Night Owl</button>
+        <button onclick="applyTemplate('weekend');document.getElementById('templateMenu').classList.remove('open');">🛋️ Weekend</button>
       </div>
     </div>
   </div>`;
@@ -918,6 +919,13 @@ const TEMPLATES={
     {t:'2:30 PM',text:'Virtual driving work',cls:'chop',sm:'',end:'4:00 PM'},
     {t:'4:00 PM',text:'Rest',cls:'free',sm:'',end:'5:00 PM'},
     {t:'7:00 PM',text:'Nutrition work',cls:'chop',sm:'',end:'9:00 PM'},
+  ],
+  weekend:[
+    {t:'9:30 AM',text:'Sleep in / slow morning',cls:'free',sm:'No rush.',end:'10:30 AM'},
+    {t:'10:30 AM',text:'Brunch',cls:'personal',sm:'',end:'11:30 AM'},
+    {t:'11:30 AM',text:'Errands',cls:'errands',sm:'',end:'1:30 PM'},
+    {t:'1:30 PM',text:'Free time / self care',cls:'free',sm:'',end:'4:00 PM'},
+    {t:'4:00 PM',text:'MCAT study block',cls:'mcat',sm:'Optional — great to start in June!',end:'6:00 PM'},
   ],
 };
 
