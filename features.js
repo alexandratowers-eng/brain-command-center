@@ -1483,15 +1483,16 @@ function addTmrwTask(){
 // ===== LATER ITEMS RESURFACE (PM next day) =====
 function surfaceLaterItems(){
   const now=new Date();
-  if(now.getHours()<12)return;
   const today=todayStr();
-  const lastSurface=D._lastLaterSurface||'';
-  if(lastSurface===today)return;
+  const lsKey='laterSurface_'+today;
+  if(localStorage.getItem(lsKey))return;
+  // Only show once per day, and not until after 10am
+  if(now.getHours()<10)return;
   const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
   const parked=D.parkingItems||[];
   const total=laterTasks.length+parked.length;
   if(!total)return;
-  D._lastLaterSurface=today;save();
+  localStorage.setItem(lsKey,'1');
   const old=document.getElementById('laterSurfaceModal');if(old)old.remove();
   const modal=document.createElement('div');
   modal.id='laterSurfaceModal';
