@@ -47,19 +47,19 @@ function renderWeeklyGoal(){
   // Follow-up line (shown separately, not counted toward goal)
   let followupHtml='';
   if(followupTotal){
-    followupHtml=`<div style="font-size:9px;color:var(--rose);margin-bottom:6px;padding:4px 8px;background:rgba(244,114,182,.06);border-radius:5px;display:flex;align-items:center;gap:4px;">🔄 <strong>${followupTotal}</strong> follow-up${followupTotal!==1?'s':''} this week${todayFollowup?` · <span style="color:var(--rose);">${todayFollowup} today</span>`:''}  <span style="font-size:7px;color:var(--dim);margin-left:auto;">(not counted toward goal)</span></div>`;
+    followupHtml=`<div style="font-size:9px;color:var(--rose);margin-bottom:6px;padding:4px 8px;background:rgba(244,114,182,.06);border-radius:5px;display:flex;align-items:center;gap:4px;">🔄 <strong>${followupTotal}</strong> follow-up${todayFollowup?` · ${todayFollowup} today`:''}</div>`;
   }
 
   // Log session inline form
   const logFormHtml=_wgLogOpen?`
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">
-      <div style="font-size:9px;font-weight:600;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px;">Log a session</div>
-      <div style="font-size:9px;color:var(--dim);margin-bottom:6px;">What type of calls?</div>
+      <div style="font-size:9px;font-weight:600;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px;">Log calls</div>
+      <div style="font-size:9px;color:var(--dim);margin-bottom:6px;">Type</div>
       <div style="display:flex;gap:4px;margin-bottom:8px;" id="wgLogType">
         <button class="t-btn wg-type-btn active" data-type="recruit" onclick="wgSelectType(this)" style="font-size:9px;padding:4px 10px;border-color:var(--blue);color:var(--blue);flex:1;">📞 Recruit</button>
         <button class="t-btn wg-type-btn" data-type="followup" onclick="wgSelectType(this)" style="font-size:9px;padding:4px 10px;flex:1;">🔄 Follow-up</button>
       </div>
-      <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">How many calls?</div>
+      <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">Count</div>
       <div style="display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap;" id="wgLogCount">
         <button class="t-btn wg-count-btn" onclick="wgSelectCount(this,1)" style="font-size:10px;padding:4px 10px;">1</button>
         <button class="t-btn wg-count-btn" onclick="wgSelectCount(this,2)" style="font-size:10px;padding:4px 10px;">2</button>
@@ -98,14 +98,14 @@ function renderWeeklyGoal(){
       <span style="font-size:11px;font-weight:600;">${goal.label}</span>
       <span style="font-size:9px;color:var(--dim);cursor:pointer;" onclick="editWeeklyGoal()" title="Edit">✏️</span>
     </div>
-    ${todayRecruit?`<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">Today: ${todayRecruit} recruit ${goal.unit||'calls'}</div>`:''}
-    <div style="font-size:8px;color:var(--dim);margin-bottom:2px;">📞 Recruit calls <span style="font-weight:600;">(goal: ${lo}–${hi})</span></div>
+    ${todayRecruit?`<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">Today: ${todayRecruit}</div>`:''}
+    <div style="font-size:8px;color:var(--dim);margin-bottom:2px;">📞 Recruit <span style="font-weight:600;">${lo}–${hi}</span></div>
     <div style="position:relative;height:8px;background:var(--border);border-radius:4px;overflow:visible;margin-bottom:3px;">
       <div style="position:absolute;left:${loMark}%;right:0;top:0;bottom:0;background:rgba(52,211,153,.12);border-radius:0 4px 4px 0;"></div>
       <div style="width:${pct}%;height:100%;background:${cur>=lo?'var(--green)':'var(--blue)'};border-radius:4px;transition:width .4s cubic-bezier(.4,0,.2,1);position:relative;z-index:1;opacity:${cur>=lo?1:0.7};"></div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:4px;">
-      <span style="color:${msgColor};">${cur} recruit · ${msg}</span>
+      <span style="color:${msgColor};">${cur} · ${msg}</span>
       <span>${lo}–${hi}</span>
     </div>
     ${followupHtml}

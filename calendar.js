@@ -8,12 +8,13 @@ function isMeetingBlock(slot){
 }
 function getBlockColor(slot){
   if(slot.cls==='deadline')return '#ef4444';
-  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#eab308':'#fde68a';
   if(slot.cls==='focus')return '#a78bfa';
   if(slot.cls==='_task')return '#f87171';
   if(slot.cls==='_todo')return '#60a5fa';
   const cat=D.cats[slot.cls];
-  return cat?cat.color:'var(--blue)';
+  if(cat)return cat.color;
+  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#eab308':'#fde68a';
+  return 'var(--blue)';
 }
 
 // ===== QUICK-ADD AGENT =====
@@ -311,7 +312,7 @@ function renderWeekView(){
       const cells=el.querySelectorAll(`.wk-cell[data-date="${dt}"][data-hour="${startM>=60?Math.floor(startM/60):startHr}"]`);
       // Instead, position absolutely within the grid
       const block=document.createElement('div');
-      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
+      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${!D.cats[slot.cls]&&isMeetingBlock(slot)?'is-meeting':''}`;
       block.style.cssText=`grid-row:${cellRow+1};grid-column:${colIdx};top:${offsetPx}px;height:${durationPx}px;`;
       block.innerHTML=`${slot.text}${slot.sm?`<div class="wk-block-sub">${slot.sm}</div>`:''}`;
       block.title=`${slot.t} - ${slot.text}`;
@@ -397,7 +398,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
       if(!slot._id){slot._id='s'+Date.now()+'_'+i;}
       const sid=slot._id;
       const block=document.createElement('div');
-      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
+      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${!D.cats[slot.cls]&&isMeetingBlock(slot)?'is-meeting':''}`;
       if(slot._locOnly){
         // loc-only: slim strip at left edge of this day column, behind events
         const stripLeft=`calc(52px + ${colIdx} * (100% - 54px) / 7 + 1px)`;
@@ -1255,32 +1256,28 @@ function renderWinsTab(){
 
 function renderAllWinsView(el){
   const allDates=[];
+  function gatherWins(dt){
+    const ref=(D.reflections&&D.reflections[dt])||{};
+    const manualWins=(ref.manualWins||[]).map(w=>({text:w,cat:'_win'}));
+    const completedSlots=(getTimeline(dt)||[]).filter(s=>s.done).map(s=>({text:s.text,cat:s.cls||'_block'}));
+    const completedTasks=D.tasks.filter(t=>t.date===dt&&t.done).map(t=>({text:t.text,cat:t.cat||'_task'}));
+    return{items:[...completedSlots,...completedTasks,...manualWins],smallWin:ref.smallWin||''};
+  }
   if(D.reflections){
     Object.keys(D.reflections).forEach(dt=>{
-      const ref=D.reflections[dt];
-      const manualWins=ref.manualWins||[];
-      const completedSlots=(getTimeline(dt)||[]).filter(s=>s.done);
-      const completedTasks=D.tasks.filter(t=>t.date===dt&&t.done);
-      const wins=[
-        ...completedSlots.map(s=>s.text),
-        ...completedTasks.map(t=>t.text),
-        ...manualWins
-      ];
-      if(wins.length)allDates.push({dt,wins,smallWin:ref.smallWin||''});
+      const g=gatherWins(dt);
+      if(g.items.length)allDates.push({dt,...g});
     });
   }
-  // Also check dates with completed timeline/tasks but no reflection entry
   const tlDates=Object.keys(D.days||{});
   tlDates.forEach(dt=>{
     if(allDates.some(d=>d.dt===dt))return;
-    const completedSlots=(getTimeline(dt)||[]).filter(s=>s.done);
-    const completedTasks=D.tasks.filter(t=>t.date===dt&&t.done);
-    const wins=[...completedSlots.map(s=>s.text),...completedTasks.map(t=>t.text)];
-    if(wins.length)allDates.push({dt,wins,smallWin:''});
+    const g=gatherWins(dt);
+    if(g.items.length)allDates.push({dt,...g});
   });
   allDates.sort((a,b)=>b.dt.localeCompare(a.dt));
 
-  const totalWins=allDates.reduce((sum,d)=>sum+d.wins.length,0);
+  const totalWins=allDates.reduce((sum,d)=>sum+d.items.length,0);
 
   let html=`<div style="max-width:800px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
@@ -1295,20 +1292,41 @@ function renderAllWinsView(el){
       <div style="font-size:13px;">No wins logged yet — start adding what you accomplish!</div>
     </div>`;
   } else {
-    allDates.forEach(({dt,wins,smallWin})=>{
+    allDates.forEach(({dt,items,smallWin})=>{
       const d=dateObj(dt);
       const dayLabel=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
       const isToday=dt===todayStr();
+      const groups={};
+      items.forEach(w=>{
+        const k=w.cat||'_other';
+        if(!groups[k])groups[k]=[];
+        groups[k].push(w.text);
+      });
+      const sortedKeys=Object.keys(groups).sort((a,b)=>{
+        if(a==='_win')return 1;if(b==='_win')return -1;
+        return groups[b].length-groups[a].length;
+      });
+      let groupsHtml='';
+      sortedKeys.forEach(k=>{
+        const cat=D.cats[k];
+        const emoji=k==='_win'?'✨':k==='_block'?'📅':k==='_task'?'✅':cat?cat.emoji:'📌';
+        const label=k==='_win'?'Manual wins':k==='_block'?'Blocks':k==='_task'?'Tasks':cat?cat.label:k;
+        const color=k==='_win'?'var(--green)':cat?cat.color:'var(--blue)';
+        groupsHtml+=`<div style="margin-bottom:6px;">
+          <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">${emoji} ${label}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${groups[k].map(w=>`<span style="display:inline-flex;align-items:center;gap:4px;background:${color}12;border:1px solid ${color}25;border-radius:6px;padding:3px 8px;font-size:10px;color:${color};">
+              <span class="mi" style="font-size:11px;">check_circle</span>${(w||'').replace(/</g,'&lt;')}
+            </span>`).join('')}
+          </div>
+        </div>`;
+      });
       html+=`<div style="margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;${isToday?'border-color:rgba(52,211,153,.4);':''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;font-weight:600;${isToday?'color:var(--green);':'color:var(--text);'}">${isToday?'Today — ':''} ${dayLabel}</span>
-          <span style="font-size:10px;color:var(--dim);">${wins.length} win${wins.length!==1?'s':''}</span>
+          <span style="font-size:10px;color:var(--dim);">${items.length} win${items.length!==1?'s':''}</span>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">
-          ${wins.map(w=>`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--green);">
-            <span class="mi" style="font-size:11px;">check_circle</span>${w}
-          </span>`).join('')}
-        </div>
+        ${groupsHtml}
         ${smallWin?`<div style="margin-top:6px;font-size:10px;color:var(--dim);font-style:italic;padding-left:4px;">"${smallWin}"</div>`:''}
       </div>`;
     });
