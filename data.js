@@ -107,6 +107,32 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._mcatStartNextWeek=true;
   }
+  // Switch MCAT from daily to twice-a-week (Wed+Sat), starting Wed May 13
+  if(!d._mcatTwiceWeek){
+    if(d.days){
+      // Remove all daily MCAT blocks
+      Object.keys(d.days).forEach(dt=>{
+        if(Array.isArray(d.days[dt])){
+          d.days[dt]=d.days[dt].filter(s=>!s._mcatDaily);
+        }
+      });
+      // Add Wed+Sat MCAT blocks May 13–31
+      const labels=['📚 MCAT Content Review','📚 MCAT Biochem Review','📚 MCAT P/S Review','📚 MCAT C/P Review','📚 MCAT B/B Review','📚 MCAT CARS Practice','📚 MCAT Flashcards'];
+      let li=0;
+      for(let day=13;day<=31;day++){
+        const dt=`2026-05-${String(day).padStart(2,'0')}`;
+        const dow=new Date(2026,4,day).getDay();
+        if(dow!==3&&dow!==6)continue; // Wed=3, Sat=6
+        if(!d.days[dt])d.days[dt]=[];
+        const tl=d.days[dt];
+        if(!tl.some(s=>s._mcatBiweekly)){
+          tl.push({t:'12:30 PM',text:labels[li%labels.length],cls:'mcat',sm:'MCAT review (Wed & Sat)',loc:'',end:'12:40 PM',_mcatBiweekly:true,_id:'mcat_2x_'+day});
+          li++;
+        }
+      }
+    }
+    d._mcatTwiceWeek=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
