@@ -2039,7 +2039,8 @@ function renderSidebarTmrw(){
   if(!el)return;
   const tmrw=dateStr(new Date(dateObj(todayStr()).getTime()+86400000));
   const tl=getTimeline(tmrw);
-  if(!tl.length){
+  const tmrwTasks=(typeof D!=='undefined'&&D.tasks)?D.tasks.filter(t=>t.date===tmrw&&!t.done&&t.cat!=='braindump'):[];
+  if(!tl.length&&!tmrwTasks.length){
     el.innerHTML=`<div class="sw-tmrw-empty">Nothing scheduled yet</div>
       <button class="t-btn" style="font-size:9px;margin-top:4px;width:100%;" onclick="D.selectedDate='${tmrw}';setCalView('day');">Plan tomorrow</button>`;
     return;
@@ -2053,6 +2054,18 @@ function renderSidebarTmrw(){
       <button class="sw-bump-btn" title="Move to today" onclick="event.stopPropagation();sidebarBumpToToday('${tmrw}',${i});">&#8592;</button>
     </div>`;
   });
+  if(tmrwTasks.length){
+    html+=`<div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 3px;padding-left:2px;">Tasks</div>`;
+    tmrwTasks.forEach(t=>{
+      const cat=(typeof D!=='undefined'&&D.cats)?D.cats[t.cat]:null;
+      const emoji=cat?cat.emoji:'📌';
+      const shortText=(t.text||'').length>30?t.text.slice(0,30)+'…':t.text;
+      html+=`<div class="sw-tmrw-row" style="border-left-color:var(--blue);">
+        <div class="sw-tmrw-time" style="font-size:8px;">${emoji}</div>
+        <div class="sw-tmrw-text" style="font-size:10px;">${shortText.replace(/</g,'&lt;')}</div>
+      </div>`;
+    });
+  }
   html+=`<button class="t-btn" style="font-size:9px;margin-top:6px;width:100%;" onclick="D.selectedDate='${tmrw}';setCalView('day');">Open tomorrow &rsaquo;</button>`;
   el.innerHTML=html;
 }
@@ -2126,11 +2139,31 @@ function renderEnergy(){
 
 // ===== TIMER =====
 let tInt=null,tSec=25*60,tRun=false,tBrk=false,tPre=25;
-function setPreset(m,el){if(tRun)return;tPre=m;tSec=m*60;tBrk=false;updateTimerDisp();const inp=document.getElementById('timerInput');if(inp)inp.value=m;}
-function setPresetFromInput(){if(tRun)return;const v=parseInt(document.getElementById('timerInput').value)||25;const m=Math.max(1,Math.min(240,v));tPre=m;tSec=m*60;tBrk=false;updateTimerDisp();}
+function _saveTimerState(){
+  try{localStorage.setItem('bcc_timer',JSON.stringify({sec:tSec,run:tRun,brk:tBrk,pre:tPre,at:Date.now()}));}catch(e){}
+}
+function _restoreTimerState(){
+  try{
+    const raw=localStorage.getItem('bcc_timer');if(!raw)return;
+    const s=JSON.parse(raw);
+    tPre=s.pre||25;tBrk=!!s.brk;
+    if(s.run){
+      const elapsed=Math.floor((Date.now()-s.at)/1000);
+      tSec=Math.max(0,(s.sec||0)-elapsed);
+      if(tSec>0){tRun=false;toggleTimer();}
+      else{tSec=tBrk?tPre*60:5*60;tBrk=!tBrk;tRun=false;updateTimerDisp();}
+    } else {
+      tSec=s.sec||tPre*60;tRun=false;updateTimerDisp();
+    }
+    const inp=document.getElementById('timerInput');if(inp)inp.value=tPre;
+  }catch(e){}
+}
+function setPreset(m,el){if(tRun)return;tPre=m;tSec=m*60;tBrk=false;updateTimerDisp();_saveTimerState();const inp=document.getElementById('timerInput');if(inp)inp.value=m;}
+function setPresetFromInput(){if(tRun)return;const v=parseInt(document.getElementById('timerInput').value)||25;const m=Math.max(1,Math.min(240,v));tPre=m;tSec=m*60;tBrk=false;updateTimerDisp();_saveTimerState();}
 function toggleTimer(){
-  if(tRun){clearInterval(tInt);tRun=false;document.getElementById('timerStartBtn').textContent='Resume';document.getElementById('timerLabel').textContent='paused';return;}
+  if(tRun){clearInterval(tInt);tRun=false;document.getElementById('timerStartBtn').textContent='Resume';document.getElementById('timerLabel').textContent='paused';_saveTimerState();return;}
   tRun=true;document.getElementById('timerStartBtn').textContent='Pause';document.getElementById('timerLabel').textContent=tBrk?'break':'focusing...';
+  _saveTimerState();
   tInt=setInterval(()=>{
     tSec--;
     if(tSec<=0){clearInterval(tInt);tRun=false;
@@ -2138,10 +2171,10 @@ function toggleTimer(){
       else{tBrk=false;tSec=tPre*60;document.getElementById('timerLabel').textContent='ready';}
       document.getElementById('timerStartBtn').textContent='Start';
     }
-    updateTimerDisp();
+    updateTimerDisp();_saveTimerState();
   },1000);
 }
-function resetTimer(){clearInterval(tInt);tRun=false;tBrk=false;tSec=tPre*60;document.getElementById('timerStartBtn').textContent='Start';document.getElementById('timerLabel').textContent='ready';updateTimerDisp();}
+function resetTimer(){clearInterval(tInt);tRun=false;tBrk=false;tSec=tPre*60;document.getElementById('timerStartBtn').textContent='Start';document.getElementById('timerLabel').textContent='ready';updateTimerDisp();_saveTimerState();}
 function updateTimerDisp(){const m=Math.floor(tSec/60),s=tSec%60;document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');document.getElementById('pomoCount').textContent=D.pomo+' sessions';document.getElementById('sPomo').textContent=D.pomo;
   const total=tBrk?5*60:tPre*60;const pct=total>0?(total-tSec)/total:0;const circ=2*Math.PI*52;const ring=document.getElementById('timerRingProgress');if(ring)ring.style.strokeDashoffset=circ*(1-pct);
   const mini=document.getElementById('timerMiniDisp');if(mini)mini.textContent=tRun?(String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')):'';

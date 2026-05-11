@@ -145,6 +145,7 @@ function save(){
     if(prev){_undoStack.push(prev);if(_undoStack.length>_UNDO_MAX)_undoStack.shift();}
     _lastSnap=now;
   }
+  D._localModifiedAt=now;
   localStorage.setItem(SK,JSON.stringify(D));
   if(typeof SyncEngine!=='undefined')SyncEngine.scheduleSync();
   const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Saved';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),1200);}

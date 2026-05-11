@@ -630,6 +630,7 @@ function updateMvt(btn){
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.innerWidth<=900){D.calView='day';save();}
   if(typeof SyncEngine!=='undefined')SyncEngine.init();
+  setTimeout(()=>{if(typeof _restoreTimerState==='function')_restoreTimerState();},1200);
 });
 </script>
 </body>

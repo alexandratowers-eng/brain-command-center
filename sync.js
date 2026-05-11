@@ -58,15 +58,21 @@ window.SyncEngine=(function(){
       const local=localRaw?JSON.parse(localRaw):null;
       const remoteTs=remote._syncedAt||0;
       const localTs=(local&&local._syncedAt)?local._syncedAt:0;
+      const localModified=(local&&local._localModifiedAt)?local._localModifiedAt:0;
       if(remoteTs>localTs){
-        localStorage.setItem(SK,JSON.stringify(remote));
-        if(typeof D!=='undefined'&&typeof load==='function'){
-          const restored=load();
-          Object.keys(D).forEach(k=>delete D[k]);
-          Object.assign(D,restored);
-          if(typeof renderAll==='function')renderAll();
+        if(localModified>localTs){
+          setStatus('idle','Synced ✓ (local changes pending push)');
+          scheduleSync();
+        } else {
+          localStorage.setItem(SK,JSON.stringify(remote));
+          if(typeof D!=='undefined'&&typeof load==='function'){
+            const restored=load();
+            Object.keys(D).forEach(k=>delete D[k]);
+            Object.assign(D,restored);
+            if(typeof renderAll==='function')renderAll();
+          }
+          setStatus('idle','Synced ✓ pulled '+new Date(remoteTs).toLocaleTimeString());
         }
-        setStatus('idle','Synced ✓ pulled '+new Date(remoteTs).toLocaleTimeString());
       } else {
         setStatus('idle','Synced ✓');
       }
@@ -91,8 +97,9 @@ window.SyncEngine=(function(){
       if(!raw){setStatus('idle','Nothing to sync');return;}
       const payload=JSON.parse(raw);
       payload._syncedAt=Date.now();
+      delete payload._localModifiedAt;
       localStorage.setItem(SK,JSON.stringify(payload));
-      if(typeof D!=='undefined')D._syncedAt=payload._syncedAt;
+      if(typeof D!=='undefined'){D._syncedAt=payload._syncedAt;delete D._localModifiedAt;}
       await gistPut(cfg,payload);
       setStatus('idle','Synced ✓ '+new Date().toLocaleTimeString());
     }catch(e){

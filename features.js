@@ -982,7 +982,7 @@ function generateCoachSuggestions(){
         <button class="coach-s-btn" style="border-color:${catColor};color:${catColor};" onclick="event.stopPropagation();coachAddBlock('${t.cat}',${mainDur},'${safe}')">${mainLabel}</button>
       </div>${backupHtml}
       <div style="display:flex;align-items:center;gap:4px;margin-top:2px;padding-left:22px;">
-        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToTomorrow(${t.id});generateCoachSuggestions();">→ tmrw</button>
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToTomorrow(${t.id});generateCoachSuggestions();if(typeof renderMiniCal==='function')renderMiniCal();">→ tmrw</button>
         <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToLater(${t.id});generateCoachSuggestions();">→ later</button>
       </div>
     </div>`;
