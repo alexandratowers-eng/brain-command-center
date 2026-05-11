@@ -4,7 +4,7 @@
   --bg:#0e0e14;--bg2:#131319;--card:#1a1a24;--border:#242430;
   --text:#e8e8f0;--dim:#6b6b80;
   --blue:#6366f1;--indigo:#818cf8;--rose:#f472b6;--green:#34d399;
-  --amber:#e8e8f0;--red:#f87171;--teal:#2dd4bf;--purple:#a78bfa;
+  --amber:#f97316;--red:#f87171;--teal:#2dd4bf;--purple:#a78bfa;
   --grad:linear-gradient(135deg,#6366f1,#a78bfa);
 }
 /* Light / Day theme */
@@ -12,7 +12,7 @@
   --bg:#ededf2;--bg2:#f2f2f6;--card:#f7f7fa;--border:#dcdce8;
   --text:#0f0f14;--dim:#64648a;
   --blue:#4f46e5;--indigo:#6366f1;--rose:#db2777;--green:#059669;
-  --amber:#0f0f14;--red:#dc2626;--teal:#0d9488;--purple:#7c3aed;
+  --amber:#ea580c;--red:#dc2626;--teal:#0d9488;--purple:#7c3aed;
   --grad:linear-gradient(135deg,#4f46e5,#7c3aed);
 }
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:12px;}
