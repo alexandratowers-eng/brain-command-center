@@ -20,7 +20,7 @@ function renderWeeklyGoal(){
   if(cur===0){msg='Ready when you are 🫶';msgColor='var(--dim)';}
   else if(cur<lo*0.25){msg='You started — that\'s the hardest part 💪';msgColor='var(--blue)';}
   else if(cur<lo*0.5){msg='Building momentum! 🔥';msgColor='var(--blue)';}
-  else if(cur<lo){msg='Getting close to the zone! 🎯';msgColor='var(--amber)';}
+  else if(cur<lo){msg='Getting close to the zone! 🎯';msgColor='var(--teal)';}
   else if(cur>=lo&&cur<=hi){msg='You\'re in the zone! 🎉';msgColor='var(--green)';}
   else{msg='Above and beyond!! 🚀';msgColor='var(--green)';}
 
@@ -50,7 +50,7 @@ function renderWeeklyGoal(){
   if(recruitTotal||followupTotal){
     const parts=[];
     if(recruitTotal)parts.push(`<span style="color:var(--blue);">${recruitTotal} new</span>`);
-    if(followupTotal)parts.push(`<span style="color:var(--amber);">${followupTotal} follow-up</span>`);
+    if(followupTotal)parts.push(`<span style="color:var(--pink);">${followupTotal} follow-up</span>`);
     if(untypedTotal)parts.push(`<span style="color:var(--dim);">${untypedTotal} other</span>`);
     breakdownHtml=`<div style="font-size:8px;margin-bottom:6px;display:flex;gap:6px;align-items:center;">${parts.join('<span style="color:var(--border);">·</span>')}</div>`;
   }
@@ -992,7 +992,7 @@ function generateCoachSuggestions(){
   }
 
   const eMsg=energy>=4?'Good energy today':energy<=2?'Low energy — start small':'Steady — one thing at a time';
-  el.innerHTML=`<div style="font-size:9px;color:var(--dim);margin-bottom:6px;padding:0 4px;">${eMsg} · <b style="color:var(--amber);">${pendingTasks.length}</b> left</div>${html}`;
+  el.innerHTML=`<div style="font-size:9px;color:var(--dim);margin-bottom:6px;padding:0 4px;">${eMsg} · <b style="color:var(--indigo);">${pendingTasks.length}</b> left</div>${html}`;
 }
 
 function coachAddBlock(catKey,durMin,title){
@@ -1188,7 +1188,7 @@ function renderTomorrowMode(){
     if(tl.length>6) schedHtml+=`<div style="font-size:8px;color:var(--dim);text-align:center;">+${tl.length-6} more</div>`;
   }
   if(tmrwTasks.length){
-    schedHtml+=`<div style="font-size:8px;color:var(--amber);font-weight:600;margin-top:4px;">📋 ${tmrwTasks.length} task${tmrwTasks.length!==1?'s':''} due</div>`;
+    schedHtml+=`<div style="font-size:8px;color:var(--blue);font-weight:600;margin-top:4px;">📋 ${tmrwTasks.length} task${tmrwTasks.length!==1?'s':''} due</div>`;
     schedHtml+=tmrwTasks.slice(0,4).map(t=>{
       const cat=D.cats[t.cat];
       return `<div style="font-size:9px;color:var(--dim);padding:1px 0;">• ${cat?cat.emoji:''} ${t.text}</div>`;
@@ -1211,7 +1211,7 @@ function renderTomorrowMode(){
   spotsHtml+=`</div>`;
   spotsHtml+=`<div id="customSpotInput" style="display:none;gap:4px;margin-top:4px;">
     <input type="text" class="mode-note-input" id="customSpotText" placeholder="new spot..." onkeydown="if(event.key==='Enter')addCustomSpot()" style="flex:1;">
-    <button class="distraction-add-btn" onclick="addCustomSpot()" style="border-color:var(--amber);color:var(--amber);font-size:10px;">+</button>
+    <button class="distraction-add-btn" onclick="addCustomSpot()" style="border-color:var(--green);color:var(--green);font-size:10px;">+</button>
   </div>`;
 
   el.innerHTML=spotsHtml+schedHtml;
@@ -1256,7 +1256,7 @@ function renderModePriorities(){
   const el=document.getElementById('modePriList');if(!el)return;
   if(!items.length){el.innerHTML='';return;}
   el.innerHTML=items.map(p=>`<div class="mode-pri-item ${p.done?'done':''}">
-    <button class="distraction-check" onclick="toggleModePri('${showDate}',${p.id})" style="color:var(--amber);">${p.done?'✓':'○'}</button>
+    <button class="distraction-check" onclick="toggleModePri('${showDate}',${p.id})" style="color:var(--indigo);">${p.done?'✓':'○'}</button>
     <span class="mode-pri-text">${p.text}</span>
     <button class="distraction-del" onclick="removeModePri('${showDate}',${p.id})">×</button>
   </div>`).join('');
@@ -1310,9 +1310,9 @@ function renderTomorrowView(){
 
   // Header
   html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-    <span class="mi" style="color:var(--amber);font-size:28px;">wb_sunny</span>
+    <span class="mi" style="color:var(--blue);font-size:28px;">wb_sunny</span>
     <div>
-      <h2 style="margin:0;font-size:18px;font-weight:700;color:var(--amber);">${dayLabel}</h2>
+      <h2 style="margin:0;font-size:18px;font-weight:700;color:var(--blue);">${dayLabel}</h2>
       <div style="font-size:11px;color:var(--dim);">${isWeekend?'Weekend':'Weekday'} · ${tl.length} block${tl.length!==1?'s':''} · ${tmrwTasks.length} task${tmrwTasks.length!==1?'s':''}</div>
     </div>
   </div>`;
@@ -1388,12 +1388,12 @@ function renderTomorrowView(){
   html+=`<div>`;
 
   // Top priorities
-  html+=`<div style="background:var(--card);border:1px solid rgba(253,230,138,.2);border-radius:10px;padding:14px;margin-bottom:12px;">
-    <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎯 Top Priorities</div>`;
+  html+=`<div style="background:var(--card);border:1px solid rgba(129,140,248,.2);border-radius:10px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:10px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎯 Top Priorities</div>`;
   if(priorities.length){
     priorities.forEach(p=>{
       html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);${p.done?'opacity:.4;text-decoration:line-through;':''}">
-        <button onclick="toggleModePri('${tmrw}',${p.id});renderTomorrowView();" style="background:none;border:1.5px solid var(--amber);border-radius:50%;width:14px;height:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--amber);padding:0;${p.done?'background:var(--amber);color:#fff;':''}">${p.done?'✓':'○'}</button>
+        <button onclick="toggleModePri('${tmrw}',${p.id});renderTomorrowView();" style="background:none;border:1.5px solid var(--indigo);border-radius:50%;width:14px;height:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--indigo);padding:0;${p.done?'background:var(--indigo);color:#fff;':''}">${p.done?'✓':'○'}</button>
         <span style="flex:1;font-size:12px;">${p.text}</span>
         <button onclick="removeModePri('${tmrw}',${p.id});renderTomorrowView();" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;">✕</button>
       </div>`;
@@ -1401,7 +1401,7 @@ function renderTomorrowView(){
   }
   html+=`<div style="display:flex;gap:4px;margin-top:6px;">
     <input type="text" id="tmrwPriInput" class="mode-note-input" placeholder="+ add a priority..." style="flex:1;padding:6px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter'){addTmrwPriority();renderTomorrowView();}">
-    <button onclick="addTmrwPriority();renderTomorrowView();" style="background:none;border:1px solid var(--amber);border-radius:6px;color:var(--amber);cursor:pointer;padding:4px 10px;font-size:11px;font-family:inherit;">+</button>
+    <button onclick="addTmrwPriority();renderTomorrowView();" style="background:none;border:1px solid var(--indigo);border-radius:6px;color:var(--indigo);cursor:pointer;padding:4px 10px;font-size:11px;font-family:inherit;">+</button>
   </div>`;
   html+=`</div>`;
 
@@ -1410,13 +1410,13 @@ function renderTomorrowView(){
     <div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📍 Where to work</div>`;
   allSpots.forEach(s=>{
     const sel=picked.includes(s.key);
-    html+=`<div onclick="toggleSpot('${s.key}');renderTomorrowView();" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;margin-bottom:3px;border:1px solid ${sel?'var(--amber)':'var(--border)'};background:${sel?'rgba(253,230,138,.08)':'transparent'};transition:all .15s;">
+    html+=`<div onclick="toggleSpot('${s.key}');renderTomorrowView();" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;margin-bottom:3px;border:1px solid ${sel?'var(--green)':'var(--border)'};background:${sel?'rgba(52,211,153,.08)':'transparent'};transition:all .15s;">
       <span style="font-size:16px;">${s.icon}</span>
       <div style="flex:1;">
         <div style="font-size:12px;font-weight:600;">${s.label}</div>
         ${s.desc?`<div style="font-size:9px;color:var(--dim);">${s.desc}</div>`:''}
       </div>
-      ${sel?'<span style="color:var(--amber);font-size:12px;">✓</span>':''}
+      ${sel?'<span style="color:var(--green);font-size:12px;">✓</span>':''}
     </div>`;
   });
   html+=`<div style="margin-top:6px;">
@@ -1549,7 +1549,7 @@ function checkOverdueTasks(){
       <div class="overdue-text">${cat?.emoji||''} ${t.text}</div>
       <span class="overdue-ago">${ago}</span>
       <button class="overdue-btn" onclick="moveOverdueToToday(${t.id})" title="Move to today">today</button>
-      <button class="overdue-btn reschedule" onclick="rescheduleOverdueTask(${t.id})" title="Pick a new date" style="border-color:var(--amber);color:var(--amber);">📅</button>
+      <button class="overdue-btn reschedule" onclick="rescheduleOverdueTask(${t.id})" title="Pick a new date" style="border-color:var(--blue);color:var(--blue);">📅</button>
     </div>`;
   }).join('');
 }
@@ -1763,7 +1763,7 @@ function toggleWorryPause(){
   const btn=document.getElementById('worryPauseBtn');
   if(btn)btn.innerHTML=`<span class="mi" style="font-size:14px;">${_worryPaused?'play_arrow':'pause'}</span>`;
   const ring=document.getElementById('worryRingProgress');
-  if(ring)ring.style.stroke=_worryPaused?'var(--dim)':'var(--amber)';
+  if(ring)ring.style.stroke=_worryPaused?'var(--dim)':'var(--teal)';
 }
 function resetWorryTimer(){
   if(_worryTimer){clearInterval(_worryTimer);_worryTimer=null;}
@@ -1783,7 +1783,7 @@ function updateWorryTimerDisplay(){
     const pct=(_worryTotalSecs-_worrySecondsLeft)/_worryTotalSecs;
     ring.style.strokeDashoffset=(pct*97.4).toFixed(1);
     if(_worrySecondsLeft<=60)ring.style.stroke='var(--red)';
-    else ring.style.stroke='var(--amber)';
+    else ring.style.stroke='var(--teal)';
   }
 }
 function finishWorryNotes(){

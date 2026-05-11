@@ -215,9 +215,9 @@ function renderAllTasks(){
   if(snoozedTasks.length){
     let sh=`<div class="simple-tasks-section" style="margin-top:16px;">
       <div class="simple-tasks-header" style="cursor:pointer;" onclick="toggleSnoozedView()">
-        <span class="mi" style="font-size:20px;color:var(--amber);">snooze</span>
+        <span class="mi" style="font-size:20px;color:var(--pink);">snooze</span>
         <span class="simple-tasks-title">Snoozed</span>
-        <span class="badge" style="background:rgba(253,230,138,.15);color:var(--amber);">${snoozedTasks.length}</span>
+        <span class="badge" style="background:rgba(244,114,182,.15);color:var(--pink);">${snoozedTasks.length}</span>
         <span class="swimlane-chevron">${_snoozedCollapsed?'▸':'▾'}</span>
       </div>`;
     if(!_snoozedCollapsed){
@@ -229,7 +229,7 @@ function renderAllTasks(){
           <div class="p-dot ${t.pri}"></div>
           <div class="simple-task-content">
             <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
-            <span style="font-size:9px;color:var(--amber);">⏰ ${label}</span>
+            <span style="font-size:9px;color:var(--pink);">⏰ ${label}</span>
           </div>
           <div class="simple-task-actions">
             <button class="defer-btn" onclick="unsnooze(${t.id})" title="Bring back now">↑ now</button>
@@ -458,7 +458,7 @@ function renderBucketView(){
     quick:{label:'⚡ Easy but annoying',desc:'Quick wins you keep putting off',color:'var(--green)',tasks:[]},
     focus:{label:'🧠 Longer / Focus',desc:'Need a real block of time',color:'var(--purple)',tasks:[]},
     call:{label:'📞 Call-based',desc:'During business hours only',color:'var(--blue)',tasks:[]},
-    errand:{label:'🚗 Errands',desc:'Out-of-house tasks',color:'var(--amber)',tasks:[]},
+    errand:{label:'🚗 Errands',desc:'Out-of-house tasks',color:'var(--teal)',tasks:[]},
     low:{label:'😴 Low energy ok',desc:'Good for wind-down time',color:'var(--dim)',tasks:[]},
     untagged:{label:'📋 Unsorted',desc:'Drag here or tag with an effort type',color:'var(--text)',tasks:[]}
   };
@@ -947,8 +947,8 @@ function renderCalRightTasks(){
     const savedPlan=D.dayPlans&&D.dayPlans[today]||'';
     const defaultText=[(spotPart||''),(priParts||'')].filter(Boolean).join(' · ');
     const planText=savedPlan||defaultText;
-    bannerHtml=`<div style="background:rgba(253,230,138,.07);border:1px solid rgba(253,230,138,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
-      <span style="font-weight:700;color:var(--amber);">Your plan:</span>
+    bannerHtml=`<div style="background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
+      <span style="font-weight:700;color:var(--blue);">Your plan:</span>
       <input type="text" id="todayPlanInput" value="${planText.replace(/"/g,'&quot;')}" placeholder="What's your plan for today?" onchange="if(!D.dayPlans)D.dayPlans={};D.dayPlans[todayStr()]=this.value;save();" style="background:none;border:none;color:var(--text);font-size:10px;font-family:inherit;width:calc(100% - 70px);outline:none;padding:0;">
     </div>`;
   }
@@ -969,7 +969,7 @@ function renderCalRightTasks(){
       isPast:isToday&&endM<=nowMin, isCurrent:isToday&&startM<=nowMin&&endM>nowMin,
       label:slot.text, subtitle:slot.t+(slot.end?' – '+slot.end:'')+(slot.loc?' · '+slot.loc:''),
       toggleAction:`togSlotDone('${dt}','${sid}')`,
-      extraBtn:`<button onclick="event.stopPropagation();slotToTask('${dt}','${sid}')" title="Move to tasks" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1';this.style.color='var(--amber)';this.style.borderColor='var(--amber)';" onmouseleave="this.style.opacity='.5';this.style.color='var(--dim)';this.style.borderColor='var(--dim)';">→ task</button>`,
+      extraBtn:`<button onclick="event.stopPropagation();slotToTask('${dt}','${sid}')" title="Move to tasks" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1';this.style.color='var(--blue)';this.style.borderColor='var(--blue)';" onmouseleave="this.style.opacity='.5';this.style.color='var(--dim)';this.style.borderColor='var(--dim)';">→ task</button>`,
       ctx:''
     }));
   });
@@ -1001,7 +1001,7 @@ function renderCalRightTasks(){
       color:catColor, done:false, isPast:false, isCurrent:false,
       label:emoji+' '+effortTag+t.text, subtitle:'',
       toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
-      extraBtn:`<button onclick="event.stopPropagation();openRemindPicker(event,${t.id})" title="Remind later" style="font-size:10px;border:1px solid var(--amber);border-radius:3px;background:none;color:var(--amber);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.6;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.6'">⏰</button>`
+      extraBtn:`<button onclick="event.stopPropagation();openRemindPicker(event,${t.id})" title="Remind later" style="font-size:10px;border:1px solid var(--pink);border-radius:3px;background:none;color:var(--pink);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.6;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.6'">⏰</button>`
     }));
   });
   doneTasks.forEach(t=>{
@@ -1186,14 +1186,14 @@ function renderCalRightStash(){
 
   // Snoozed reminders sub-section
   if(snoozedTasks.length){
-    html+=`<div style="background:rgba(253,230,138,.06);border:1px solid rgba(253,230,138,.15);border-radius:6px;padding:4px 6px;margin-bottom:6px;">
-      <div style="font-size:8px;font-weight:700;color:var(--amber);margin-bottom:2px;">⏰ ${snoozedToday.length?snoozedToday.length+' reminder'+(snoozedToday.length>1?'s':'')+' coming back today':''}${snoozedToday.length&&(snoozedTasks.length-snoozedToday.length)?' · ':''}${(snoozedTasks.length-snoozedToday.length)?(snoozedTasks.length-snoozedToday.length)+' snoozed':''}</div>`;
+    html+=`<div style="background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.15);border-radius:6px;padding:4px 6px;margin-bottom:6px;">
+      <div style="font-size:8px;font-weight:700;color:var(--pink);margin-bottom:2px;">⏰ ${snoozedToday.length?snoozedToday.length+' reminder'+(snoozedToday.length>1?'s':'')+' coming back today':''}${snoozedToday.length&&(snoozedTasks.length-snoozedToday.length)?' · ':''}${(snoozedTasks.length-snoozedToday.length)?(snoozedTasks.length-snoozedToday.length)+' snoozed':''}</div>`;
     snoozedTasks.slice(0,3).forEach(t=>{
       const cat=D.cats[t.cat];
       const rd=new Date(t.remindAt);
       const timeLabel=rd.toDateString()===new Date().toDateString()?rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):rd.toLocaleDateString([],{month:'short',day:'numeric'});
       html+=`<div style="display:flex;align-items:center;gap:4px;padding:1px 0;font-size:9px;color:var(--dim);">
-        <span>⏰</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</span><span style="font-size:8px;color:var(--amber);">${timeLabel}</span>
+        <span>⏰</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</span><span style="font-size:8px;color:var(--pink);">${timeLabel}</span>
       </div>`;
     });
     if(snoozedTasks.length>3) html+=`<div style="font-size:8px;color:var(--dim);padding-left:14px;">+${snoozedTasks.length-3} more</div>`;
@@ -1727,7 +1727,7 @@ function renderMobileTasks(){
     const catOpts=Object.entries(D.cats||{}).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     let actions='';
     if(section==='today'){
-      actions=`<button onclick="openRemindPicker(event,${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--amber);cursor:pointer;">⏰</button>
+      actions=`<button onclick="openRemindPicker(event,${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--pink);cursor:pointer;">⏰</button>
         <button onclick="deferToTomorrow(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">tmrw</button>
         <button onclick="deferToLater(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">later</button>`;
     } else if(section==='tomorrow'){
