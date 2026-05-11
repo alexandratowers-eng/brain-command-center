@@ -217,7 +217,7 @@ function renderAllTasks(){
       <div class="simple-tasks-header" style="cursor:pointer;" onclick="toggleSnoozedView()">
         <span class="mi" style="font-size:20px;color:var(--amber);">snooze</span>
         <span class="simple-tasks-title">Snoozed</span>
-        <span class="badge" style="background:rgba(180,180,200,.15);color:var(--amber);">${snoozedTasks.length}</span>
+        <span class="badge" style="background:rgba(253,230,138,.15);color:var(--amber);">${snoozedTasks.length}</span>
         <span class="swimlane-chevron">${_snoozedCollapsed?'▸':'▾'}</span>
       </div>`;
     if(!_snoozedCollapsed){
@@ -947,7 +947,7 @@ function renderCalRightTasks(){
     const savedPlan=D.dayPlans&&D.dayPlans[today]||'';
     const defaultText=[(spotPart||''),(priParts||'')].filter(Boolean).join(' · ');
     const planText=savedPlan||defaultText;
-    bannerHtml=`<div style="background:rgba(180,180,200,.07);border:1px solid rgba(180,180,200,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
+    bannerHtml=`<div style="background:rgba(253,230,138,.07);border:1px solid rgba(253,230,138,.18);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:10px;line-height:1.5;">
       <span style="font-weight:700;color:var(--amber);">Your plan:</span>
       <input type="text" id="todayPlanInput" value="${planText.replace(/"/g,'&quot;')}" placeholder="What's your plan for today?" onchange="if(!D.dayPlans)D.dayPlans={};D.dayPlans[todayStr()]=this.value;save();" style="background:none;border:none;color:var(--text);font-size:10px;font-family:inherit;width:calc(100% - 70px);outline:none;padding:0;">
     </div>`;
@@ -1186,7 +1186,7 @@ function renderCalRightStash(){
 
   // Snoozed reminders sub-section
   if(snoozedTasks.length){
-    html+=`<div style="background:rgba(180,180,200,.06);border:1px solid rgba(180,180,200,.15);border-radius:6px;padding:4px 6px;margin-bottom:6px;">
+    html+=`<div style="background:rgba(253,230,138,.06);border:1px solid rgba(253,230,138,.15);border-radius:6px;padding:4px 6px;margin-bottom:6px;">
       <div style="font-size:8px;font-weight:700;color:var(--amber);margin-bottom:2px;">⏰ ${snoozedToday.length?snoozedToday.length+' reminder'+(snoozedToday.length>1?'s':'')+' coming back today':''}${snoozedToday.length&&(snoozedTasks.length-snoozedToday.length)?' · ':''}${(snoozedTasks.length-snoozedToday.length)?(snoozedTasks.length-snoozedToday.length)+' snoozed':''}</div>`;
     snoozedTasks.slice(0,3).forEach(t=>{
       const cat=D.cats[t.cat];
