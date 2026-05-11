@@ -81,7 +81,7 @@ if('serviceWorker' in navigator){
     </div>
     <!-- Tomorrow Preview -->
     <div class="s-card" data-card="tmrw-preview">
-      <div class="s-title" style="color:var(--amber);"><span class="mi" style="font-size:14px;">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('tmrw-preview',this)">▾</button></div>
+      <div class="s-title" style="color:var(--indigo);"><span class="mi" style="font-size:14px;">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('tmrw-preview',this)">▾</button></div>
       <div class="s-body" id="cardBody-tmrw-preview">
         <div id="sidebarTmrwPreview"></div>
       </div>
@@ -227,7 +227,7 @@ if('serviceWorker' in navigator){
         </div>
         <!-- Tomorrow's Plan -->
         <div class="s-card mode-card" data-card="mode">
-          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--amber);">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('mode',this)">▾</button></div>
+          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--indigo);">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('mode',this)">▾</button></div>
           <div class="s-body" id="cardBody-mode">
             <div style="font-size:8px;color:var(--dim);margin-bottom:3px;">Tap to pick a spot</div>
             <div class="mode-options" id="modeOptions"></div>
@@ -235,7 +235,7 @@ if('serviceWorker' in navigator){
               <div style="font-size:9px;color:var(--dim);margin-bottom:3px;">Top priorities for tomorrow</div>
               <div class="mode-pri-input-row">
                 <input type="text" id="modePriInput" class="mode-note-input" placeholder="add a priority..." onkeydown="if(event.key==='Enter')addModePriority()">
-                <button class="distraction-add-btn" onclick="addModePriority()" style="border-color:var(--amber);color:var(--amber);">+</button>
+                <button class="distraction-add-btn" onclick="addModePriority()" style="border-color:var(--indigo);color:var(--indigo);">+</button>
               </div>
               <div id="modePriList"></div>
             </div>

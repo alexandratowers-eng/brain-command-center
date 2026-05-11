@@ -10,9 +10,14 @@ function renderWeeklyGoal(){
       <button class="t-btn" onclick="openWeeklyGoalSetup()" style="font-size:9px;">+ New Tracker</button>`;
     return;
   }
-  const cur=goal.current;
   const lo=goal.rangeLow||20;
   const hi=goal.rangeHigh||40;
+
+  // Count by call type — progress bar tracks recruit only
+  const allSessions=goal.sessions||[];
+  const recruitTotal=allSessions.filter(s=>s.type==='recruit'||!s.type).reduce((a,s)=>a+s.count,0);
+  const followupTotal=allSessions.filter(s=>s.type==='followup').reduce((a,s)=>a+s.count,0);
+  const cur=recruitTotal;
   const pct=Math.min(100,Math.round((cur/hi)*100));
   const loMark=Math.round((lo/hi)*100);
 
@@ -24,35 +29,25 @@ function renderWeeklyGoal(){
   else if(cur>=lo&&cur<=hi){msg='You\'re in the zone! 🎉';msgColor='var(--green)';}
   else{msg='Above and beyond!! 🚀';msgColor='var(--green)';}
 
-  // Count by call type
-  const allSessions=goal.sessions||[];
-  const recruitTotal=allSessions.filter(s=>s.type==='recruit').reduce((a,s)=>a+s.count,0);
-  const followupTotal=allSessions.filter(s=>s.type==='followup').reduce((a,s)=>a+s.count,0);
-  const untypedTotal=allSessions.filter(s=>!s.type).reduce((a,s)=>a+s.count,0);
-
-  // Today's total
+  // Today's total (recruit only for main display)
   const todayS=todayStr();
-  const todaySessions=allSessions.filter(s=>{return s.when&&s.when.startsWith(todayS);});
-  const todayTotal=todaySessions.reduce((a,s)=>a+s.count,0);
+  const todayRecruitSessions=allSessions.filter(s=>(s.type==='recruit'||!s.type)&&s.when&&s.when.startsWith(todayS));
+  const todayRecruit=todayRecruitSessions.reduce((a,s)=>a+s.count,0);
+  const todayFollowup=allSessions.filter(s=>s.type==='followup'&&s.when&&s.when.startsWith(todayS)).reduce((a,s)=>a+s.count,0);
 
-  // Daily breakdown for current week
+  // Daily breakdown for current week (recruit only)
   const weekDates=getWeekDates(todayS);
   const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const dailyCounts=weekDates.map(dt=>{
-    return allSessions.filter(s=>s.when&&s.when.startsWith(dt)).reduce((a,s)=>a+s.count,0);
+    return allSessions.filter(s=>(s.type==='recruit'||!s.type)&&s.when&&s.when.startsWith(dt)).reduce((a,s)=>a+s.count,0);
   });
   const daysElapsed=weekDates.filter(dt=>dt<=todayS).length;
   const dailyAvg=daysElapsed>0?Math.round((cur/daysElapsed)*10)/10:0;
 
-
-  // Breakdown line
-  let breakdownHtml='';
-  if(recruitTotal||followupTotal){
-    const parts=[];
-    if(recruitTotal)parts.push(`<span style="color:var(--blue);">${recruitTotal} new</span>`);
-    if(followupTotal)parts.push(`<span style="color:var(--pink);">${followupTotal} follow-up</span>`);
-    if(untypedTotal)parts.push(`<span style="color:var(--dim);">${untypedTotal} other</span>`);
-    breakdownHtml=`<div style="font-size:8px;margin-bottom:6px;display:flex;gap:6px;align-items:center;">${parts.join('<span style="color:var(--border);">·</span>')}</div>`;
+  // Follow-up line (shown separately, not counted toward goal)
+  let followupHtml='';
+  if(followupTotal){
+    followupHtml=`<div style="font-size:9px;color:var(--rose);margin-bottom:6px;padding:4px 8px;background:rgba(244,114,182,.06);border-radius:5px;display:flex;align-items:center;gap:4px;">🔄 <strong>${followupTotal}</strong> follow-up${followupTotal!==1?'s':''} this week${todayFollowup?` · <span style="color:var(--rose);">${todayFollowup} today</span>`:''}  <span style="font-size:7px;color:var(--dim);margin-left:auto;">(not counted toward goal)</span></div>`;
   }
 
   // Log session inline form
@@ -103,15 +98,17 @@ function renderWeeklyGoal(){
       <span style="font-size:11px;font-weight:600;">${goal.label}</span>
       <span style="font-size:9px;color:var(--dim);cursor:pointer;" onclick="editWeeklyGoal()" title="Edit">✏️</span>
     </div>
-    ${todayTotal?`<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">Today: ${todayTotal} ${goal.unit||'calls'}</div>`:''}
+    ${todayRecruit?`<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">Today: ${todayRecruit} recruit ${goal.unit||'calls'}</div>`:''}
+    <div style="font-size:8px;color:var(--dim);margin-bottom:2px;">📞 Recruit calls <span style="font-weight:600;">(goal: ${lo}–${hi})</span></div>
     <div style="position:relative;height:8px;background:var(--border);border-radius:4px;overflow:visible;margin-bottom:3px;">
       <div style="position:absolute;left:${loMark}%;right:0;top:0;bottom:0;background:rgba(52,211,153,.12);border-radius:0 4px 4px 0;"></div>
       <div style="width:${pct}%;height:100%;background:${cur>=lo?'var(--green)':'var(--blue)'};border-radius:4px;transition:width .4s cubic-bezier(.4,0,.2,1);position:relative;z-index:1;opacity:${cur>=lo?1:0.7};"></div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:4px;">
-      <span style="color:${msgColor};">${cur} done · ${msg}</span>
+      <span style="color:${msgColor};">${cur} recruit · ${msg}</span>
       <span>${lo}–${hi}</span>
     </div>
+    ${followupHtml}
     ${dailyHtml}
     <div style="display:flex;gap:3px;margin-bottom:7px;flex-wrap:wrap;">
       <button class="t-btn" onclick="bumpWeeklyGoal(1)" style="font-size:9px;padding:3px 8px;">+1</button>

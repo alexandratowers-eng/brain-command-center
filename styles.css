@@ -157,7 +157,7 @@ button,input,select,textarea{font-family:inherit;}
 .distraction-del{background:none;border:none;cursor:pointer;font-size:11px;color:var(--dim);padding:0 2px;flex-shrink:0;opacity:.4;transition:opacity .15s;}
 .distraction-del:hover{opacity:1;color:var(--red);}
 /* TOMORROW'S MODE PICKER */
-.mode-card{background:linear-gradient(135deg,rgba(129,140,248,.04),rgba(52,211,153,.04)),var(--card);}
+.mode-card{background:linear-gradient(135deg,rgba(129,140,248,.06),rgba(99,102,241,.03)),var(--card);}
 .spot-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text);font-size:9px;font-weight:500;font-family:inherit;transition:all .15s;white-space:nowrap;}
 .spot-pill:hover{border-color:var(--green);background:rgba(52,211,153,.06);}
 .spot-pill.selected{border-color:var(--green);background:rgba(52,211,153,.15);color:var(--green);font-weight:600;}
