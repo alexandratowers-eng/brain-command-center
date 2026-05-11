@@ -951,6 +951,7 @@ button,input,select,textarea{font-family:inherit;}
 
 /* Note badge on calendar blocks */
 .dv-note-badge{animation:notePulse 2s ease-in-out infinite;}
+.dv-sm-edit:empty::before{content:attr(data-placeholder);opacity:.3;font-style:italic;pointer-events:none;}
 @keyframes notePulse{0%,100%{opacity:1;}50%{opacity:.5;}}
 
 /* Block checklist */

@@ -847,14 +847,14 @@ function renderDayView(){
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
-        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':(s._isMeeting&&!isMeetingBlock({...s,_isMeeting:false})?'<span class="meeting-chop-tag is-meeting" style="background:rgba(253,230,138,.4);color:#78350f;">MTG</span>':'')}${(s.text||'').replace(/</g,'&lt;')}</div>
+        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':(s._isMeeting&&!isMeetingBlock({...s,_isMeeting:false})?'<span class="meeting-chop-tag is-meeting" style="background:rgba(253,230,138,.4);color:#78350f;">MTG</span>':'')}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
       </div>
-      ${heightPx>36?`<div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;">
+      <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;">
         ${s.loc?`<div style="font-size:9px;color:${catColor};opacity:.8;display:flex;align-items:center;gap:2px;"><span class="mi" style="font-size:10px;">location_on</span>${s.loc}</div>`:''}
-        ${s.sm?`<div style="font-size:10px;color:${catColor};opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(s.sm||'').replace(/</g,'&lt;')}</div>`:''}
+        <div class="dv-sm-edit" contenteditable="true" spellcheck="false" data-sid="${sid}" data-dt="${dt}" style="font-size:10px;color:${catColor};opacity:.7;white-space:pre-wrap;word-break:break-word;min-height:14px;outline:none;border-radius:3px;padding:1px 2px;cursor:text;" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();" onfocus="this.style.opacity='1';this.style.background='rgba(255,255,255,.06)';" onblur="this.style.opacity='.7';this.style.background='';dvSmEditSave(this);" data-placeholder="add notes...">${(s.sm||'').replace(/</g,'&lt;')}</div>
         ${itemsHtml}
-      </div>`:''}
+      </div>
       ${heightPx>=30?`<button class="dv-bump-tmrw-btn" onclick="event.preventDefault();event.stopPropagation();sidebarBumpToTomorrow('${dt}',${i});">&rarr; tmrw</button>`:''}
       <div class="dv-resize-handle" data-dt="${dt}" data-sid="${sid}" data-idx="${i}" title="Drag to resize"></div>
     </div>`;
@@ -1040,6 +1040,7 @@ function _slotIdx(tl,sid){return tl.findIndex(s=>String(s._id)===String(sid));}
 function editSlotTime(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].t=val;tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));setTimeline(dt,tl);renderCalendar();}
 function editSlotText(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].text=val.trim()||tl[i].text;setTimeline(dt,tl);}
 function editSlotSm(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].sm=val.trim();setTimeline(dt,tl);}
+function dvSmEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();editSlotSm(dt,sid,val);}
 function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 function removeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl.splice(i,1);setTimeline(dt,tl);renderCalendar();}
 function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const orig=tl[i];const newT=parseMin(orig.t)+30;tl.splice(i+1,0,{t:minToTime(newT),text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});setTimeline(dt,tl);renderCalendar();}
