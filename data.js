@@ -185,7 +185,7 @@ function defaults(){
   return{
     cats:{
       medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
-      chop:{emoji:'🔬',label:'CHOP',color:'#60a5fa'},
+      chop:{emoji:'🔬',label:'CHOP',color:'#fcd34d'},
       mcat:{emoji:'📚',label:'MCAT',color:'#60a5fa'},
       personal:{emoji:'🏠',label:'Personal',color:'#34d399'},
       exercise:{emoji:'🏃',label:'Exercise',color:'#34d399'},
