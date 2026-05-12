@@ -250,13 +250,28 @@ function toggleRec(){
   navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
     mediaRec=new MediaRecorder(stream);audioChunks=[];
     mediaRec.ondataavailable=e=>audioChunks.push(e.data);
-    mediaRec.onstop=()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recStatus').textContent='Done';};
+    mediaRec.onstop=()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recStatus').textContent='Done — use "Copy to Notes" to save your recording';};
     mediaRec.start();btn.textContent='Stop';btn.classList.add('recording');
     document.getElementById('recStatus').textContent='Recording...';
     document.getElementById('recTranscript').style.display='block';
   }).catch(e=>{alert('Mic access needed: '+e.message);});
 }
-function clearRecording(){document.getElementById('transcriptText').textContent='';}
+function copyRecToNotes(){
+  const txt=(document.getElementById('transcriptText').textContent||'').trim();
+  if(!txt){alert('No recording transcript to copy');return;}
+  const notes=document.getElementById('mtgNotes');
+  const prefix=notes.value.trim()?notes.value+'\n\n':'';
+  notes.value=prefix+'## Recording Transcript\n'+txt;
+  saveMeetingNotes();
+  const body=document.getElementById('mtgComposeBody');
+  if(body)body.style.display='block';
+  const chev=document.getElementById('mtgComposeChevron');
+  if(chev)chev.textContent='expand_less';
+  notes.focus();
+  const t=document.getElementById('saveToast');
+  if(t){t.innerHTML='✓ Copied to notes — hit Save when ready';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),2500);}
+}
+function clearRecording(){document.getElementById('transcriptText').textContent='';document.getElementById('recTranscript').style.display='none';document.getElementById('recStatus').textContent='';}
 
 // ===== MEETING NOTES =====
 const MTG_TEMPLATES={
@@ -496,7 +511,19 @@ function renderMtgCalendarView(){
   const today=todayStr();
 
   if(_mtgView==='today'){
-    el.innerHTML=renderMtgDayCard(today,true);
+    const savedToday=(D.meetings||[]).filter(m=>m.date===today);
+    let todayHtml=renderMtgDayCard(today,true);
+    if(savedToday.length){
+      todayHtml+=`<div style="margin-top:12px;"><h4 style="font-size:12px;font-weight:600;color:var(--dim);margin:0 0 6px;display:flex;align-items:center;gap:4px;"><span class="mi" style="font-size:14px;">folder_open</span> Today's Saved Notes</h4>`;
+      todayHtml+=savedToday.map(m=>`<div class="mtg-saved-item" onclick="loadSavedMeeting(${m.id})" style="cursor:pointer;">
+        <span class="mi" style="color:var(--blue);font-size:14px;">description</span>
+        <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.title}</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px;white-space:pre-wrap;max-height:40px;overflow:hidden;">${(m.notes||'').slice(0,120)}${(m.notes||'').length>120?'...':''}</div></div>
+        <button class="task-act-btn" onclick="event.stopPropagation();deleteMeeting(${m.id});" title="Delete">x</button>
+      </div>`).join('');
+      todayHtml+=`</div>`;
+    }
+    el.innerHTML=todayHtml;
   } else if(_mtgView==='week'){
     const dates=getWeekDates(today);
     let html='';

@@ -359,7 +359,10 @@ if('serviceWorker' in navigator){
         </div>
         <div id="recTranscript" style="display:none;margin-bottom:12px;">
           <div class="transcript-box" id="transcriptText"></div>
-          <div style="display:flex;gap:6px;margin-top:6px;"><button class="t-btn" onclick="clearRecording()" style="font-size:10px;">Clear Recording</button></div>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <button class="t-btn primary" onclick="copyRecToNotes()" style="font-size:10px;"><span class="mi" style="font-size:13px;">content_paste</span> Copy to Notes</button>
+            <button class="t-btn" onclick="clearRecording()" style="font-size:10px;">Clear</button>
+          </div>
         </div>
 
         <!-- MEETINGS CALENDAR VIEW TABS -->
@@ -379,9 +382,9 @@ if('serviceWorker' in navigator){
             <h3 style="font-size:13px;margin:0;display:flex;align-items:center;gap:6px;">
               <span class="mi" style="color:var(--blue);font-size:16px;">edit_note</span> New Meeting Note
             </h3>
-            <span class="mi mtg-compose-chevron" id="mtgComposeChevron" style="font-size:18px;color:var(--dim);transition:transform .2s;">expand_more</span>
+            <span class="mi mtg-compose-chevron" id="mtgComposeChevron" style="font-size:18px;color:var(--dim);transition:transform .2s;">expand_less</span>
           </div>
-          <div id="mtgComposeBody">
+          <div id="mtgComposeBody" style="display:block;">
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
               <button class="t-btn" onclick="loadMeetingTpl('1on1')" style="font-size:10px;"><span class="mi" style="font-size:13px;">groups</span> 1:1 Check-in</button>
               <button class="t-btn" onclick="loadMeetingTpl('research')" style="font-size:10px;"><span class="mi" style="font-size:13px;">biotech</span> Research Meeting</button>
