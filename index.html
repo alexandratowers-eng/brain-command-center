@@ -358,10 +358,12 @@ if('serviceWorker' in navigator){
           </div>
         </div>
         <div id="recTranscript" style="display:none;margin-bottom:12px;">
-          <div class="transcript-box" id="transcriptText"></div>
-          <div style="display:flex;gap:6px;margin-top:6px;">
-            <button class="t-btn primary" onclick="copyRecToNotes()" style="font-size:10px;"><span class="mi" style="font-size:13px;">content_paste</span> Copy to Notes</button>
-            <button class="t-btn" onclick="clearRecording()" style="font-size:10px;">Clear</button>
+          <div style="font-size:10px;color:var(--dim);margin-bottom:4px;display:flex;align-items:center;gap:4px;"><span class="mi" style="font-size:12px;">subtitles</span> Live Transcript</div>
+          <div class="transcript-box" id="transcriptText" style="min-height:100px;"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+            <button class="t-btn primary" onclick="saveRecDirect()" style="font-size:10px;"><span class="mi" style="font-size:13px;">save</span> Save Now</button>
+            <button class="t-btn" onclick="saveRecToNotes()" style="font-size:10px;"><span class="mi" style="font-size:13px;">edit_note</span> Add to Notes Below</button>
+            <button class="t-btn" onclick="clearRecording()" style="font-size:10px;">Discard</button>
           </div>
         </div>
 

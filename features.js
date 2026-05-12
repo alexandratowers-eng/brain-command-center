@@ -242,36 +242,99 @@ function renderMcat(){
   }).join('');
 }
 
-// ===== RECORDER =====
-let mediaRec=null,audioChunks=[];
+// ===== RECORDER (live speech-to-text) =====
+let _recog=null,_recogRunning=false,_recogTranscript='';
 function toggleRec(){
   const btn=document.getElementById('recBtn');
-  if(mediaRec&&mediaRec.state==='recording'){mediaRec.stop();btn.textContent='Start Recording';btn.classList.remove('recording');return;}
-  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-    mediaRec=new MediaRecorder(stream);audioChunks=[];
-    mediaRec.ondataavailable=e=>audioChunks.push(e.data);
-    mediaRec.onstop=()=>{stream.getTracks().forEach(t=>t.stop());document.getElementById('recStatus').textContent='Done — use "Copy to Notes" to save your recording';};
-    mediaRec.start();btn.textContent='Stop';btn.classList.add('recording');
-    document.getElementById('recStatus').textContent='Recording...';
-    document.getElementById('recTranscript').style.display='block';
-  }).catch(e=>{alert('Mic access needed: '+e.message);});
+  const status=document.getElementById('recStatus');
+  const panel=document.getElementById('recTranscript');
+  const box=document.getElementById('transcriptText');
+  if(_recogRunning){stopRec();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Speech recognition not supported in this browser. Try Chrome.');return;}
+  _recog=new SR();
+  _recog.continuous=true;
+  _recog.interimResults=true;
+  _recog.lang='en-US';
+  _recogTranscript='';
+  _recog.onresult=(e)=>{
+    let interim='',final='';
+    for(let i=0;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)final+=t+' ';
+      else interim+=t;
+    }
+    _recogTranscript=final.trim();
+    box.textContent=_recogTranscript+(interim?' '+interim:'');
+  };
+  _recog.onerror=(e)=>{
+    if(e.error==='no-speech')return;
+    status.textContent='Error: '+e.error;
+  };
+  _recog.onend=()=>{
+    if(_recogRunning){_recog.start();}
+  };
+  _recog.start();
+  _recogRunning=true;
+  btn.innerHTML='<span class="mi" style="font-size:13px;vertical-align:middle;color:var(--red);">stop_circle</span> Stop';
+  btn.classList.add('recording');
+  status.textContent='Listening...';
+  panel.style.display='block';
+  box.textContent='';
 }
-function copyRecToNotes(){
+function stopRec(){
+  _recogRunning=false;
+  if(_recog)_recog.stop();
+  const btn=document.getElementById('recBtn');
+  btn.innerHTML='<span class="mi" style="font-size:13px;vertical-align:middle;">mic</span> Record';
+  btn.classList.remove('recording');
+  const status=document.getElementById('recStatus');
+  const txt=_recogTranscript.trim();
+  if(txt){
+    status.textContent='Done — click "Save to Notes" below';
+  } else {
+    status.textContent='No speech detected. Try again.';
+  }
+}
+function saveRecToNotes(){
   const txt=(document.getElementById('transcriptText').textContent||'').trim();
-  if(!txt){alert('No recording transcript to copy');return;}
+  if(!txt){alert('No transcript to save — try recording again');return;}
   const notes=document.getElementById('mtgNotes');
   const prefix=notes.value.trim()?notes.value+'\n\n':'';
   notes.value=prefix+'## Recording Transcript\n'+txt;
+  const titleEl=document.getElementById('mtgTitle');
+  if(!titleEl.value.trim())titleEl.value='Meeting Notes';
+  const dateEl=document.getElementById('mtgDate');
+  if(!dateEl.value)dateEl.value=todayStr();
   saveMeetingNotes();
   const body=document.getElementById('mtgComposeBody');
   if(body)body.style.display='block';
   const chev=document.getElementById('mtgComposeChevron');
   if(chev)chev.textContent='expand_less';
   notes.focus();
+  document.getElementById('recTranscript').style.display='none';
+  document.getElementById('recStatus').textContent='✓ Transcript added to notes below';
   const t=document.getElementById('saveToast');
-  if(t){t.innerHTML='✓ Copied to notes — hit Save when ready';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),2500);}
+  if(t){t.innerHTML='✓ Transcript added — hit Save to keep it';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),3000);}
 }
-function clearRecording(){document.getElementById('transcriptText').textContent='';document.getElementById('recTranscript').style.display='none';document.getElementById('recStatus').textContent='';}
+function saveRecDirect(){
+  const txt=(document.getElementById('transcriptText').textContent||'').trim();
+  if(!txt){alert('No transcript to save — try recording again');return;}
+  if(!D.meetings)D.meetings=[];
+  D.meetings.unshift({id:Date.now(),title:'Meeting Recording',date:todayStr(),notes:'## Recording Transcript\n'+txt,notionSynced:false});
+  save();renderSavedMeetings();renderMtgCalendarView();
+  document.getElementById('recTranscript').style.display='none';
+  document.getElementById('recStatus').textContent='';
+  celebrate();
+  const t=document.getElementById('saveToast');
+  if(t){t.innerHTML='✓ Saved!';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),2000);}
+}
+function clearRecording(){
+  document.getElementById('transcriptText').textContent='';
+  document.getElementById('recTranscript').style.display='none';
+  document.getElementById('recStatus').textContent='';
+  _recogTranscript='';
+}
 
 // ===== MEETING NOTES =====
 const MTG_TEMPLATES={
@@ -424,15 +487,17 @@ function saveMeetingToList(){
   const title=document.getElementById('mtgTitle').value.trim()||'Untitled Meeting';
   const date=document.getElementById('mtgDate').value||todayStr();
   const notes=document.getElementById('mtgNotes').value;
-  if(!notes.trim()){alert('Nothing to save');return;}
+  if(!notes.trim()&&!title.trim()){alert('Add a title or notes first');return;}
   if(!D.meetings)D.meetings=[];
-  D.meetings.unshift({id:Date.now(),title,date,notes,notionSynced:false});
+  D.meetings.unshift({id:Date.now(),title,date,notes:notes||'(no notes)',notionSynced:false});
   save();renderSavedMeetings();renderMtgCalendarView();
   document.getElementById('mtgTitle').value='';
   document.getElementById('mtgDate').value='';
   document.getElementById('mtgNotes').value='';
   D._mtgDraft=null;save();
   celebrate();
+  const t=document.getElementById('saveToast');
+  if(t){t.innerHTML=`✓ "${title}" saved`;t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),2000);}
 }
 
 function markForNotion(id){
@@ -514,13 +579,23 @@ function renderMtgCalendarView(){
     const savedToday=(D.meetings||[]).filter(m=>m.date===today);
     let todayHtml=renderMtgDayCard(today,true);
     if(savedToday.length){
-      todayHtml+=`<div style="margin-top:12px;"><h4 style="font-size:12px;font-weight:600;color:var(--dim);margin:0 0 6px;display:flex;align-items:center;gap:4px;"><span class="mi" style="font-size:14px;">folder_open</span> Today's Saved Notes</h4>`;
-      todayHtml+=savedToday.map(m=>`<div class="mtg-saved-item" onclick="loadSavedMeeting(${m.id})" style="cursor:pointer;">
-        <span class="mi" style="color:var(--blue);font-size:14px;">description</span>
-        <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.title}</div>
-        <div style="font-size:10px;color:var(--dim);margin-top:2px;white-space:pre-wrap;max-height:40px;overflow:hidden;">${(m.notes||'').slice(0,120)}${(m.notes||'').length>120?'...':''}</div></div>
-        <button class="task-act-btn" onclick="event.stopPropagation();deleteMeeting(${m.id});" title="Delete">x</button>
-      </div>`).join('');
+      todayHtml+=`<div style="margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <span class="mi" style="font-size:15px;color:var(--blue);">folder_open</span>
+          <span style="font-size:12px;font-weight:700;">Today's Saved Notes</span>
+          <span class="badge" style="margin-left:4px;">${savedToday.length}</span>
+        </div>`;
+      todayHtml+=savedToday.map(m=>{
+        const preview=(m.notes||'').replace(/^#+\s*/gm,'').replace(/\*\*/g,'').trim().slice(0,150);
+        return `<div class="mtg-saved-item" onclick="loadSavedMeeting(${m.id})" style="margin:4px 6px;cursor:pointer;">
+          <span class="mi" style="color:var(--blue);font-size:16px;flex-shrink:0;">description</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.title||'Untitled'}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${preview}${preview.length>=150?'...':''}</div>
+          </div>
+          <button class="task-act-btn" onclick="event.stopPropagation();deleteMeeting(${m.id});" title="Delete" style="flex-shrink:0;">×</button>
+        </div>`;
+      }).join('');
       todayHtml+=`</div>`;
     }
     el.innerHTML=todayHtml;
