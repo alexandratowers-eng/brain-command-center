@@ -242,7 +242,7 @@ function renderAllTasks(){
   }
 
   // --- PARKED / LATER section: undated tasks + parking items + backlog ---
-  const laterTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&(!t.date||t.date>today)&&!isSnoozed(t)).sort((a,b)=>priOrd[a.pri]-priOrd[b.pri]);
+  const laterTasks=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&(!t.date||t.date>today)&&!isSnoozed(t)).sort((a,b)=>(b.id||0)-(a.id||0));
   const laterDone=D.tasks.filter(t=>t.done&&t.cat!=='braindump'&&(!t.date||t.date>today));
   const parked=D.parkingItems||[];
   const backlog=D.backlog||[];
@@ -1138,7 +1138,7 @@ function renderCalRightBacklog(){renderCalRightStash();}
 function renderCalRightStash(){
   const el=document.getElementById('calRightStashList');if(!el)return;
   const today=todayStr();
-  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t));
+  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)).sort((a,b)=>(b.id||0)-(a.id||0));
   const parked=D.parkingItems||[];
   const backlog=D.backlog||[];
   const total=laterTasks.length+parked.length+backlog.length;
