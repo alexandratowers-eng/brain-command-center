@@ -1078,12 +1078,12 @@ function generateCoachSuggestions(){
     const priDot=t.pri==='high'?`<span style="width:5px;height:5px;border-radius:50%;background:var(--rose);display:inline-block;flex-shrink:0;margin-right:2px;" title="High priority"></span>`:'';
 
     html+=`<div style="margin-bottom:4px;">
-      <div class="coach-suggestion" onclick="coachAddBlock('${t.cat}',${mainDur},'${safe}')">
+      <div class="coach-suggestion" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" onclick="coachAddBlock('${t.cat}',${mainDur},'${safe}')">
         <span class="coach-s-icon">${emoji}</span>
         <span class="coach-s-text">${priDot}${shortText}</span>
         <button class="coach-s-btn" style="border-color:${catColor};color:${catColor};" onclick="event.stopPropagation();coachAddBlock('${t.cat}',${mainDur},'${safe}')">${mainLabel}</button>
       </div>${backupHtml}
-      <div style="display:flex;align-items:center;gap:4px;margin-top:2px;padding-left:22px;">
+      <div style="display:flex;align-items:center;gap:3px;margin-top:2px;padding-left:22px;flex-wrap:wrap;">
         <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();coachSnooze(${t.id});generateCoachSuggestions();">⏰ later</button>
         <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToTomorrow(${t.id});generateCoachSuggestions();if(typeof renderMiniCal==='function')renderMiniCal();">→ tmrw</button>
         <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToLater(${t.id});generateCoachSuggestions();">→ stash</button>

@@ -848,7 +848,7 @@ function renderDayView(){
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
-        <div class="dv-main-input dv-drag-input" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':(s._isMeeting&&!isMeetingBlock({...s,_isMeeting:false})?'<span class="meeting-chop-tag is-meeting" style="background:rgba(253,230,138,.4);color:#78350f;">MTG</span>':'')}${(s.text||'').replace(/</g,'&lt;')}</div>
+        <div class="dv-main-input dv-drag-input" contenteditable="true" spellcheck="false" data-sid="${sid}" data-dt="${dt}" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;outline:none;border-radius:3px;padding:0 2px;" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){event.preventDefault();this.blur();}" onfocus="this.style.cursor='text';this.style.background='rgba(255,255,255,.06)';" onblur="this.style.cursor='grab';this.style.background='';dvTitleEditSave(this);">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':(s._isMeeting&&!isMeetingBlock({...s,_isMeeting:false})?'<span class="meeting-chop-tag is-meeting" style="background:rgba(253,230,138,.4);color:#78350f;">MTG</span>':'')}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:1px;overflow:visible;flex:1;">
@@ -883,7 +883,7 @@ function renderDayView(){
       const color=cat?cat.color:'var(--blue)';
       const isOD=t._overdue;
       const hideStyle=idx>=SHOW_INIT&&hasMore?'display:none;':'';
-      html+=`<div class="task-rem-row" style="${hideStyle}display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
+      html+=`<div class="task-rem-row" draggable="true" data-task-id="${t.id}" style="${hideStyle}display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);cursor:grab;" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';">
         <div style="width:4px;height:4px;border-radius:50%;background:${isOD?'var(--red)':color};flex-shrink:0;"></div>
         ${isOD?'<span style="font-size:7px;color:var(--red);font-weight:700;flex-shrink:0;">OVERDUE</span>':''}
         <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
@@ -1076,6 +1076,7 @@ function editSlotTime(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,s
 function editSlotText(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].text=val.trim()||tl[i].text;setTimeline(dt,tl);}
 function editSlotSm(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].sm=val.trim();setTimeline(dt,tl);}
 function dvSmEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();editSlotSm(dt,sid,val);}
+function dvTitleEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();if(!val)return;const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;if(tl[i].text===val)return;tl[i].text=val;setTimeline(dt,tl);}
 function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 function removeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl.splice(i,1);setTimeline(dt,tl);renderCalendar();}
 function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const orig=tl[i];const newT=parseMin(orig.t)+30;tl.splice(i+1,0,{t:minToTime(newT),text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});setTimeline(dt,tl);renderCalendar();}
@@ -1409,23 +1410,54 @@ function initGridClick(){
     const totalMin=Math.floor(y/rowH)*60+Math.round((y%rowH)/rowH*60/15)*15;
     return startHr*60+totalMin;
   };
+  // Drop tasks onto the grid to create blocks
+  grid.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
+  grid.addEventListener('drop',e=>{
+    e.preventDefault();
+    const data=e.dataTransfer.getData('text/plain');
+    if(!data||!data.startsWith('task:'))return;
+    const taskId=parseInt(data.split(':')[1]);
+    const task=D.tasks.find(x=>x.id===taskId);
+    if(!task)return;
+    const mins=calcMins(e);
+    const dt=grid.dataset.dt;
+    if(!dt||mins<7*60||mins>=24*60)return;
+    const tl=getTimeline(dt)||[];
+    const t=minToTime(mins);
+    const endTime=minToTime(mins+30);
+    let idx=tl.length;
+    for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>mins){idx=j;break;}}
+    tl.splice(idx,0,{t,text:task.text,cls:task.cat||'personal',sm:'',loc:'',end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+    setTimeline(dt,tl);
+    task.done=true;
+    save();
+    renderCalendar();
+    if(typeof renderCalRightTasks==='function')renderCalRightTasks();
+  });
   grid.addEventListener('click',e=>{
     const block=e.target.closest('.dv-block');
-    if(!block)return;
-    if(block.classList.contains('loc-only'))return;
-    if(block._wasDragged){block._wasDragged=false;return;}
-    if(e.target.closest('input,button,label'))return;
-    e.stopPropagation();
-    const dt=block.dataset.dt;
-    const idx=parseInt(block.dataset.idx);
-    const tl=getTimeline(dt);
-    const slot=tl[idx];
-    if(slot&&slot.text&&slot.text.includes('Review parked')&&typeof openParkingReview==='function'){
-      openParkingReview();
-    } else if(slot){
-      const mins=parseMin(slot.t);
-      openDvPopover(e,dt,null,mins,idx);
+    if(block){
+      if(block.classList.contains('loc-only'))return;
+      if(block._wasDragged){block._wasDragged=false;return;}
+      if(e.target.closest('input,button,label,[contenteditable]'))return;
+      e.stopPropagation();
+      const dt=block.dataset.dt;
+      const idx=parseInt(block.dataset.idx);
+      const tl=getTimeline(dt);
+      const slot=tl[idx];
+      if(slot&&slot.text&&slot.text.includes('Review parked')&&typeof openParkingReview==='function'){
+        openParkingReview();
+      } else if(slot){
+        const mins=parseMin(slot.t);
+        openDvPopover(e,dt,null,mins,idx);
+      }
+      return;
     }
+    // Single-click on empty grid area → new block
+    if(_gridDragCreated){_gridDragCreated=false;return;}
+    const mins=calcMins(e);
+    const dt=grid.dataset.dt;
+    if(mins>=7*60&&mins<24*60&&dt)openDvPopover(e,dt,null,mins);
   });
   grid.addEventListener('contextmenu',e=>{
     const block=e.target.closest('.dv-block');

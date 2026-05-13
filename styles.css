@@ -133,11 +133,11 @@ button,input,select,textarea{font-family:inherit;}
 /* ADHD COACH */
 .coach-card{background:linear-gradient(135deg,rgba(52,211,153,.06),rgba(192,132,252,.06)),var(--card);}
 :root.light .coach-card{background:linear-gradient(135deg,rgba(4,120,87,.04),rgba(124,58,237,.04)),var(--card);}
-.coach-suggestion{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;margin-bottom:1px;min-width:0;}
+.coach-suggestion{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:6px;cursor:grab;transition:all .15s;border:1px solid transparent;margin-bottom:1px;min-width:0;}
 .coach-suggestion:hover{background:rgba(96,165,250,.06);border-color:rgba(96,165,250,.15);}
-.coach-s-icon{font-size:13px;flex-shrink:0;}
-.coach-s-text{font-size:10px;flex:1;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-.coach-s-btn{font-size:8px;padding:2px 6px;border-radius:4px;border:1px solid var(--green);background:transparent;color:var(--green);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;font-family:inherit;}
+.coach-s-icon{font-size:12px;flex-shrink:0;}
+.coach-s-text{font-size:10px;flex:1;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.coach-s-btn{font-size:7px;padding:2px 5px;border-radius:4px;border:1px solid var(--green);background:transparent;color:var(--green);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;font-family:inherit;}
 .coach-s-btn:hover{background:var(--green);color:white;}
 .breathe-circle{width:50px;height:50px;border-radius:50%;background:var(--blue);margin:8px auto;transition:transform 4s ease-in-out,background 2s ease;opacity:.7;}
 /* DISTRACTIONS / PARKING LOT */
