@@ -230,6 +230,10 @@ function setTimeline(dt,tl){D.days[dt]=tl;save();}
 function autoAddWin(text,dt){
   if(!text)return;
   if(!dt)dt=todayStr();
+  // Skip if already tracked as a completed block or task (avoids duplicate wins)
+  const isCompletedBlock=(D.days[dt]||[]).some(s=>s.done&&s.text===text);
+  const isCompletedTask=(D.tasks||[]).some(t=>t.date===dt&&t.done&&t.text===text);
+  if(isCompletedBlock||isCompletedTask)return;
   if(!D.reflections)D.reflections={};
   if(!D.reflections[dt])D.reflections[dt]={};
   if(!D.reflections[dt].manualWins)D.reflections[dt].manualWins=[];

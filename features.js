@@ -1090,6 +1090,45 @@ function generateCoachSuggestions(){
     </div>`;
   }
 
+  // Time-sensitive tasks: calls, tasks with "by Xpm" in text, or effort=call
+  const timeSensitive=pendingTasks.filter(t=>{
+    if(t.effort==='call')return true;
+    if(/\b(call|phone|text|email|send|submit)\b/i.test(t.text))return true;
+    if(/\bbefore\s+\d/i.test(t.text)||/\bby\s+\d/i.test(t.text))return true;
+    return false;
+  });
+  const urgentNotShown=timeSensitive.filter(t=>!pendingTasks.slice(0,shown).includes(t));
+  if(urgentNotShown.length){
+    const u=urgentNotShown[0];
+    const cat=D.cats[u.cat];
+    const emoji=cat?.emoji||'📞';
+    const color=cat?.color||'var(--blue)';
+    const safeU=u.text.replace(/'/g,"\\'");
+    const shortU=u.text.length>35?u.text.slice(0,35)+'…':u.text;
+    html+=`<div style="margin-top:4px;padding:5px 8px;background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.2);border-radius:8px;">
+      <div style="font-size:8px;color:var(--rose);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;">⏰ Time-sensitive</div>
+      <div class="coach-suggestion" onclick="coachAddBlock('${u.cat}',15,'${safeU}')">
+        <span class="coach-s-icon">${emoji}</span>
+        <span class="coach-s-text">${shortU}</span>
+        <button class="coach-s-btn" style="border-color:${color};color:${color};font-size:8px;" onclick="event.stopPropagation();coachAddBlock('${u.cat}',15,'${safeU}')">Do now</button>
+      </div>
+    </div>`;
+  }
+
+  // Surface a random undated task from the stash
+  if(laterPool.length&&shown<2){
+    const rand=laterPool[Math.floor(Math.random()*laterPool.length)];
+    const cat=D.cats[rand.cat];
+    const emoji=cat?.emoji||'📌';
+    const safeR=rand.text.replace(/'/g,"\\'");
+    const shortR=rand.text.length>30?rand.text.slice(0,30)+'…':rand.text;
+    html+=`<div style="margin-top:4px;font-size:9px;color:var(--dim);display:flex;align-items:center;gap:4px;padding:3px 4px;">
+      <span>${emoji}</span>
+      <span style="flex:1;">From stash: <em>${shortR}</em></span>
+      <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${rand.id}).date=todayStr();save();generateCoachSuggestions();if(typeof renderCalRightTasks==='function')renderCalRightTasks();">→ today</button>
+    </div>`;
+  }
+
   const eMsg=energy>=4?'Good energy today':energy<=2?'Low energy — start small':'Steady — one thing at a time';
   el.innerHTML=`<div style="font-size:9px;color:var(--dim);margin-bottom:6px;padding:0 4px;">${eMsg} · <b style="color:var(--indigo);">${pendingTasks.length}</b> left</div>${html}`;
 }
