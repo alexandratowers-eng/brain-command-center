@@ -931,7 +931,8 @@ function renderCalRightTasks(){
     const bgColor=opts.done?'background:rgba(52,211,153,.04);':'';
     const checkFill=opts.done?`background:${opts.color};color:#fff;`:`background:none;color:${opts.color};`;
     const subtitle=opts.subtitle||'';
-    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);${bgColor}" ${opts.ctx||''}>
+    const dragAttr=opts.taskId&&!opts.done?`draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${opts.taskId});event.dataTransfer.effectAllowed='move';this.style.opacity='.3';" ondragend="this.style.opacity='${opacity}';" style="cursor:grab;`:'style="';
+    return `<div ${dragAttr}display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);${bgColor}" ${opts.ctx||''}>
       <button onclick="event.stopPropagation();${opts.toggleAction}" style="${checkFill}border:1.5px solid ${opts.color};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;padding:0;">${opts.done?'✓':''}</button>
       ${currentDot}
       <div style="flex:1;min-width:0;">
@@ -1005,7 +1006,7 @@ function renderCalRightTasks(){
     const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
     allTaskBlocks.push(renderBlock({
       color:catColor, done:false, isPast:false, isCurrent:false,
-      label:emoji+' '+effortTag+t.text, subtitle:'',
+      label:emoji+' '+effortTag+t.text, subtitle:'', taskId:t.id,
       toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
       extraBtn:`<button onclick="event.stopPropagation();openRemindPicker(event,${t.id})" title="Remind later" style="font-size:10px;border:1px solid var(--pink);border-radius:3px;background:none;color:var(--pink);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.6;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.6'">⏰</button>`
     }));
@@ -1160,7 +1161,7 @@ function renderCalRightStash(){
 
   laterTasks.forEach(t=>{
     const cat=D.cats[t.cat];
-    allItems.push({sort:0,html:`<div class="task-item" style="padding:3px 0;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+    allItems.push({sort:0,html:`<div class="task-item" style="padding:3px 0;cursor:grab;" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
       <div class="p-dot ${t.pri}"></div>
       <input type="checkbox" onchange="togTask(${t.id},this)">
       <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</div>
