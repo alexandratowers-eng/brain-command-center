@@ -1084,8 +1084,9 @@ function generateCoachSuggestions(){
         <button class="coach-s-btn" style="border-color:${catColor};color:${catColor};" onclick="event.stopPropagation();coachAddBlock('${t.cat}',${mainDur},'${safe}')">${mainLabel}</button>
       </div>${backupHtml}
       <div style="display:flex;align-items:center;gap:4px;margin-top:2px;padding-left:22px;">
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();coachSnooze(${t.id});generateCoachSuggestions();">⏰ later</button>
         <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToTomorrow(${t.id});generateCoachSuggestions();if(typeof renderMiniCal==='function')renderMiniCal();">→ tmrw</button>
-        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToLater(${t.id});generateCoachSuggestions();">→ later</button>
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToLater(${t.id});generateCoachSuggestions();">→ stash</button>
       </div>
     </div>`;
   }
@@ -1111,6 +1112,10 @@ function generateCoachSuggestions(){
         <span class="coach-s-icon">${emoji}</span>
         <span class="coach-s-text">${shortU}</span>
         <button class="coach-s-btn" style="border-color:${color};color:${color};font-size:8px;" onclick="event.stopPropagation();coachAddBlock('${u.cat}',15,'${safeU}')">Do now</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:2px;padding-left:22px;">
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();deferToTomorrow(${u.id});generateCoachSuggestions();">→ tmrw</button>
+        <button class="coach-s-btn" style="font-size:7px;border-color:var(--dim);color:var(--dim);" onclick="event.stopPropagation();coachSnooze(${u.id});generateCoachSuggestions();">⏰ later today</button>
       </div>
     </div>`;
   }

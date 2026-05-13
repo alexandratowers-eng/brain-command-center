@@ -83,6 +83,12 @@ function deferToLater(id){
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📌 Moved to Stash';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
 }
+const _coachSnoozed={};
+function coachSnooze(id){
+  _coachSnoozed[id]=Date.now()+2*60*60*1000;
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Snoozed 2 hrs';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
+}
+function isSnoozed(t){return _coachSnoozed[t.id]&&Date.now()<_coachSnoozed[t.id];}
 function laterToToday(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.date=todayStr();

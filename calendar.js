@@ -13,7 +13,7 @@ function getBlockColor(slot){
   if(slot.cls==='_todo')return '#60a5fa';
   const cat=D.cats[slot.cls];
   if(cat)return cat.color;
-  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#eab308':'#fde68a';
+  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#ca8a04':'#fbbf24';
   return 'var(--blue)';
 }
 
@@ -864,35 +864,36 @@ function renderDayView(){
 
   html+=`</div>`;
 
-  // Task reminders below calendar
-  const dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done);
-  const overdueTasks=D.tasks.filter(t=>t.date&&t.date<dt&&!t.done);
-  if(dayTasks.length||overdueTasks.length){
+  // Task reminders below calendar — collapsible, newest first
+  const dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
+  const overdueTasks=D.tasks.filter(t=>t.date&&t.date<dt&&!t.done).sort((a,b)=>b.id-a.id);
+  const allReminders=[...overdueTasks.map(t=>({...t,_overdue:true})),...dayTasks];
+  if(allReminders.length){
+    const SHOW_INIT=3;
+    const hasMore=allReminders.length>SHOW_INIT;
+    const uid='taskRem_'+Date.now();
     html+=`<div style="margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">`;
-    if(overdueTasks.length){
-      html+=`<div style="font-size:9px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">⏰ Overdue (${overdueTasks.length})</div>`;
-      overdueTasks.forEach(t=>{
-        const cat=D.cats[t.cat];
-        const color=cat?cat.color:'var(--blue)';
-        html+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
-          <div style="width:4px;height:4px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
-          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).date='${dt}';save();renderCalendar();">→ today</button>
-          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();">✓</button>
-        </div>`;
-      });
-    }
-    if(dayTasks.length){
-      html+=`<div style="font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px;margin:${overdueTasks.length?'8px':'0'} 0 6px;">📋 Tasks for today (${dayTasks.length})</div>`;
-      dayTasks.forEach(t=>{
-        const cat=D.cats[t.cat];
-        const color=cat?cat.color:'var(--blue)';
-        html+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
-          <div style="width:4px;height:4px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
-          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();">✓</button>
-        </div>`;
-      });
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;cursor:pointer;" onclick="const c=document.getElementById('${uid}');const b=this.querySelector('.t-expand');if(c.dataset.open==='1'){c.style.maxHeight=c.dataset.initH+'px';c.style.overflow='hidden';c.dataset.open='0';b.textContent='▾ '+(${allReminders.length}-${SHOW_INIT})+' more';}else{c.style.maxHeight='none';c.style.overflow='visible';c.dataset.open='1';b.textContent='▴ less';}">
+      <span style="font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px;">📋 Tasks (${allReminders.length})</span>
+      ${hasMore?`<span class="t-expand" style="font-size:8px;color:var(--dim);cursor:pointer;">▾ ${allReminders.length-SHOW_INIT} more</span>`:''}
+    </div>`;
+    html+=`<div id="${uid}" data-open="0">`;
+    allReminders.forEach((t,idx)=>{
+      const cat=D.cats[t.cat];
+      const color=cat?cat.color:'var(--blue)';
+      const isOD=t._overdue;
+      const hideStyle=idx>=SHOW_INIT&&hasMore?'display:none;':'';
+      html+=`<div class="task-rem-row" style="${hideStyle}display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
+        <div style="width:4px;height:4px;border-radius:50%;background:${isOD?'var(--red)':color};flex-shrink:0;"></div>
+        ${isOD?'<span style="font-size:7px;color:var(--red);font-weight:700;flex-shrink:0;">OVERDUE</span>':''}
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
+        ${isOD?`<button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).date='${dt}';save();renderCalendar();">→ today</button>`:''}
+        <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();">✓</button>
+      </div>`;
+    });
+    html+=`</div>`;
+    if(hasMore){
+      html+=`<script>(function(){var c=document.getElementById('${uid}');if(!c)return;var rows=c.querySelectorAll('.task-rem-row');var h=0;for(var i=0;i<Math.min(${SHOW_INIT},rows.length);i++)h+=rows[i].offsetHeight;c.dataset.initH=h;c.style.maxHeight=h+'px';c.style.overflow='hidden';for(var j=${SHOW_INIT};j<rows.length;j++)rows[j].style.display='';})();</script>`;
     }
     html+=`</div>`;
   }
