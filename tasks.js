@@ -1165,6 +1165,7 @@ function renderCalRightStash(){
       <div class="p-dot ${t.pri}"></div>
       <input type="checkbox" onchange="togTask(${t.id},this)">
       <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</div>
+      <button class="defer-btn" onclick="stashSetDate(${t.id})" title="Set date" style="font-size:9px;">📅</button>
       <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today" style="font-size:9px;">→ today</button>
     </div>`});
   });
@@ -1269,21 +1270,77 @@ function schedParkingReview(){
   if(toast){toast.innerHTML='📌 Review block added for '+label+' at 2 PM';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2500);}
 }
 function autoParkingReview(){
-  const stashCount=(D.parkingItems||[]).length+(D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump')).length;
+  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
+  const stashCount=(D.parkingItems||[]).length+laterTasks.length;
   if(!stashCount)return;
-  const today=new Date();
-  if(today.getDay()!==5)return;
   const dt=todayStr();
-  const tl=getTimeline(dt)||[];
-  if(tl.some(s=>s.text&&s.text.includes('Review stash')||s.text&&s.text.includes('Review parked')))return;
   const lastReview=D._lastParkingReview||'';
   if(lastReview===dt)return;
   D._lastParkingReview=dt;
-  const startMin=14*60;
-  let idx=tl.length;
-  for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>startMin){idx=j;break;}}
-  tl.splice(idx,0,{t:'2:00 PM',text:'📌 Review stash ('+stashCount+' items)',cls:'braindump',sm:'Weekly check — promote, delete, or defer',end:'2:30 PM'});
-  setTimeline(dt,tl);save();
+  // Show a small daily check-in with 3-5 random stash items
+  openDailyStashCheckin();
+}
+function openDailyStashCheckin(){
+  const old=document.getElementById('dailyStashCheckin');if(old)old.remove();
+  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
+  const parked=D.parkingItems||[];
+  const all=[...laterTasks.map(t=>({type:'task',item:t})),...parked.map(p=>({type:'parked',item:p}))];
+  if(!all.length)return;
+  // Shuffle and pick up to 4
+  for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+  const batch=all.slice(0,4);
+  const modal=document.createElement('div');
+  modal.id='dailyStashCheckin';
+  modal.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);';
+  let itemsHtml=batch.map(b=>{
+    if(b.type==='task'){
+      const t=b.item;const cat=D.cats[t.cat];
+      return `<div class="stash-checkin-row" style="display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:13px;">${cat?cat.emoji:'📋'}</span>
+        <span style="flex:1;font-size:12px;">${t.text}</span>
+        <div style="display:flex;gap:3px;flex-shrink:0;">
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;border-color:var(--green);color:var(--green);" onclick="laterToToday(${t.id});this.closest('.stash-checkin-row').style.opacity='.3';this.closest('.stash-checkin-row').style.pointerEvents='none';">→ today</button>
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="stashSetDate(${t.id});this.closest('.stash-checkin-row').style.opacity='.3';this.closest('.stash-checkin-row').style.pointerEvents='none';">📅 date</button>
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;border-color:var(--red);color:var(--red);" onclick="dropLaterTask(${t.id});this.closest('.stash-checkin-row').style.opacity='.3';this.closest('.stash-checkin-row').style.pointerEvents='none';">✕</button>
+        </div>
+      </div>`;
+    } else {
+      const p=b.item;
+      return `<div class="stash-checkin-row" style="display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:13px;">📌</span>
+        <span style="flex:1;font-size:12px;">${p.text}</span>
+        <div style="display:flex;gap:3px;flex-shrink:0;">
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="promoteParkingItem(${p.id});this.closest('.stash-checkin-row').style.opacity='.3';this.closest('.stash-checkin-row').style.pointerEvents='none';">↑ task</button>
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;border-color:var(--red);color:var(--red);" onclick="removeParkingItem(${p.id});this.closest('.stash-checkin-row').style.opacity='.3';this.closest('.stash-checkin-row').style.pointerEvents='none';">✕</button>
+        </div>
+      </div>`;
+    }
+  }).join('');
+  const remaining=all.length-batch.length;
+  modal.innerHTML=`<div style="background:var(--card);border-radius:12px;padding:20px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:15px;">📌 Daily Stash Check-in</h3>
+      <button onclick="document.getElementById('dailyStashCheckin').remove()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;">✕</button>
+    </div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:10px;">Here are a few items from your stash. Pull to today, pick a date, or drop.</div>
+    ${itemsHtml}
+    ${remaining>0?`<div style="font-size:9px;color:var(--dim);text-align:center;padding:6px 0;">${remaining} more in stash</div>`:''}
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;">
+      <button onclick="openParkingReview();document.getElementById('dailyStashCheckin').remove();" class="t-btn" style="padding:5px 12px;font-size:10px;">See all</button>
+      <button onclick="document.getElementById('dailyStashCheckin').remove()" class="t-btn" style="padding:5px 12px;font-size:10px;border-color:var(--green);color:var(--green);">Done</button>
+    </div>
+  </div>`;
+  modal.onclick=(e)=>{if(e.target===modal)modal.remove();};
+  document.body.appendChild(modal);
+}
+function stashSetDate(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const dt=prompt('Set date (YYYY-MM-DD):',todayStr());
+  if(!dt||!/^\d{4}-\d{2}-\d{2}$/.test(dt))return;
+  t.date=dt;
+  save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
+  if(typeof renderCalRightStash==='function')renderCalRightStash();
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📅 Scheduled for '+dt;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
 }
 function openParkingReview(){
   const old=document.getElementById('parkingReviewModal');if(old)old.remove();
@@ -1301,6 +1358,7 @@ function openParkingReview(){
       <span style="font-size:12px;">${cat?cat.emoji:'📋'}</span>
       <span style="flex:1;font-size:12px;">${t.text}</span>
       <button onclick="laterToToday(${t.id});openParkingReview();" class="t-btn" style="font-size:9px;padding:2px 6px;border-color:var(--green);color:var(--green);">→ today</button>
+      <button onclick="stashSetDate(${t.id});openParkingReview();" class="t-btn" style="font-size:9px;padding:2px 6px;">📅 date</button>
       <button onclick="dropLaterTask(${t.id});openParkingReview();" class="t-btn" style="font-size:9px;padding:2px 6px;border-color:var(--red);color:var(--red);">✕ drop</button>
     </div>`;
   }).join(''):'<div style="font-size:11px;color:var(--dim);padding:8px 0;">None</div>';
