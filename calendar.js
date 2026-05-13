@@ -728,14 +728,15 @@ function renderDayView(){
   const startHr=7,endHr=24;
   const ROW_H=56;
 
+  const dayTitle=isToday?'Today — '+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   let html=`<div class="dv-header">
     <div class="dv-nav">
       <button onclick="navDay(-1)">&lt;</button>
     </div>
-    <h2>${d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</h2>
+    <h2>${dayTitle}</h2>
     <div class="dv-nav">
       <button onclick="navDay(1)">&gt;</button>
-      <button onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
+      ${!isToday?`<button onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
     <button class="ics-btn" onclick="exportICS()" style="margin-left:auto;">Export .ics</button>
   </div>`;
@@ -862,6 +863,39 @@ function renderDayView(){
   });
 
   html+=`</div>`;
+
+  // Task reminders below calendar
+  const dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done);
+  const overdueTasks=D.tasks.filter(t=>t.date&&t.date<dt&&!t.done);
+  if(dayTasks.length||overdueTasks.length){
+    html+=`<div style="margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">`;
+    if(overdueTasks.length){
+      html+=`<div style="font-size:9px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">⏰ Overdue (${overdueTasks.length})</div>`;
+      overdueTasks.forEach(t=>{
+        const cat=D.cats[t.cat];
+        const color=cat?cat.color:'var(--blue)';
+        html+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
+          <div style="width:4px;height:4px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).date='${dt}';save();renderCalendar();">→ today</button>
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();">✓</button>
+        </div>`;
+      });
+    }
+    if(dayTasks.length){
+      html+=`<div style="font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px;margin:${overdueTasks.length?'8px':'0'} 0 6px;">📋 Tasks for today (${dayTasks.length})</div>`;
+      dayTasks.forEach(t=>{
+        const cat=D.cats[t.cat];
+        const color=cat?cat.color:'var(--blue)';
+        html+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
+          <div style="width:4px;height:4px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
+          <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();">✓</button>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  }
 
   // Bottom toolbar
   if(tl.length){
@@ -2092,7 +2126,14 @@ function renderSidebarTmrw(){
 function sidebarBumpToToday(fromDt,idx){
   const fromTl=getTimeline(fromDt);
   if(idx<0||idx>=fromTl.length)return;
-  const slot=fromTl.splice(idx,1)[0];
+  const slot=fromTl[idx];
+  const timeStr=prompt('Move "'+slot.text+'" to today at what time?\n(e.g. 2pm, 1:30pm, or press Cancel to keep '+slot.t+')');
+  if(timeStr===null)return;
+  if(timeStr.trim()){
+    const parsed=parseTimeStr(timeStr.trim().replace(/\s+/g,'').replace(/(\d)(am|pm)/i,'$1 $2'));
+    if(parsed!==null){slot.t=minToTime(parsed);if(slot.end){const dur=parseMin(slot.end)-parseMin(slot.t);slot.end=minToTime(parsed+(dur>0?dur:30));}}
+  }
+  fromTl.splice(idx,1);
   setTimeline(fromDt,fromTl);
   const today=todayStr();
   const toTl=getTimeline(today)||[];
