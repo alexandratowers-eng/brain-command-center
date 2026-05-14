@@ -768,6 +768,28 @@ function renderDayView(){
   </div>`;
 
 
+  // Task strip — pinned above calendar grid, always visible
+  const _dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
+  const _overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<dt&&!t.done).sort((a,b)=>b.id-a.id):[];
+  const _allTasks=[..._overdueTasks.map(t=>({...t,_overdue:true})),..._dayTasks];
+  if(_allTasks.length){
+    html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:6px 8px;background:var(--card);border:1px solid var(--border);border-radius:8px;">`;
+    _allTasks.forEach(t=>{
+      const cat=D.cats[t.cat];
+      const color=cat?cat.color:'var(--blue)';
+      const emoji=cat?cat.emoji:'📋';
+      const isOD=t._overdue;
+      const short=t.text.length>28?t.text.slice(0,28)+'…':t.text;
+      html+=`<div draggable="true" data-task-id="${t.id}" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${color}18;border:1px solid ${color}40;border-radius:6px;font-size:10px;cursor:grab;max-width:220px;${isOD?'border-left:3px solid var(--red);':''}">
+        <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${short}</span>
+        <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
+        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();" title="Done">✓</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
   // Outlook-style hour grid — always visible, blocks overlay
   const totalH=(endHr-startHr)*ROW_H;
   html+=`<div class="dv-grid-wrap" data-dt="${dt}" data-starthr="${startHr}" data-rowh="${ROW_H}" style="position:relative;min-height:${totalH}px;border:1px solid var(--border);border-radius:10px;overflow:visible;background:var(--card);">`;
@@ -863,40 +885,6 @@ function renderDayView(){
   });
 
   html+=`</div>`;
-
-  // Task reminders below calendar — collapsible, newest first
-  const dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
-  const overdueTasks=D.tasks.filter(t=>t.date&&t.date<dt&&!t.done).sort((a,b)=>b.id-a.id);
-  const allReminders=[...overdueTasks.map(t=>({...t,_overdue:true})),...dayTasks];
-  if(allReminders.length){
-    const SHOW_INIT=3;
-    const hasMore=allReminders.length>SHOW_INIT;
-    const uid='taskRem_'+Date.now();
-    html+=`<div style="margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">`;
-    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;cursor:pointer;" onclick="const c=document.getElementById('${uid}');const b=this.querySelector('.t-expand');if(c.dataset.open==='1'){c.style.maxHeight=c.dataset.initH+'px';c.style.overflow='hidden';c.dataset.open='0';b.textContent='▾ '+(${allReminders.length}-${SHOW_INIT})+' more';}else{c.style.maxHeight='none';c.style.overflow='visible';c.dataset.open='1';b.textContent='▴ less';}">
-      <span style="font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px;">📋 Tasks (${allReminders.length})</span>
-      ${hasMore?`<span class="t-expand" style="font-size:8px;color:var(--dim);cursor:pointer;">▾ ${allReminders.length-SHOW_INIT} more</span>`:''}
-    </div>`;
-    html+=`<div id="${uid}" data-open="0">`;
-    allReminders.forEach((t,idx)=>{
-      const cat=D.cats[t.cat];
-      const color=cat?cat.color:'var(--blue)';
-      const isOD=t._overdue;
-      const hideStyle=idx>=SHOW_INIT&&hasMore?'display:none;':'';
-      html+=`<div class="task-rem-row" draggable="true" data-task-id="${t.id}" style="${hideStyle}display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);cursor:grab;" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';">
-        <div style="width:4px;height:4px;border-radius:50%;background:${isOD?'var(--red)':color};flex-shrink:0;"></div>
-        ${isOD?'<span style="font-size:7px;color:var(--red);font-weight:700;flex-shrink:0;">OVERDUE</span>':''}
-        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(t.text||'').replace(/</g,'&lt;')}</span>
-        ${isOD?`<button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).date='${dt}';save();renderCalendar();">→ today</button>`:''}
-        <button class="t-btn" style="font-size:8px;padding:2px 6px;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();">✓</button>
-      </div>`;
-    });
-    html+=`</div>`;
-    if(hasMore){
-      html+=`<script>(function(){var c=document.getElementById('${uid}');if(!c)return;var rows=c.querySelectorAll('.task-rem-row');var h=0;for(var i=0;i<Math.min(${SHOW_INIT},rows.length);i++)h+=rows[i].offsetHeight;c.dataset.initH=h;c.style.maxHeight=h+'px';c.style.overflow='hidden';for(var j=${SHOW_INIT};j<rows.length;j++)rows[j].style.display='';})();</script>`;
-    }
-    html+=`</div>`;
-  }
 
   // Bottom toolbar
   if(tl.length){
@@ -1075,6 +1063,29 @@ function _slotIdx(tl,sid){return tl.findIndex(s=>String(s._id)===String(sid));}
 function editSlotTime(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].t=val;tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));setTimeline(dt,tl);renderCalendar();}
 function editSlotText(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].text=val.trim()||tl[i].text;setTimeline(dt,tl);}
 function editSlotSm(dt,sid,val){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl[i].sm=val.trim();setTimeline(dt,tl);}
+function taskToBlock(taskId,dt){
+  const task=D.tasks.find(x=>x.id===taskId);if(!task)return;
+  const tl=getTimeline(dt)||[];
+  const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();
+  let startMin=Math.ceil(nowMin/15)*15;
+  if(dt!==todayStr())startMin=9*60;
+  // Find next free 30-min slot
+  for(let attempt=0;attempt<48;attempt++){
+    const endMin=startMin+30;
+    const conflict=tl.some(s=>{const a=parseMin(s.t);const b=s.end?parseMin(s.end):a+60;return a<endMin&&b>startMin;});
+    if(!conflict)break;
+    startMin+=15;
+  }
+  if(startMin+30>23*60+45)startMin=23*60;
+  const t=minToTime(startMin);
+  const endTime=minToTime(startMin+30);
+  let idx=tl.length;
+  for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>startMin){idx=j;break;}}
+  tl.splice(idx,0,{t,text:task.text,cls:task.cat||'personal',sm:'',loc:'',end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+  setTimeline(dt,tl);
+  task.done=true;save();
+  renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();
+}
 function dvSmEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();editSlotSm(dt,sid,val);}
 function dvTitleEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();if(!val)return;const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;if(tl[i].text===val)return;tl[i].text=val;setTimeline(dt,tl);}
 function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
