@@ -61,8 +61,19 @@ window.SyncEngine=(function(){
       const localModified=(local&&local._localModifiedAt)?local._localModifiedAt:0;
       if(remoteTs>localTs){
         if(localModified>localTs){
-          setStatus('idle','Synced ✓ (local changes pending push)');
-          scheduleSync();
+          // Both sides changed — merge tasks and days rather than losing one side
+          const merged=mergeData(local,remote);
+          merged._syncedAt=Date.now();
+          delete merged._localModifiedAt;
+          localStorage.setItem(SK,JSON.stringify(merged));
+          if(typeof D!=='undefined'&&typeof load==='function'){
+            const restored=load();
+            Object.keys(D).forEach(k=>delete D[k]);
+            Object.assign(D,restored);
+            if(typeof renderAll==='function')renderAll();
+          }
+          await gistPut(cfg,merged);
+          setStatus('idle','Synced ✓ merged '+new Date().toLocaleTimeString());
         } else {
           localStorage.setItem(SK,JSON.stringify(remote));
           if(typeof D!=='undefined'&&typeof load==='function'){
@@ -73,6 +84,9 @@ window.SyncEngine=(function(){
           }
           setStatus('idle','Synced ✓ pulled '+new Date(remoteTs).toLocaleTimeString());
         }
+      } else if(localModified&&localModified>localTs){
+        scheduleSync();
+        setStatus('idle','Synced ✓ (push pending)');
       } else {
         setStatus('idle','Synced ✓');
       }
@@ -106,6 +120,88 @@ window.SyncEngine=(function(){
       setStatus('error','Cloud save failed: '+e.message);
       window.addEventListener('online',()=>push(),{once:true});
     }
+  }
+
+  function mergeData(local,remote){
+    // Start with remote as base, merge in local additions
+    const merged=JSON.parse(JSON.stringify(remote));
+    // Merge tasks: keep all unique tasks by ID, prefer done=true
+    if(local.tasks&&merged.tasks){
+      const byId={};
+      merged.tasks.forEach(t=>byId[t.id]=t);
+      local.tasks.forEach(t=>{
+        if(!byId[t.id]){byId[t.id]=t;}
+        else if(t.done&&!byId[t.id].done){byId[t.id].done=true;}
+        else if(t.date&&!byId[t.id].date){byId[t.id].date=t.date;}
+      });
+      merged.tasks=Object.values(byId);
+    }
+    // Merge days: union blocks by _id
+    if(local.days){
+      Object.keys(local.days).forEach(dt=>{
+        if(!merged.days[dt]){merged.days[dt]=local.days[dt];return;}
+        const remoteIds=new Set((merged.days[dt]||[]).map(s=>s._id).filter(Boolean));
+        (local.days[dt]||[]).forEach(s=>{
+          if(s._id&&!remoteIds.has(s._id))merged.days[dt].push(s);
+        });
+      });
+    }
+    // Merge reflections
+    if(local.reflections){
+      Object.keys(local.reflections).forEach(dt=>{
+        if(!merged.reflections)merged.reflections={};
+        if(!merged.reflections[dt]){merged.reflections[dt]=local.reflections[dt];return;}
+        const lr=local.reflections[dt];const mr=merged.reflections[dt];
+        if(lr.manualWins&&mr.manualWins){
+          const set=new Set(mr.manualWins);
+          lr.manualWins.forEach(w=>{if(!set.has(w))mr.manualWins.push(w);});
+        } else if(lr.manualWins){mr.manualWins=lr.manualWins;}
+      });
+    }
+    // Merge parkingItems
+    if(local.parkingItems&&merged.parkingItems){
+      const ids=new Set(merged.parkingItems.map(p=>p.id));
+      local.parkingItems.forEach(p=>{if(!ids.has(p.id))merged.parkingItems.push(p);});
+    }
+    // Keep higher nextId
+    if(local.nextId>merged.nextId)merged.nextId=local.nextId;
+    return merged;
+  }
+
+  async function forcePull(){
+    const cfg=getConfig();if(!cfg){alert('Sync not connected. Tap the cloud icon to set up.');return;}
+    setStatus('syncing','Force pulling...');
+    try{
+      const remote=await gistGet(cfg);
+      if(!remote){setStatus('error','Nothing in cloud');return;}
+      localStorage.setItem(SK,JSON.stringify(remote));
+      if(typeof D!=='undefined'&&typeof load==='function'){
+        const restored=load();
+        Object.keys(D).forEach(k=>delete D[k]);
+        Object.assign(D,restored);
+        if(typeof renderAll==='function')renderAll();
+      }
+      setStatus('idle','Synced ✓ force pulled');
+      const toast=document.getElementById('saveToast');
+      if(toast){toast.innerHTML='☁️ Pulled from cloud!';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000);}
+    }catch(e){setStatus('error','Pull failed: '+e.message);}
+  }
+
+  async function forcePush(){
+    const cfg=getConfig();if(!cfg){alert('Sync not connected.');return;}
+    setStatus('syncing','Force pushing...');
+    try{
+      const raw=localStorage.getItem(SK);if(!raw)return;
+      const payload=JSON.parse(raw);
+      payload._syncedAt=Date.now();
+      delete payload._localModifiedAt;
+      localStorage.setItem(SK,JSON.stringify(payload));
+      if(typeof D!=='undefined'){D._syncedAt=payload._syncedAt;delete D._localModifiedAt;}
+      await gistPut(cfg,payload);
+      setStatus('idle','Synced ✓ force pushed');
+      const toast=document.getElementById('saveToast');
+      if(toast){toast.innerHTML='☁️ Pushed to cloud!';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000);}
+    }catch(e){setStatus('error','Push failed: '+e.message);}
   }
 
   function showPairingModal(){
@@ -168,7 +264,21 @@ window.SyncEngine=(function(){
     const cfg=getConfig();
     const el=document.getElementById('syncStatusBtn');
     if(el)el.addEventListener('click',()=>{
-      if(_state==='error'||_state==='disabled')showPairingModal();
+      if(_state==='error'||_state==='disabled'){showPairingModal();return;}
+      // Show sync menu
+      const old=document.getElementById('syncMenu');if(old)old.remove();
+      const m=document.createElement('div');m.id='syncMenu';
+      const r=el.getBoundingClientRect();
+      m.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+4}px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:140px;`;
+      m.innerHTML=`
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.pull();">☁️ Pull from cloud</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.push();">⬆️ Push to cloud</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.forcePull();">⬇️ Force pull (overwrite local)</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.forcePush();">⬆️ Force push (overwrite cloud)</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.showPairingModal();">🔧 Change token</button>`;
+      document.body.appendChild(m);
+      const dismiss=ev=>{if(!m.contains(ev.target)&&ev.target!==el){m.remove();document.removeEventListener('mousedown',dismiss);}};
+      setTimeout(()=>document.addEventListener('mousedown',dismiss),10);
     });
     if(!cfg){
       setStatus('disabled','Tap to connect sync');
@@ -181,5 +291,5 @@ window.SyncEngine=(function(){
     });
   }
 
-  return{init,scheduleSync,pull,push,showPairingModal,completePairing};
+  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing};
 })();
