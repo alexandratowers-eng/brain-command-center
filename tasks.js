@@ -932,7 +932,7 @@ function renderCalRightTasks(){
     const checkFill=opts.done?`background:${opts.color};color:#fff;`:`background:none;color:${opts.color};`;
     const subtitle=opts.subtitle||'';
     const dragAttr=opts.taskId&&!opts.done?`draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${opts.taskId});event.dataTransfer.effectAllowed='move';this.style.opacity='.3';" ondragend="this.style.opacity='${opacity}';" style="cursor:grab;`:'style="';
-    return `<div ${dragAttr}display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);${bgColor}" ${opts.ctx||''}>
+    return `<div ${dragAttr}display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);${bgColor}" title="${(opts.fullText||opts.label||'').replace(/"/g,'&quot;')}" ${opts.ctx||''}>
       <button onclick="event.stopPropagation();${opts.toggleAction}" style="${checkFill}border:1.5px solid ${opts.color};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;padding:0;">${opts.done?'✓':''}</button>
       ${currentDot}
       <div style="flex:1;min-width:0;">
@@ -1006,7 +1006,7 @@ function renderCalRightTasks(){
     const effortTag=t.effort&&EFFORT_TAGS[t.effort]?EFFORT_TAGS[t.effort].emoji+' ':'';
     allTaskBlocks.push(renderBlock({
       color:catColor, done:false, isPast:false, isCurrent:false,
-      label:emoji+' '+effortTag+t.text, subtitle:'', taskId:t.id,
+      label:(t.urgent?'⚡ ':'')+emoji+' '+effortTag+t.text, fullText:t.text, subtitle:'', taskId:t.id,
       toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
       extraBtn:`<button onclick="event.stopPropagation();openRemindPicker(event,${t.id})" title="Remind later" style="font-size:10px;border:1px solid var(--pink);border-radius:3px;background:none;color:var(--pink);cursor:pointer;padding:1px 4px;flex-shrink:0;opacity:.6;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.6'">⏰</button>`
     }));
@@ -1145,7 +1145,7 @@ function renderCalRightBacklog(){renderCalRightStash();}
 function renderCalRightStash(){
   const el=document.getElementById('calRightStashList');if(!el)return;
   const today=todayStr();
-  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)).sort((a,b)=>(b.id||0)-(a.id||0));
+  const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)||(b.id||0)-(a.id||0));
   const parked=D.parkingItems||[];
   const backlog=D.backlog||[];
   const total=laterTasks.length+parked.length+backlog.length;
@@ -1154,7 +1154,7 @@ function renderCalRightStash(){
   const totalWithSnoozed=total+snoozedTasks.length;
   const badge=document.getElementById('calRightStashBadge');
   if(badge){badge.textContent=totalWithSnoozed;badge.classList.toggle('stash-pulse',totalWithSnoozed>5);}
-  if(!total&&!snoozedTasks.length){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing parked — your mind is clear</p>';return;}
+  if(!total&&!snoozedTasks.length){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Queue is clear — nice!</p>';return;}
 
   const STASH_LIMIT=6;
   const allItems=[];
@@ -1164,7 +1164,7 @@ function renderCalRightStash(){
     allItems.push({sort:0,html:`<div class="task-item" style="padding:3px 0;cursor:grab;" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
       <div class="p-dot ${t.pri}"></div>
       <input type="checkbox" onchange="togTask(${t.id},this)">
-      <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</div>
+      <div class="t-label" style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${t.text}">${t.urgent?'⚡ ':''}${cat?cat.emoji:''} ${t.text}</div>
       <button class="defer-btn" onclick="stashSetDate(${t.id})" title="Set date" style="font-size:9px;">📅</button>
       <button class="defer-btn" onclick="laterToToday(${t.id})" title="Pull to today" style="font-size:9px;">→ today</button>
     </div>`});
@@ -1218,12 +1218,12 @@ function renderCalRightStash(){
 
   html+=allItems.slice(0,STASH_LIMIT).map(i=>i.html).join('');
   if(allItems.length>STASH_LIMIT){
-    html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">Show all ${allItems.length} items</button>`;
+    html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">See ${allItems.length-STASH_LIMIT} more</button>`;
     html+=`<div id="stashOverflow" style="display:none;">${allItems.slice(STASH_LIMIT).map(i=>i.html).join('')}</div>`;
   }
 
   // Review Stash button
-  html+=`<button class="t-btn" onclick="openParkingReview()" style="font-size:9px;width:100%;margin-top:6px;border-color:var(--purple);color:var(--purple);">📋 Review Stash</button>`;
+  html+=`<button class="t-btn" onclick="openParkingReview()" style="font-size:9px;width:100%;margin-top:6px;border-color:var(--purple);color:var(--purple);">📋 Review Queue</button>`;
 
   el.innerHTML=html;
 }
@@ -1521,6 +1521,9 @@ function openTaskCtx(e,id){
     <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();openEdit(${id});">
       <span class="mi" style="font-size:14px;">edit</span> Edit
     </button>
+    <button class="wk-ctx-btn" onclick="const _t=D.tasks.find(x=>x.id===${id});if(_t){_t.urgent=!_t.urgent;save();renderAll();}document.getElementById('taskCtxMenu').remove();">
+      <span class="mi" style="font-size:14px;color:var(--red);">bolt</span> ${t.urgent?'Un-mark ASAP':'Mark ASAP ⚡'}
+    </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();openRemindPicker(event,${id});">
       <span class="mi" style="font-size:14px;">snooze</span> Remind later
     </button>
@@ -1528,7 +1531,7 @@ function openTaskCtx(e,id){
       <span class="mi" style="font-size:14px;">arrow_forward</span> Move to tomorrow
     </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();deferToLater(${id});">
-      <span class="mi" style="font-size:14px;">inventory_2</span> Move to Stash
+      <span class="mi" style="font-size:14px;">inventory_2</span> Move to Queue
     </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('taskCtxMenu').remove();delTask(${id});" style="color:var(--red);">
       <span class="mi" style="font-size:14px;">delete</span> Delete

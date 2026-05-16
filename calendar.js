@@ -3,17 +3,21 @@ function isMeetingBlock(slot){
   if(!slot||!slot.text)return false;
   if(slot._isMeeting)return true;
   const lc=slot.text.toLowerCase();
-  return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar|chop|tpp|debrief|consult)\b/i.test(lc);
+  return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar|debrief|consult)\b/i.test(lc);
 }
 function getBlockColor(slot){
   if(slot.cls==='deadline')return '#ef4444';
-  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#0d9488':'#14b8a6';
   if(slot.cls==='focus')return '#a78bfa';
   if(slot.cls==='_task')return '#f87171';
   if(slot.cls==='_todo')return '#60a5fa';
   const cat=D.cats[slot.cls];
   if(cat)return cat.color;
   return 'var(--blue)';
+}
+
+function expandTaskChip(el){
+  if(el._expanded){el.textContent=el.dataset.short;el.style.whiteSpace='nowrap';el.style.maxWidth='180px';el._expanded=false;}
+  else{el.textContent=el.dataset.full;el.style.whiteSpace='normal';el.style.maxWidth='none';el._expanded=true;}
 }
 
 // ===== QUICK-ADD AGENT =====
@@ -311,7 +315,7 @@ function renderWeekView(){
       const cells=el.querySelectorAll(`.wk-cell[data-date="${dt}"][data-hour="${startM>=60?Math.floor(startM/60):startHr}"]`);
       // Instead, position absolutely within the grid
       const block=document.createElement('div');
-      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${!D.cats[slot.cls]&&isMeetingBlock(slot)?'is-meeting':''}`;
+      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
       block.style.cssText=`grid-row:${cellRow+1};grid-column:${colIdx};top:${offsetPx}px;height:${durationPx}px;`;
       block.innerHTML=`${slot.text}${slot.sm?`<div class="wk-block-sub">${slot.sm}</div>`:''}`;
       block.title=`${slot.t} - ${slot.text}`;
@@ -397,7 +401,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
       if(!slot._id){slot._id='s'+Date.now()+'_'+i;}
       const sid=slot._id;
       const block=document.createElement('div');
-      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${!D.cats[slot.cls]&&isMeetingBlock(slot)?'is-meeting':''}`;
+      block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
       if(slot._locOnly){
         // loc-only: slim strip at left edge of this day column, behind events
         const stripLeft=`calc(52px + ${colIdx} * (100% - 54px) / 7 + 1px)`;
@@ -426,9 +430,9 @@ function renderWeekBlocks(container, dates, startHr, endHr){
           ?'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;'
           :`overflow:hidden;font-weight:700;display:-webkit-box;-webkit-line-clamp:${maxLines};-webkit-box-orient:vertical;word-break:break-word;`;
         const doneBtn=heightPx>=24?`<span class="wk-done-btn" title="${slot.done?'Mark not done':'Mark done'}" style="position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:6px;opacity:.5;z-index:10;flex-shrink:0;">${slot.done?'✓':''}</span>`:'';
-        const _isChopMtg=isMeetingBlock(slot)&&(slot.cls==='chop'||/\bchop\b/i.test(slot.text||''));
-        const _chopTag=_isChopMtg?'<span class="meeting-chop-tag">CHOP</span>':'';
-        block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${_chopTag}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
+        const _isMtg=isMeetingBlock(slot);
+        const _mtgTag=_isMtg?'<span class="meeting-chop-tag">Meeting</span>':'';
+        block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${_mtgTag}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
         block.title=`${slot.t} - ${slot.text}${slot.loc?' @ '+slot.loc:''}${_wkHasNote?' (has notes)':''}`;
       }
       block.oncontextmenu=(e)=>{e.preventDefault();e.stopPropagation();if(!slot._locOnly)openWkBlockMenu(e,dt,i);};
@@ -778,10 +782,13 @@ function renderDayView(){
       const color=cat?cat.color:'var(--blue)';
       const emoji=cat?cat.emoji:'📋';
       const isOD=t._overdue;
-      const short=t.text.length>28?t.text.slice(0,28)+'…':t.text;
-      html+=`<div draggable="true" data-task-id="${t.id}" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${color}18;border:1px solid ${color}40;border-radius:6px;font-size:10px;cursor:grab;max-width:220px;${isOD?'border-left:3px solid var(--red);':''}">
+      const needsTrunc=t.text.length>28;
+      const short=needsTrunc?t.text.slice(0,28)+'…':t.text;
+      const urgentBadge=t.urgent?'<span style="color:var(--red);font-size:9px;flex-shrink:0;">⚡</span>':'';
+      html+=`<div draggable="true" data-task-id="${t.id}" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" title="${t.text.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${color}18;border:1px solid ${color}40;border-radius:6px;font-size:10px;cursor:grab;${isOD?'border-left:3px solid var(--red);':''}">
         <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${short}</span>
+        ${urgentBadge}
+        <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
         <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
         <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();" title="Done">✓</button>
       </div>`;
@@ -869,7 +876,7 @@ function renderDayView(){
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
-        <div class="dv-main-input dv-drag-input" contenteditable="true" spellcheck="false" data-sid="${sid}" data-dt="${dt}" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;outline:none;border-radius:3px;padding:0 2px;" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){event.preventDefault();this.blur();}" onfocus="this.style.cursor='text';this.style.background='rgba(255,255,255,.06)';" onblur="this.style.cursor='grab';this.style.background='';dvTitleEditSave(this);">${(isMeetingBlock(s)&&(s.cls==='chop'||/\bchop\b/i.test(s.text||'')))?'<span class="meeting-chop-tag is-meeting">CHOP</span>':(s._isMeeting&&!isMeetingBlock({...s,_isMeeting:false})?'<span class="meeting-chop-tag is-meeting" style="background:rgba(253,230,138,.4);color:#78350f;">MTG</span>':'')}${(s.text||'').replace(/</g,'&lt;')}</div>
+        <div class="dv-main-input dv-drag-input" contenteditable="true" spellcheck="false" data-sid="${sid}" data-dt="${dt}" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;outline:none;border-radius:3px;padding:0 2px;" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){event.preventDefault();this.blur();}" onfocus="this.style.cursor='text';this.style.background='rgba(255,255,255,.06)';" onblur="this.style.cursor='grab';this.style.background='';dvTitleEditSave(this);">${isMeetingBlock(s)?'<span class="meeting-chop-tag">Meeting</span>':''}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:1px;overflow:visible;flex:1;">
