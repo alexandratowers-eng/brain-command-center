@@ -1,4 +1,4 @@
-const CACHE='bcc-v19';
+const CACHE='bcc-v21';
 const ASSETS=[
   './',
   './index.html',
@@ -25,11 +25,21 @@ self.addEventListener('activate',e=>{
 
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-  e.respondWith(
-    fetch(e.request).then(resp=>{
-      const clone=resp.clone();
-      caches.open(CACHE).then(c=>c.put(e.request,clone));
-      return resp;
-    }).catch(()=>caches.match(e.request))
-  );
+  const url=new URL(e.request.url);
+  const isAsset=/\.(html|js|css|json)(\?.*)?$/.test(url.pathname)||url.pathname.endsWith('/');
+  if(isAsset){
+    e.respondWith(
+      fetch(e.request,{cache:'no-store'}).then(resp=>{
+        const clone=resp.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,clone));
+        return resp;
+      }).catch(()=>caches.match(e.request))
+    );
+  } else {
+    e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request)));
+  }
+});
+
+self.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();
 });

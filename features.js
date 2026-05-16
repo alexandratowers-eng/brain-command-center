@@ -98,7 +98,7 @@ function renderWeeklyGoal(){
       <span style="font-size:11px;font-weight:600;">${goal.label}</span>
       <span style="font-size:9px;color:var(--dim);cursor:pointer;" onclick="editWeeklyGoal()" title="Edit">✏️</span>
     </div>
-    ${todayRecruit?`<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">Today: ${todayRecruit}</div>`:''}
+    ${''/* today count removed for simplicity */}
     <div style="font-size:8px;color:var(--dim);margin-bottom:2px;">📞 Recruit <span style="font-weight:600;">${lo}–${hi}</span></div>
     <div style="position:relative;height:8px;background:var(--border);border-radius:4px;overflow:visible;margin-bottom:3px;">
       <div style="position:absolute;left:${loMark}%;right:0;top:0;bottom:0;background:rgba(52,211,153,.12);border-radius:0 4px 4px 0;"></div>
@@ -232,7 +232,31 @@ function editWeeklyGoal(){
 // ===== MCAT =====
 function renderMcat(){
   const el=document.getElementById('mcatSteps');
-  el.innerHTML=D.mcatSteps.map((s,i)=>{
+  const steps=D.mcatSteps||[];
+  const total=steps.length;
+  const done=steps.filter(s=>s.status==='done').length;
+  const skipped=steps.filter(s=>s.status==='skip').length;
+  const pct=total?Math.round((done/total)*100):0;
+  const r=36,circ=2*Math.PI*r;
+  const offset=circ-(pct/100)*circ;
+  const timeTotal=steps.reduce((a,s)=>{const m=parseInt(s.time)||0;return a+m;},0);
+  const timeDone=steps.filter(s=>s.status==='done').reduce((a,s)=>{const m=parseInt(s.time)||0;return a+m;},0);
+
+  let ringHtml=`<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+    <svg width="84" height="84" viewBox="0 0 84 84">
+      <circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--border)" stroke-width="6"/>
+      <circle cx="42" cy="42" r="${r}" fill="none" stroke="${pct>=100?'var(--green)':'#818cf8'}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 42 42)" style="transition:stroke-dashoffset .6s ease;"/>
+      <text x="42" y="38" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${pct}%</text>
+      <text x="42" y="52" text-anchor="middle" fill="var(--dim)" font-size="8">${done}/${total}</text>
+    </svg>
+    <div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">Steps done: <strong style="color:var(--text);">${done}</strong> / ${total}</div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">Skipped: ${skipped}</div>
+      <div style="font-size:10px;color:var(--dim);">Time: <strong style="color:var(--text);">${timeDone}</strong> / ${timeTotal} min</div>
+    </div>
+  </div>`;
+
+  let stepsHtml=steps.map((s,i)=>{
     const isDone=s.status==='done',isSkip=s.status==='skip';
     return `<div class="mcat-step">
       <div class="step-n ${isDone?'completed':isSkip?'skipped':''}">${isDone?'✓':isSkip?'→':(i+1)}</div>
@@ -240,101 +264,10 @@ function renderMcat(){
       <div style="display:flex;gap:3px;">${s.status==='todo'?`<button class="step-btn done-btn" onclick="D.mcatSteps[${i}].status='done';save();renderMcat();">done</button><button class="step-btn skip-btn" onclick="D.mcatSteps[${i}].status='skip';save();renderMcat();">skip</button>`:`<button class="step-btn" onclick="D.mcatSteps[${i}].status='todo';save();renderMcat();">undo</button>`}</div>
     </div>`;
   }).join('');
+
+  el.innerHTML=ringHtml+stepsHtml;
 }
 
-// ===== RECORDER (live speech-to-text) =====
-let _recog=null,_recogRunning=false,_recogTranscript='';
-function toggleRec(){
-  const btn=document.getElementById('recBtn');
-  const status=document.getElementById('recStatus');
-  const panel=document.getElementById('recTranscript');
-  const box=document.getElementById('transcriptText');
-  if(_recogRunning){stopRec();return;}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('Speech recognition not supported in this browser. Try Chrome.');return;}
-  _recog=new SR();
-  _recog.continuous=true;
-  _recog.interimResults=true;
-  _recog.lang='en-US';
-  _recogTranscript='';
-  _recog.onresult=(e)=>{
-    let interim='',final='';
-    for(let i=0;i<e.results.length;i++){
-      const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal)final+=t+' ';
-      else interim+=t;
-    }
-    _recogTranscript=final.trim();
-    box.textContent=_recogTranscript+(interim?' '+interim:'');
-  };
-  _recog.onerror=(e)=>{
-    if(e.error==='no-speech')return;
-    status.textContent='Error: '+e.error;
-  };
-  _recog.onend=()=>{
-    if(_recogRunning){_recog.start();}
-  };
-  _recog.start();
-  _recogRunning=true;
-  btn.innerHTML='<span class="mi" style="font-size:13px;vertical-align:middle;color:var(--red);">stop_circle</span> Stop';
-  btn.classList.add('recording');
-  status.textContent='Listening...';
-  panel.style.display='block';
-  box.textContent='';
-}
-function stopRec(){
-  _recogRunning=false;
-  if(_recog)_recog.stop();
-  const btn=document.getElementById('recBtn');
-  btn.innerHTML='<span class="mi" style="font-size:13px;vertical-align:middle;">mic</span> Record';
-  btn.classList.remove('recording');
-  const status=document.getElementById('recStatus');
-  const txt=_recogTranscript.trim();
-  if(txt){
-    status.textContent='Done — click "Save to Notes" below';
-  } else {
-    status.textContent='No speech detected. Try again.';
-  }
-}
-function saveRecToNotes(){
-  const txt=(document.getElementById('transcriptText').textContent||'').trim();
-  if(!txt){alert('No transcript to save — try recording again');return;}
-  const notes=document.getElementById('mtgNotes');
-  const prefix=notes.value.trim()?notes.value+'\n\n':'';
-  notes.value=prefix+'## Recording Transcript\n'+txt;
-  const titleEl=document.getElementById('mtgTitle');
-  if(!titleEl.value.trim())titleEl.value='Meeting Notes';
-  const dateEl=document.getElementById('mtgDate');
-  if(!dateEl.value)dateEl.value=todayStr();
-  saveMeetingNotes();
-  const body=document.getElementById('mtgComposeBody');
-  if(body)body.style.display='block';
-  const chev=document.getElementById('mtgComposeChevron');
-  if(chev)chev.textContent='expand_less';
-  notes.focus();
-  document.getElementById('recTranscript').style.display='none';
-  document.getElementById('recStatus').textContent='✓ Transcript added to notes below';
-  const t=document.getElementById('saveToast');
-  if(t){t.innerHTML='✓ Transcript added — hit Save to keep it';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),3000);}
-}
-function saveRecDirect(){
-  const txt=(document.getElementById('transcriptText').textContent||'').trim();
-  if(!txt){alert('No transcript to save — try recording again');return;}
-  if(!D.meetings)D.meetings=[];
-  D.meetings.unshift({id:Date.now(),title:'Meeting Recording',date:todayStr(),notes:'## Recording Transcript\n'+txt,notionSynced:false});
-  save();renderSavedMeetings();renderMtgCalendarView();
-  document.getElementById('recTranscript').style.display='none';
-  document.getElementById('recStatus').textContent='';
-  celebrate();
-  const t=document.getElementById('saveToast');
-  if(t){t.innerHTML='✓ Saved!';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),2000);}
-}
-function clearRecording(){
-  document.getElementById('transcriptText').textContent='';
-  document.getElementById('recTranscript').style.display='none';
-  document.getElementById('recStatus').textContent='';
-  _recogTranscript='';
-}
 
 // ===== MEETING NOTES =====
 const MTG_TEMPLATES={
@@ -1288,7 +1221,7 @@ function toggleMtgLoc(dt,label){
   const m=meetings.find(x=>x.label===label);
   const current=D.mtgLocOverrides[key]||(m?m.loc:'remote');
   D.mtgLocOverrides[key]=current==='office'?'remote':'office';
-  save();renderMtgWeek();
+  save();renderMtgCalendarView();
 }
 
 // ===== TOMORROW'S PLAN =====
@@ -2100,5 +2033,99 @@ setInterval(checkEventReminders,30000);
 setTimeout(checkEventReminders,2000);
 setInterval(checkTomorrowReminder,60000);
 setTimeout(checkTomorrowReminder,5000);
+
+// ===== GLOBAL SEARCH =====
+function toggleSearch(){
+  const wrap=document.getElementById('searchInputWrap');
+  const inp=document.getElementById('globalSearchInput');
+  if(wrap.style.display==='none'){wrap.style.display='flex';inp.focus();}
+  else closeSearch();
+}
+function closeSearch(){
+  document.getElementById('searchInputWrap').style.display='none';
+  document.getElementById('searchResults').style.display='none';
+  document.getElementById('globalSearchInput').value='';
+}
+function handleSearchKey(e){
+  if(e.key==='Escape')closeSearch();
+  if(e.key==='Enter'){
+    const first=document.querySelector('.sr-item');
+    if(first)first.click();
+  }
+}
+function runGlobalSearch(q){
+  const res=document.getElementById('searchResults');
+  if(!q||q.length<2){res.style.display='none';return;}
+  const lq=q.toLowerCase();
+  const results=[];
+  // Search calendar blocks
+  if(D.days){
+    Object.entries(D.days).forEach(([dt,slots])=>{
+      if(!Array.isArray(slots))return;
+      slots.forEach(s=>{
+        if((s.text&&s.text.toLowerCase().includes(lq))||(s.sm&&s.sm.toLowerCase().includes(lq))||(s.loc&&s.loc.toLowerCase().includes(lq))){
+          results.push({type:'event',text:s.text,date:dt,icon:'📅'});
+        }
+      });
+    });
+  }
+  // Search tasks
+  if(D.tasks){
+    D.tasks.forEach(t=>{
+      if(t.text&&t.text.toLowerCase().includes(lq)){
+        results.push({type:'task',text:t.text,date:t.date||'',icon:t.done?'✅':'☐'});
+      }
+    });
+  }
+  // Search meeting notes
+  if(D.meetings){
+    D.meetings.forEach(m=>{
+      if((m.title&&m.title.toLowerCase().includes(lq))||(m.notes&&m.notes.toLowerCase().includes(lq))){
+        results.push({type:'meeting',text:m.title||'Meeting',date:m.date||'',icon:'📝'});
+      }
+    });
+  }
+  // Search brain dump
+  if(D.brainDump&&D.brainDump.toLowerCase().includes(lq)){
+    results.push({type:'note',text:'Brain Dump',date:'',icon:'🧠'});
+  }
+  // Search parking lot
+  if(D.parkingItems){
+    D.parkingItems.forEach(p=>{
+      if(p.text&&p.text.toLowerCase().includes(lq)){
+        results.push({type:'note',text:p.text,date:p.added||'',icon:'🅿️'});
+      }
+    });
+  }
+  if(!results.length){res.innerHTML='<div class="sr-empty">No results</div>';res.style.display='block';return;}
+  // Group and render (max 12 results)
+  const grouped={};
+  results.slice(0,12).forEach(r=>{
+    if(!grouped[r.type])grouped[r.type]=[];
+    grouped[r.type].push(r);
+  });
+  const labels={event:'Events',task:'Tasks',meeting:'Meetings',note:'Notes'};
+  let html='';
+  Object.entries(grouped).forEach(([type,items])=>{
+    html+=`<div class="sr-group"><div class="sr-group-title">${labels[type]||type}</div>`;
+    items.forEach(item=>{
+      const dateDisp=item.date?item.date.slice(5):'';
+      html+=`<div class="sr-item" onclick="searchGoTo('${type}','${item.date}')"><span class="sr-icon">${item.icon}</span><span>${item.text.length>40?item.text.slice(0,40)+'…':item.text}</span><span class="sr-date">${dateDisp}</span></div>`;
+    });
+    html+=`</div>`;
+  });
+  res.innerHTML=html;
+  res.style.display='block';
+}
+function searchGoTo(type,dt){
+  closeSearch();
+  if(type==='event'&&dt){D.selectedDate=dt;renderAll();document.querySelector('[data-tab="calendar"]')?.click();}
+  else if(type==='task'){document.querySelector('[data-tab="tasks"]')?.click();}
+  else if(type==='meeting'){document.querySelector('[data-tab="meetings"]')?.click();}
+  else if(type==='note'){document.querySelector('[data-tab="tasks"]')?.click();}
+}
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();toggleSearch();}
+});
 
 init();

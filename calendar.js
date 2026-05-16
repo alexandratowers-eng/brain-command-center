@@ -1,19 +1,18 @@
 // ===== MEETING/EVENT/CALL COLOR OVERRIDE =====
 function isMeetingBlock(slot){
   if(!slot||!slot.text)return false;
-  if(slot.cls==='errands')return true;
   if(slot._isMeeting)return true;
   const lc=slot.text.toLowerCase();
   return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar|chop|tpp|debrief|consult)\b/i.test(lc);
 }
 function getBlockColor(slot){
   if(slot.cls==='deadline')return '#ef4444';
+  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#0d9488':'#14b8a6';
   if(slot.cls==='focus')return '#a78bfa';
   if(slot.cls==='_task')return '#f87171';
   if(slot.cls==='_todo')return '#60a5fa';
   const cat=D.cats[slot.cls];
   if(cat)return cat.color;
-  if(isMeetingBlock(slot))return document.documentElement.classList.contains('light')?'#ca8a04':'#fbbf24';
   return 'var(--blue)';
 }
 

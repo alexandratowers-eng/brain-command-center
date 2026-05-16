@@ -7,27 +7,30 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#6366f1">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
-<link rel="stylesheet" href="styles.css">
-<script src="sync-config.js" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260516">
+<script src="sync-config.js?v=20260516" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
-// Nuke old service workers + caches — uses localStorage to prevent reload loop
 if('serviceWorker' in navigator){
-  var _swNuked=localStorage.getItem('sw_nuked_v2');
-  navigator.serviceWorker.getRegistrations().then(function(regs){
-    if(regs.length&&!_swNuked){
-      localStorage.setItem('sw_nuked_v2','1');
-      Promise.all(regs.map(function(r){return r.unregister();})).then(function(){
-        return caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k);}));});
-      }).then(function(){window.location.reload(true);});
-      return;
-    }
-    if(!regs.length&&_swNuked){/* already clean */}
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(function(reg){
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing;
+        nw.addEventListener('statechange',function(){
+          if(nw.state==='installed'&&navigator.serviceWorker.controller){
+            nw.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(!sessionStorage.getItem('sw_reload')){
+        sessionStorage.setItem('sw_reload','1');
+        window.location.reload();
+      }
+    });
   });
 }
 </script>
@@ -47,6 +50,14 @@ if('serviceWorker' in navigator){
         <button onclick="exportData();toggleDataMenu();">⬇ Download Backup</button>
         <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
       </div>
+    </div>
+    <div class="topbar-search" id="topbarSearch">
+      <button class="search-icon-btn" onclick="toggleSearch()" title="Search (Cmd+K)"><span class="mi" style="font-size:18px;">search</span></button>
+      <div class="search-input-wrap" id="searchInputWrap" style="display:none;">
+        <input type="text" id="globalSearchInput" placeholder="Search events, tasks, notes..." autocomplete="off" oninput="runGlobalSearch(this.value)" onkeydown="handleSearchKey(event)">
+        <button onclick="closeSearch()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;">✕</button>
+      </div>
+      <div class="search-results" id="searchResults" style="display:none;"></div>
     </div>
     <button id="syncStatusBtn" data-state="disabled" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Sync status">🔗</button>
     <button id="notifToggleBtn" onclick="requestNotifPermission()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
@@ -352,19 +363,6 @@ if('serviceWorker' in navigator){
             <h2 style="font-size:18px;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;"><span class="mi" style="color:var(--rose);font-size:22px;">groups</span> Meetings</h2>
             <p style="font-size:11px;color:var(--dim);margin:2px 0 0;">Your meeting home base — prep, notes, and calendar all in one place.</p>
           </div>
-          <div style="display:flex;gap:6px;">
-            <button class="rec-btn" id="recBtn" onclick="toggleRec()" style="font-size:10px;padding:5px 12px;"><span class="mi" style="font-size:13px;vertical-align:middle;">mic</span> Record</button>
-            <span style="font-size:10px;color:var(--dim);align-self:center;" id="recStatus"></span>
-          </div>
-        </div>
-        <div id="recTranscript" style="display:none;margin-bottom:12px;">
-          <div style="font-size:10px;color:var(--dim);margin-bottom:4px;display:flex;align-items:center;gap:4px;"><span class="mi" style="font-size:12px;">subtitles</span> Live Transcript</div>
-          <div class="transcript-box" id="transcriptText" style="min-height:100px;"></div>
-          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-            <button class="t-btn primary" onclick="saveRecDirect()" style="font-size:10px;"><span class="mi" style="font-size:13px;">save</span> Save Now</button>
-            <button class="t-btn" onclick="saveRecToNotes()" style="font-size:10px;"><span class="mi" style="font-size:13px;">edit_note</span> Add to Notes Below</button>
-            <button class="t-btn" onclick="clearRecording()" style="font-size:10px;">Discard</button>
-          </div>
         </div>
 
         <!-- MEETINGS CALENDAR VIEW TABS -->
@@ -449,7 +447,7 @@ if('serviceWorker' in navigator){
   </label>
   <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
     <input type="checkbox" id="dpIsMeeting" style="width:14px;height:14px;cursor:pointer;">
-    <span style="color:var(--amber);">groups</span> Mark as meeting block (CHOP/meeting styling)
+    <span class="mi" style="font-size:14px;color:var(--teal);">groups</span> Mark as meeting block
   </label>
   <div class="wp-btns">
     <button class="t-btn" onclick="closeDvPopover()">Cancel</button>
@@ -479,7 +477,7 @@ if('serviceWorker' in navigator){
   </label>
   <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
     <input type="checkbox" id="wpIsMeeting" style="width:14px;height:14px;cursor:pointer;">
-    <span style="color:var(--amber);">groups</span> Mark as meeting block (CHOP/meeting styling)
+    <span class="mi" style="font-size:14px;color:var(--teal);">groups</span> Mark as meeting block
   </label>
   <div class="wp-btns">
     <button class="t-btn" onclick="closeWkPopover()">Cancel</button>
@@ -608,12 +606,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js"></script>
-<script src="core.js"></script>
-<script src="calendar.js"></script>
-<script src="tasks.js"></script>
-<script src="features.js"></script>
-<script src="sync.js"></script>
+<script src="data.js?v=20260516"></script>
+<script src="core.js?v=20260516"></script>
+<script src="calendar.js?v=20260516"></script>
+<script src="tasks.js?v=20260516"></script>
+<script src="features.js?v=20260516"></script>
+<script src="sync.js?v=20260516"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

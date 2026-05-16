@@ -133,6 +133,52 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._mcatTwiceWeek=true;
   }
+  // Category consolidation: CHOP→teal first, merge exercise+errands→personal
+  if(!d._catsV3){
+    if(d.tasks)d.tasks.forEach(t=>{if(t.cat==='exercise')t.cat='personal';if(t.cat==='errands')t.cat='personal';});
+    if(d.days)Object.values(d.days).forEach(tl=>{if(Array.isArray(tl))tl.forEach(s=>{if(s.cls==='exercise')s.cls='personal';if(s.cls==='errands')s.cls='personal';});});
+    if(d.cats){
+      if(d.cats.chop)d.cats.chop.color='#14b8a6';
+      if(d.cats.personal)d.cats.personal.color='#60a5fa';
+      if(d.cats.mcat)d.cats.mcat.color='#818cf8';
+      delete d.cats.exercise;delete d.cats.errands;
+      const ordered={};
+      ['chop','personal','mcat','medapp','deadline','health','braindump'].forEach(k=>{if(d.cats[k])ordered[k]=d.cats[k];});
+      Object.keys(d.cats).forEach(k=>{if(!ordered[k])ordered[k]=d.cats[k];});
+      d.cats=ordered;
+    }
+    d._catsV3=true;
+  }
+  // Remove MCAT blocks until June, seed June Wed+Sat
+  if(!d._mcatJuneStart){
+    if(d.days){
+      Object.keys(d.days).forEach(dt=>{if(Array.isArray(d.days[dt]))d.days[dt]=d.days[dt].filter(s=>!s._mcatBiweekly&&!s._mcatDaily);});
+      const labels=['📚 MCAT Content Review','📚 MCAT Biochem Review','📚 MCAT P/S Review','📚 MCAT C/P Review','📚 MCAT B/B Review','📚 MCAT CARS Practice','📚 MCAT Flashcards'];
+      let li=0;
+      for(let day=1;day<=30;day++){
+        const dt=`2026-06-${String(day).padStart(2,'0')}`;
+        const dow=new Date(2026,5,day).getDay();
+        if(dow!==3&&dow!==6)continue;
+        if(!d.days[dt])d.days[dt]=[];
+        if(!d.days[dt].some(s=>s._mcatJune)){
+          d.days[dt].push({t:'12:30 PM',text:labels[li%labels.length],cls:'mcat',sm:'MCAT review (Wed & Sat)',loc:'',end:'12:40 PM',_mcatJune:true,_id:'mcat_jun_'+day});
+          li++;
+        }
+      }
+    }
+    d._mcatJuneStart=true;
+  }
+  // Personal statement blocks Mon-Fri May 18-22
+  if(!d._psWeekMay18){
+    if(!d.days)d.days={};
+    ['2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22'].forEach((dt,i)=>{
+      if(!d.days[dt])d.days[dt]=[];
+      if(!d.days[dt].some(s=>s._psBlock)){
+        d.days[dt].push({t:'6:00 PM',text:'📝 Personal Statement + Experience Work',cls:'personal',sm:'PS draft + experience entries',loc:'',end:'7:00 PM',_psBlock:true,_id:'ps_may_'+(18+i)});
+      }
+    });
+    d._psWeekMay18=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -184,15 +230,13 @@ function defaults(){
   const today=todayStr();
   return{
     cats:{
+      chop:{emoji:'🔬',label:'CHOP',color:'#14b8a6'},
+      personal:{emoji:'🏠',label:'Personal',color:'#60a5fa'},
+      mcat:{emoji:'📚',label:'MCAT',color:'#818cf8'},
       medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
-      chop:{emoji:'🔬',label:'CHOP',color:'#fcd34d'},
-      mcat:{emoji:'📚',label:'MCAT',color:'#60a5fa'},
-      personal:{emoji:'🏠',label:'Personal',color:'#34d399'},
-      exercise:{emoji:'🏃',label:'Exercise',color:'#34d399'},
-      braindump:{emoji:'🧠',label:'Brain Dump',color:'#a78bfa'},
       deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#f87171'},
       health:{emoji:'💚',label:'Health/Wellbeing',color:'#34d399'},
-      errands:{emoji:'📋',label:'Appts/Meetings',color:'#fcd34d'},
+      braindump:{emoji:'🧠',label:'Brain Dump',color:'#a78bfa'},
     },
     tasks:[
       {id:1,text:'Finalize resume/CV for letter writers',cat:'medapp',pri:'high',done:false,date:'2026-04-14'},
