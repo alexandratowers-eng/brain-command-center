@@ -10,8 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
-<link rel="stylesheet" href="styles.css?v=20260517">
-<script src="sync-config.js?v=20260517" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260517b">
+<script src="sync-config.js?v=20260517b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -140,25 +140,10 @@ if('serviceWorker' in navigator){
       </div>
     </div>
 
-    <!-- Quick Wins (sidebar) -->
-    <div class="s-card" data-card="sidebar-quickwins" style="border-color:rgba(52,211,153,.25);">
-      <div class="s-title" style="color:var(--green);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;">emoji_events</span> Quick Wins <span class="badge" id="sidebarWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('sidebar-quickwins',this)">▾</button></div>
-      <div class="s-body" id="cardBody-sidebar-quickwins">
-        <div class="quick-wins-input-row">
-          <input type="text" id="sidebarWinsInput" placeholder="just finished..." onkeydown="if(event.key==='Enter')addQuickWinSidebar()">
-          <button class="quick-wins-add-btn" onclick="addQuickWinSidebar()">+</button>
-        </div>
-        <div id="sidebarWinsList"></div>
-      </div>
-    </div>
-
-    <!-- Weekly Goal Tracker -->
-    <div class="s-card" data-card="weeklygoal">
-      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">trending_up</span> Weekly Progress<button class="s-collapse" onclick="toggleCard('weeklygoal',this)">▾</button></div>
-      <div class="s-body" id="cardBody-weeklygoal">
-        <div id="weeklyGoalWidget"></div>
-      </div>
-    </div>
+    <!-- Hidden compat containers for sidebar quickwins/weekly -->
+    <div id="sidebarWinsList" style="display:none;"></div>
+    <div id="sidebarWinsBadge" style="display:none;">0</div>
+    <div id="weeklyGoalWidget" style="display:none;"></div>
 
     <!-- Weekly Later Review -->
     <div class="s-card" id="weeklyReviewCard" style="display:none;" data-card="weekly-review">
@@ -619,12 +604,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260517"></script>
-<script src="core.js?v=20260517"></script>
-<script src="calendar.js?v=20260517"></script>
-<script src="tasks.js?v=20260517"></script>
-<script src="features.js?v=20260517"></script>
-<script src="sync.js?v=20260517"></script>
+<script src="data.js?v=20260517b"></script>
+<script src="core.js?v=20260517b"></script>
+<script src="calendar.js?v=20260517b"></script>
+<script src="tasks.js?v=20260517b"></script>
+<script src="features.js?v=20260517b"></script>
+<script src="sync.js?v=20260517b"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

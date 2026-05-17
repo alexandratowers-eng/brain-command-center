@@ -771,17 +771,16 @@ function renderDayView(){
   </div>`;
 
 
-  // Task strip — pinned above calendar grid, always visible
+  // Task strip — only tasks dated today; overdue tasks show in right panel
   const _dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
-  const _overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<dt&&!t.done).sort((a,b)=>b.id-a.id):[];
-  const _allTasks=[..._overdueTasks.map(t=>({...t,_overdue:true})),..._dayTasks];
+  const _allTasks=[..._dayTasks];
   if(_allTasks.length){
     html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:6px 8px;background:var(--card);border:1px solid var(--border);border-radius:8px;">`;
     _allTasks.forEach(t=>{
       const cat=D.cats[t.cat];
       const color=cat?cat.color:'var(--blue)';
       const emoji=cat?cat.emoji:'📋';
-      const isOD=t._overdue;
+      const isOD=false;
       const needsTrunc=t.text.length>28;
       const short=needsTrunc?t.text.slice(0,28)+'…':t.text;
       const urgentBadge=t.urgent?'<span style="color:var(--red);font-size:9px;flex-shrink:0;">⚡</span>':'';
@@ -790,8 +789,8 @@ function renderDayView(){
         ${urgentBadge}
         <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
         <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
-        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();autoAddWin('${t.text.replace(/'/g,"\\'")}');renderCalendar();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderSidebarWins==='function')renderSidebarWins();celebrate();" title="Done">✓</button>
-        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();trashTask(${t.id});renderCalendar();" title="Delete">✕</button>
+        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();togTask(${t.id});" title="Done">✓</button>
+        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();trashTask(${t.id});renderCalendar();renderCalTasks();renderAllTasks();updateStats();" title="Delete">✕</button>
       </div>`;
     });
     html+=`</div>`;
