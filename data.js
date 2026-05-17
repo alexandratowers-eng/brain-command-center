@@ -292,6 +292,26 @@ function autoAddWin(text,dt){
     if(typeof renderWinsTab==='function')renderWinsTab();
   }
 }
+function trashTask(id){
+  const idx=D.tasks.findIndex(t=>t.id===id);
+  if(idx===-1)return;
+  const task=D.tasks.splice(idx,1)[0];
+  task._trashedAt=Date.now();
+  if(!D.trash)D.trash=[];
+  D.trash.push(task);
+  save();
+}
+function restoreTask(idx){
+  if(!D.trash||!D.trash[idx])return;
+  const task=D.trash.splice(idx,1)[0];
+  delete task._trashedAt;
+  D.tasks.push(task);
+  save();
+}
+function emptyTrash(){
+  D.trash=[];
+  save();
+}
 function checkWinForScheduledEvent(text){
   const lc=text.toLowerCase();
   const m=lc.match(/scheduled\s+(?:for\s+)?(.+)/i);

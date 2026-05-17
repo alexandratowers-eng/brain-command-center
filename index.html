@@ -256,6 +256,13 @@ if('serviceWorker' in navigator){
             </div>
           </div>
         </div>
+        <!-- Trash -->
+        <div class="s-card" data-card="calright-trash">
+          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--dim);">delete</span> Trash <span class="badge" id="calRightTrashBadge" style="background:rgba(248,113,113,.12);color:var(--red);">0</span><button class="s-collapse" onclick="toggleCard('calright-trash',this)">▾</button></div>
+          <div class="s-body" id="cardBody-calright-trash">
+            <div id="calRightTrashList"></div>
+          </div>
+        </div>
         <!-- Quick Wins removed from right panel — now in sidebar -->
         <!-- Hidden containers for compat -->
         <div id="calRightCompletedList" style="display:none;"></div>

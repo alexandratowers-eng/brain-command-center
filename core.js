@@ -480,5 +480,6 @@ function renderCalendar(){
   if(typeof renderCalRightParking==='function')renderCalRightParking();
   if(typeof renderCalRightBacklog==='function')renderCalRightBacklog();
   if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();
+  if(typeof renderCalRightTrash==='function')renderCalRightTrash();
 }
 

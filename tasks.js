@@ -443,7 +443,7 @@ function swimlaneInlineCommit(ck,inp){
   D.tasks.push({id:D.nextId++,text,cat:ck,pri:'med',done:false,date:todayStr()});
   save();renderAllTasks();renderCalTasks();updateStats();
 }
-function delTask(id){D.tasks=D.tasks.filter(t=>t.id!==id);save();renderSidebarTasks();renderAllTasks();updateStats();}
+function delTask(id){trashTask(id);renderSidebarTasks();renderAllTasks();updateStats();}
 
 // ===== TASK VIEW TOGGLE (List vs Buckets) =====
 let _taskView='list';
@@ -1142,6 +1142,34 @@ function renderCalRightLater(){renderCalRightStash();}
 function renderCalRightParking(){renderCalRightStash();}
 function renderCalRightBacklog(){renderCalRightStash();}
 
+function renderCalRightTrash(){
+  const el=document.getElementById('calRightTrashList');if(!el)return;
+  const trash=D.trash||[];
+  const badge=document.getElementById('calRightTrashBadge');
+  if(badge)badge.textContent=trash.length;
+  if(!trash.length){
+    el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:6px;">Trash is empty</p>';
+    return;
+  }
+  let html='';
+  trash.slice().reverse().slice(0,10).forEach((t,vi)=>{
+    const ri=trash.length-1-vi;
+    const cat=D.cats[t.cat];
+    const emoji=cat?cat.emoji:'📋';
+    const ago=t._trashedAt?Math.round((Date.now()-t._trashedAt)/60000):0;
+    const agoLabel=ago<60?ago+'m ago':ago<1440?Math.round(ago/60)+'h ago':Math.round(ago/1440)+'d ago';
+    html+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
+      <span style="font-size:10px;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:line-through;">${t.text}</span>
+      <span style="font-size:8px;color:var(--dim);flex-shrink:0;">${agoLabel}</span>
+      <button onclick="restoreTask(${ri});renderCalRightTrash();renderCalendar();renderSidebarTasks();renderAllTasks();updateStats();" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:9px;padding:0 3px;flex-shrink:0;" title="Restore">↩</button>
+    </div>`;
+  });
+  if(trash.length>10)html+=`<div style="font-size:9px;color:var(--dim);text-align:center;padding:4px;">+${trash.length-10} more</div>`;
+  html+=`<button onclick="if(confirm('Empty trash? This cannot be undone.')){emptyTrash();renderCalRightTrash();}" style="margin-top:6px;width:100%;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 0;font-size:10px;cursor:pointer;font-family:inherit;opacity:.7;">Empty Trash</button>`;
+  el.innerHTML=html;
+}
+
 function renderCalRightStash(){
   const el=document.getElementById('calRightStashList');if(!el)return;
   const today=todayStr();
@@ -1557,7 +1585,7 @@ function saveModal(){const t=D.tasks.find(x=>x.id===editId);if(!t)return;t.text=
   // If date was changed and has a date, offer to add to calendar
   if(newDate&&newDate!==oldDate){taskToCalBlock(t.id);}
 }
-function deleteFromModal(){D.tasks=D.tasks.filter(t=>t.id!==editId);save();closeModal();renderSidebarTasks();renderAllTasks();updateStats();}
+function deleteFromModal(){trashTask(editId);closeModal();renderSidebarTasks();renderAllTasks();updateStats();}
 
 // ===== CAT MANAGER =====
 function buildCatSelects(){
@@ -1773,7 +1801,7 @@ function renderInbox(){
     <select onchange="if(this.value){const tk=D.tasks.find(x=>x.id===${t.id});if(tk){tk.cat=this.value;save();renderInbox();renderSidebarTasks();renderLegend();}}" style="font-size:10px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);max-width:120px;">
       <option value="">Move to...</option>${catOpts}
     </select>
-    <button class="task-act-btn" onclick="D.tasks=D.tasks.filter(x=>x.id!==${t.id});save();renderInbox();">x</button>
+    <button class="task-act-btn" onclick="trashTask(${t.id});renderInbox();">x</button>
   </div>`).join('');
 }
 
