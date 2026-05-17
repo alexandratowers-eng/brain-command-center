@@ -95,7 +95,7 @@ button,input,select,textarea{font-family:inherit;}
 .s-title{font-family:'Inter',-apple-system,sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin-bottom:6px;display:flex;align-items:center;gap:4px;}
 
 /* SIDEBAR WEEK STRIP */
-.sw-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.sw-strip{display:grid;grid-template-columns:repeat(5,1fr) .7fr .7fr;gap:2px;}
 .sw-day{display:flex;flex-direction:column;align-items:center;padding:3px 1px 4px;border-radius:5px;cursor:pointer;transition:background .15s;min-height:52px;}
 .sw-day:hover{background:rgba(96,165,250,.1);}
 .sw-day.sw-today .sw-day-name,.sw-day.sw-today .sw-day-num{color:var(--blue);font-weight:700;}
@@ -107,6 +107,8 @@ button,input,select,textarea{font-family:inherit;}
 .sw-pips{display:flex;flex-direction:column;gap:1px;width:100%;padding:0 2px;}
 .sw-pip{height:3px;border-radius:1px;width:100%;}
 .sw-pip-more{font-size:7px;color:var(--dim);text-align:center;line-height:1.4;}
+.sw-day.sw-weekend{opacity:.7;}
+.sw-day.sw-weekend .sw-day-name{font-size:7px;}
 /* TOMORROW PREVIEW */
 .sw-tmrw-row{display:flex;align-items:center;gap:4px;padding:3px 4px 3px 6px;border-left:2px solid var(--border);border-radius:0 4px 4px 0;margin-bottom:2px;background:rgba(255,255,255,.02);font-size:10px;position:relative;transition:background .15s;}
 .sw-tmrw-row:hover{background:rgba(255,255,255,.04);}
@@ -239,7 +241,7 @@ button,input,select,textarea{font-family:inherit;}
 .preset-btn.active{border-color:var(--blue);color:var(--blue);}
 
 /* ====== WEEK VIEW ====== */
-.week-grid{display:grid;grid-template-columns:50px repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);padding-bottom:28px;box-shadow:0 1px 6px rgba(0,0,0,.08);}
+.week-grid{display:grid;grid-template-columns:50px repeat(5,1fr) .5fr .5fr;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);padding-bottom:28px;box-shadow:0 1px 6px rgba(0,0,0,.08);}
 .wk-corner{background:var(--bg2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
 .wk-day-hdr{text-align:center;padding:8px 4px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:10px;font-weight:600;cursor:pointer;transition:background .15s;}
 .wk-day-hdr:hover{background:rgba(96,165,250,.08);}
@@ -257,6 +259,20 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block .wk-block-sub{font-size:9px;opacity:.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;}
 .wk-focus-note{font-size:8px;color:var(--green);background:rgba(52,211,153,.08);border:1px dashed rgba(52,211,153,.25);border-radius:4px;padding:3px 5px;z-index:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;}
 :root.light .wk-focus-note{background:rgba(4,120,87,.06);border-color:rgba(4,120,87,.2);color:#047857;}
+
+/* Weekend columns — subtle visual distinction */
+.wk-day-hdr.wk-weekend{background:rgba(167,139,250,.04);color:var(--dim);}
+.wk-day-hdr.wk-weekend .wk-name{font-size:8px;letter-spacing:.3px;}
+.wk-cell.wk-weekend{background:rgba(167,139,250,.02);}
+.wk-cell.wk-weekend:hover{background:rgba(167,139,250,.06);}
+:root.light .wk-day-hdr.wk-weekend{background:rgba(124,58,237,.03);}
+:root.light .wk-cell.wk-weekend{background:rgba(124,58,237,.015);}
+:root.light .wk-cell.wk-weekend:hover{background:rgba(124,58,237,.04);}
+/* Weekend separator */
+.wk-day-hdr.wk-weekend-start{border-left:2px solid rgba(167,139,250,.2);}
+.wk-cell.wk-weekend-start{border-left:2px solid rgba(167,139,250,.12);}
+:root.light .wk-day-hdr.wk-weekend-start{border-left:2px solid rgba(124,58,237,.15);}
+:root.light .wk-cell.wk-weekend-start{border-left:2px solid rgba(124,58,237,.1);}
 
 /* Block colors — TEAL=CHOP, BLUE=personal/tasks, INDIGO=MCAT, RED=deadlines, YELLOW outline=meetings */
 .wk-block.chop{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}

@@ -276,11 +276,12 @@ function renderWeekView(){
   // Corner
   html+='<div class="wk-corner"></div>';
   // Day headers
-  dates.forEach(dt=>{
+  dates.forEach((dt,idx)=>{
     const d=dateObj(dt);
     const isToday=dt===today;
     const isSel=dt===D.selectedDate;
-    html+=`<div class="wk-day-hdr ${isToday?'today':''} ${isSel?'selected':''}" onclick="D.selectedDate='${dt}';setCalView('day');renderMiniCal();">
+    const isWkend=idx>=5;
+    html+=`<div class="wk-day-hdr ${isToday?'today':''} ${isSel?'selected':''} ${isWkend?'wk-weekend':''} ${idx===5?'wk-weekend-start':''}" onclick="D.selectedDate='${dt}';setCalView('day');renderMiniCal();">
       <div class="wk-name">${d.toLocaleDateString('en-US',{weekday:'short'})}</div>
       <div class="wk-date">${d.getDate()}</div>
     </div>`;
@@ -291,8 +292,9 @@ function renderWeekView(){
     // Time label
     html+=`<div class="wk-time-label">${hr===0?'12 AM':hr<12?hr+' AM':hr===12?'12 PM':(hr-12)+' PM'}</div>`;
     // Day cells
-    dates.forEach(dt=>{
-      html+=`<div class="wk-cell" data-date="${dt}" data-hour="${hr}" oncontextmenu="event.preventDefault();openWkPopover(event,'${dt}',${hr})"></div>`;
+    dates.forEach((dt,idx)=>{
+      const isWkend=idx>=5;
+      html+=`<div class="wk-cell ${isWkend?'wk-weekend':''} ${idx===5?'wk-weekend-start':''}" data-date="${dt}" data-hour="${hr}" oncontextmenu="event.preventDefault();openWkPopover(event,'${dt}',${hr})"></div>`;
     });
   }
   html+='</div>';
@@ -352,8 +354,14 @@ function renderWeekView(){
       const y=e.clientY-rect.top-40;
       if(x<0||y<0)return null;
       const gW=rect.width-50;
-      const cW=gW/7;
-      const colIdx=Math.min(6,Math.floor(x/cW));
+      const colFr=[1,1,1,1,1,.5,.5];
+      const totalFr=6;
+      let accum=0;
+      let colIdx=6;
+      for(let c=0;c<7;c++){
+        accum+=colFr[c]/totalFr*gW;
+        if(x<accum){colIdx=c;break;}
+      }
       const hr=startHr+Math.floor(y/60);
       if(hr<startHr||hr>=endHr)return null;
       return {dt:dates[colIdx],hr};
@@ -378,7 +386,11 @@ function renderWeekBlocks(container, dates, startHr, endHr){
   if(!grid)return;
   grid.style.position='relative';
   const gridW=grid.offsetWidth||800;
-  const cellW=(gridW-50)/7;
+  const colFr=[1,1,1,1,1,.5,.5];
+  const totalFr=6;
+  function colLeft(ci){let s=0;for(let j=0;j<ci;j++)s+=colFr[j];return s/totalFr;}
+  function colWidth(ci){return colFr[ci]/totalFr;}
+  const cellW=(gridW-50)*colFr[0]/totalFr; // approx for weekday drag (used elsewhere)
 
   dates.forEach((dt,colIdx)=>{
     const tl=getTimeline(dt);
@@ -393,10 +405,12 @@ function renderWeekBlocks(container, dates, startHr, endHr){
 
       // Overlap positioning — use CSS calc with (100% - 54px) for the day area
       const wov=wkOverlaps[i]||{col:0,totalCols:1};
-      const denom=7*wov.totalCols;
-      const num=colIdx*wov.totalCols+wov.col;
-      const leftExpr=`calc(52px + ${num} * (100% - 54px) / ${denom})`;
-      const widthExpr=`calc((100% - 54px) / ${denom} - 2px)`;
+      const cLeft=colLeft(colIdx);
+      const cWidth=colWidth(colIdx);
+      const subLeft=cLeft+wov.col*cWidth/wov.totalCols;
+      const subWidth=cWidth/wov.totalCols;
+      const leftExpr=`calc(52px + ${subLeft} * (100% - 54px))`;
+      const widthExpr=`calc(${subWidth} * (100% - 54px) - 2px)`;
 
       if(!slot._id){slot._id='s'+Date.now()+'_'+i;}
       const sid=slot._id;
@@ -404,7 +418,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
       block.className=`wk-block ${slot.cls} ${slot.done?'done':''} ${slot._locOnly?'loc-only':''} ${isMeetingBlock(slot)?'is-meeting':''}`;
       if(slot._locOnly){
         // loc-only: slim strip at left edge of this day column, behind events
-        const stripLeft=`calc(52px + ${colIdx} * (100% - 54px) / 7 + 1px)`;
+        const stripLeft=`calc(52px + ${colLeft(colIdx)} * (100% - 54px) + 1px)`;
         block.style.cssText=`position:absolute;top:${topPx}px;left:${stripLeft};height:${heightPx}px;`;
       } else {
         block.style.cssText=`position:absolute;top:${topPx}px;left:${leftExpr};width:${widthExpr};height:${heightPx}px;`;
@@ -446,7 +460,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
         const gridEl=grid;
         const gridRect=gridEl.getBoundingClientRect();
         _wkBlockDrag={dt,idx:i,block,startX:e.clientX,startY:e.clientY,gridRect,cellW,
-          startM:parseMin(slot.t),dates,startHr,colIdx,moved:false};
+          startM:parseMin(slot.t),dates,startHr,colIdx,moved:false,colFr:[1,1,1,1,1,.5,.5],totalFr:6};
         block.style.zIndex='20';block.style.opacity='.85';block.style.cursor='grabbing';
         document.body.style.cursor='grabbing';document.body.style.userSelect='none';
       };
@@ -467,7 +481,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
       const note=document.createElement('div');
       note.className='wk-focus-note';
       const bottomPx=(endHr-startHr)*60+40;
-      note.style.cssText=`position:absolute;top:${bottomPx}px;left:calc(52px + ${colIdx} * (100% - 54px) / 7);width:calc((100% - 54px) / 7 - 2px);`;
+      note.style.cssText=`position:absolute;top:${bottomPx}px;left:calc(52px + ${colLeft(colIdx)} * (100% - 54px));width:calc(${colWidth(colIdx)} * (100% - 54px) - 2px);`;
       note.innerHTML=`<span class="mi" style="font-size:12px;color:var(--green);vertical-align:middle;">lightbulb</span> ${prevRef.focusTomorrow.trim()}`;
       note.title='Focus from yesterday';
       grid.appendChild(note);
@@ -486,11 +500,17 @@ document.addEventListener('mousemove',e=>{
   if(!d.moved)return;
   d.block._wasDragged=true;
   const minDelta=Math.round((dy/60)*60/15)*15;
-  const colDelta=Math.round(dx/d.cellW);
   const newMin=Math.max(d.startHr*60,Math.min(23*60+45,d.startM+minDelta));
-  const newCol=Math.max(0,Math.min(6,d.colIdx+colDelta));
+  const gridW=d.gridRect.width-50;
+  const absX=e.clientX-d.gridRect.left-50;
+  let newCol=6;
+  let acc=0;
+  for(let c=0;c<7;c++){acc+=d.colFr[c]/d.totalFr*gridW;if(absX<acc){newCol=c;break;}}
+  newCol=Math.max(0,Math.min(6,newCol));
   const topPx=((newMin/60)-d.startHr)*60+40;
-  const leftPx=50+newCol*d.cellW+2;
+  let colLeftFrac=0;
+  for(let j=0;j<newCol;j++)colLeftFrac+=d.colFr[j]/d.totalFr;
+  const leftPx=50+colLeftFrac*gridW+2;
   d.block.style.top=topPx+'px';
   d.block.style.left=leftPx+'px';
   d.pendingMin=newMin;
@@ -2133,7 +2153,8 @@ function renderSidebarWeek(){
       return `<div class="sw-pip" style="background:${color};opacity:${s.done?0.35:0.85};" title="${s.t} ${s.text}"></div>`;
     }).join('');
     const overflow=tl.length>MAX_PIPS?`<div class="sw-pip-more">+${tl.length-MAX_PIPS}</div>`:'';
-    html+=`<div class="sw-day ${isToday?'sw-today':''} ${isSel?'sw-selected':''}" onclick="D.selectedDate='${dt}';save();renderCalendar();renderMiniCal();">
+    const isWkend=(d.getDay()===0||d.getDay()===6);
+    html+=`<div class="sw-day ${isToday?'sw-today':''} ${isSel?'sw-selected':''} ${isWkend?'sw-weekend':''}" onclick="D.selectedDate='${dt}';save();renderCalendar();renderMiniCal();">
       <div class="sw-day-name">${dayName}</div>
       <div class="sw-day-num">${dayNum}</div>
       <div class="sw-pips">${pips}${overflow}</div>
