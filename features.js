@@ -2078,6 +2078,90 @@ setTimeout(checkEventReminders,2000);
 setInterval(checkTomorrowReminder,60000);
 setTimeout(checkTomorrowReminder,5000);
 
+// ===== PWA INSTALL + PHONE NOTIFICATIONS =====
+let _deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  _deferredInstallPrompt=e;
+});
+
+function showNotifSetup(){
+  const isPWA=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone;
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  const hasNotifAPI='Notification' in window;
+  const perm=hasNotifAPI?Notification.permission:'unsupported';
+  let content='';
+  if(isPWA&&perm==='granted'){
+    content=`<div style="text-align:center;padding:20px;">
+      <div style="font-size:36px;margin-bottom:12px;">🔔✅</div>
+      <h3 style="font-size:16px;margin-bottom:8px;">Notifications are ON</h3>
+      <p style="font-size:12px;color:var(--dim);margin-bottom:16px;">You'll get reminders 10 min before events, plus a tomorrow preview at 8 PM.</p>
+      <div style="font-size:11px;color:var(--dim);background:var(--bg);padding:10px;border-radius:8px;">
+        <b>Tip:</b> Make sure Do Not Disturb is off and BCC notifications are allowed in your phone's Settings → Notifications.
+      </div>
+    </div>`;
+  } else if(isPWA&&perm==='denied'){
+    content=`<div style="text-align:center;padding:20px;">
+      <div style="font-size:36px;margin-bottom:12px;">🔕</div>
+      <h3 style="font-size:16px;margin-bottom:8px;">Notifications Blocked</h3>
+      <p style="font-size:12px;color:var(--dim);margin-bottom:16px;">You've blocked notifications. To fix:</p>
+      <ol style="text-align:left;font-size:12px;color:var(--text);line-height:1.8;padding-left:20px;">
+        <li>Open your phone's <b>Settings</b></li>
+        <li>Go to <b>Notifications</b> → find <b>BCC</b> (or your browser name)</li>
+        <li>Toggle notifications <b>ON</b></li>
+        <li>Come back and refresh this page</li>
+      </ol>
+    </div>`;
+  } else if(isPWA&&perm==='default'){
+    content=`<div style="text-align:center;padding:20px;">
+      <div style="font-size:36px;margin-bottom:12px;">🔔</div>
+      <h3 style="font-size:16px;margin-bottom:8px;">Enable Notifications</h3>
+      <p style="font-size:12px;color:var(--dim);margin-bottom:16px;">Get reminders before events and a tomorrow preview each evening.</p>
+      <button onclick="Notification.requestPermission().then(p=>{updateNotifBtn();showNotifSetup();})" style="background:var(--blue);color:white;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Turn On Notifications</button>
+    </div>`;
+  } else if(isIOS){
+    content=`<div style="text-align:center;padding:20px;">
+      <div style="font-size:36px;margin-bottom:12px;">📱</div>
+      <h3 style="font-size:16px;margin-bottom:8px;">Get Notifications on iPhone</h3>
+      <p style="font-size:12px;color:var(--dim);margin-bottom:16px;">Add BCC to your Home Screen to enable push notifications:</p>
+      <ol style="text-align:left;font-size:12px;color:var(--text);line-height:2;padding-left:20px;">
+        <li>Tap the <b>Share</b> button <span style="font-size:14px;">⬆️</span> in Safari</li>
+        <li>Scroll down and tap <b>"Add to Home Screen"</b></li>
+        <li>Tap <b>Add</b></li>
+        <li>Open BCC from your Home Screen</li>
+        <li>Tap 🔔 to enable notifications</li>
+      </ol>
+      <div style="font-size:10px;color:var(--dim);margin-top:12px;background:var(--bg);padding:8px;border-radius:8px;">Requires iOS 16.4+ and Safari</div>
+    </div>`;
+  } else {
+    content=`<div style="text-align:center;padding:20px;">
+      <div style="font-size:36px;margin-bottom:12px;">📱</div>
+      <h3 style="font-size:16px;margin-bottom:8px;">Get Notifications on Your Phone</h3>
+      <p style="font-size:12px;color:var(--dim);margin-bottom:16px;">Install BCC as an app for the best experience:</p>
+      ${_deferredInstallPrompt?`<button onclick="_deferredInstallPrompt.prompt();_deferredInstallPrompt.userChoice.then(()=>{_deferredInstallPrompt=null;showNotifSetup();});" style="background:var(--blue);color:white;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:16px;">Install BCC App</button>`:`
+      <ol style="text-align:left;font-size:12px;color:var(--text);line-height:2;padding-left:20px;">
+        <li>Tap your browser's <b>menu</b> (⋮ or ⋯)</li>
+        <li>Tap <b>"Install app"</b> or <b>"Add to Home Screen"</b></li>
+        <li>Open BCC from your Home Screen</li>
+        <li>Tap 🔔 to enable notifications</li>
+      </ol>`}
+      ${hasNotifAPI&&perm==='default'?`<div style="margin-top:16px;"><p style="font-size:11px;color:var(--dim);margin-bottom:8px;">Or enable browser notifications now:</p><button onclick="Notification.requestPermission().then(p=>{updateNotifBtn();showNotifSetup();})" style="background:var(--card);color:var(--blue);border:1px solid var(--blue);border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Enable Browser Notifications</button></div>`:''}
+    </div>`;
+  }
+  let modal=document.getElementById('notifSetupModal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='notifSetupModal';
+    modal.style.cssText='position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);';
+    modal.onclick=e=>{if(e.target===modal)modal.remove();};
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML=`<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;max-width:400px;width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.5);">
+    <div style="display:flex;justify-content:flex-end;padding:8px 12px 0;"><button onclick="document.getElementById('notifSetupModal').remove()" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;">✕</button></div>
+    ${content}
+  </div>`;
+}
+
 // ===== GLOBAL SEARCH =====
 function toggleSearch(){
   const wrap=document.getElementById('searchInputWrap');

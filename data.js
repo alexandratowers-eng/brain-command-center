@@ -179,6 +179,10 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     });
     d._psWeekMay18=true;
   }
+  if(!d._chopBlue){
+    if(d.cats&&d.cats.chop)d.cats.chop.color='#60a5fa';
+    d._chopBlue=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];

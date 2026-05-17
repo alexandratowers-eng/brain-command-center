@@ -10,8 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
-<link rel="stylesheet" href="styles.css?v=20260516">
-<script src="sync-config.js?v=20260516" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260517">
+<script src="sync-config.js?v=20260517" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -60,7 +60,7 @@ if('serviceWorker' in navigator){
       <div class="search-results" id="searchResults" style="display:none;"></div>
     </div>
     <button id="syncStatusBtn" data-state="disabled" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Sync status">🔗</button>
-    <button id="notifToggleBtn" onclick="requestNotifPermission()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
+    <button id="notifToggleBtn" onclick="showNotifSetup()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
     <button id="themeBtn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Toggle theme">☀️</button>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
@@ -606,17 +606,18 @@ if('serviceWorker' in navigator){
   <button onclick="mobNav('mcat')"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
   <button onclick="mobNav('rec')"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
   <button onclick="toggleMobileSidebar();closeMobileMore()"><span class="mi" style="color:var(--green);">psychology</span> ADHD Coach</button>
+  <button onclick="showNotifSetup();closeMobileMore()"><span class="mi" style="color:var(--amber);">notifications</span> Phone Notifications</button>
   <button onclick="toggleTheme();closeMobileMore()"><span class="mi" style="color:var(--amber);">light_mode</span> Toggle Theme</button>
   <button onclick="document.getElementById('dataMenu').classList.toggle('show');closeMobileMore()"><span class="mi" style="color:var(--dim);">settings</span> Data / Backup</button>
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260516"></script>
-<script src="core.js?v=20260516"></script>
-<script src="calendar.js?v=20260516"></script>
-<script src="tasks.js?v=20260516"></script>
-<script src="features.js?v=20260516"></script>
-<script src="sync.js?v=20260516"></script>
+<script src="data.js?v=20260517"></script>
+<script src="core.js?v=20260517"></script>
+<script src="calendar.js?v=20260517"></script>
+<script src="tasks.js?v=20260517"></script>
+<script src="features.js?v=20260517"></script>
+<script src="sync.js?v=20260517"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

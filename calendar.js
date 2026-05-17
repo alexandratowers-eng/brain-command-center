@@ -791,6 +791,7 @@ function renderDayView(){
         <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
         <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
         <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();D.tasks.find(x=>x.id===${t.id}).done=true;save();renderCalendar();celebrate();" title="Done">✓</button>
+        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();if(confirm('Delete this task?')){D.tasks=D.tasks.filter(x=>x.id!==${t.id});save();renderCalendar();}" title="Delete">✕</button>
       </div>`;
     });
     html+=`</div>`;
@@ -872,7 +873,7 @@ function renderDayView(){
     if(s._locOnly){
       html+=`<div class="dv-block loc-only" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" title="📍 ${(s.loc||s.text||'Location').replace(/"/g,'&quot;')}" style="${locOnlyStyle}"></div>`;
     } else {
-      html+=`<div class="dv-block ${isDone?'dv-block-done':''}" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" tabindex="0" oncontextmenu="event.preventDefault();event.stopPropagation();openDvBlockMenu(event,'${dt}',${i});" style="${locOnlyStyle}">
+      html+=`<div class="dv-block ${isDone?'dv-block-done':''} ${isMeetingBlock(s)?'is-meeting':''}" data-sid="${sid}" data-idx="${i}" data-dt="${dt}" tabindex="0" oncontextmenu="event.preventDefault();event.stopPropagation();openDvBlockMenu(event,'${dt}',${i});" style="${locOnlyStyle}">
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
