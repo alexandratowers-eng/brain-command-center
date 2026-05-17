@@ -431,7 +431,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
           :`overflow:hidden;font-weight:700;display:-webkit-box;-webkit-line-clamp:${maxLines};-webkit-box-orient:vertical;word-break:break-word;`;
         const doneBtn=heightPx>=24?`<span class="wk-done-btn" title="${slot.done?'Mark not done':'Mark done'}" style="position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:6px;opacity:.5;z-index:10;flex-shrink:0;">${slot.done?'✓':''}</span>`:'';
         const _isMtg=isMeetingBlock(slot);
-        const _mtgTag=_isMtg?'<span class="meeting-chop-tag">Meeting</span>':'';
+        const _mtgTag=_isMtg?'<span class="meeting-chop-tag" title="Meeting"></span>':'';
         block.innerHTML=`${doneBtn}<div style="${titleStyle}">${_wkHasNote?'<span class="mi" style="font-size:10px;color:var(--blue);vertical-align:middle;margin-right:2px;">description</span>':''}${_mtgTag}${slot.text}</div>${heightPx>28&&slot.loc?`<div class="wk-block-sub" style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="mi" style="font-size:9px;">location_on</span>${slot.loc}</div>`:''}${heightPx>36&&slot.sm?`<div class="wk-block-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${slot.sm}</div>`:''}`;
         block.title=`${slot.t} - ${slot.text}${slot.loc?' @ '+slot.loc:''}${_wkHasNote?' (has notes)':''}`;
       }
@@ -876,7 +876,7 @@ function renderDayView(){
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="dv-done-btn" onmousedown="event.stopPropagation();" onclick="event.preventDefault();event.stopPropagation();togSlotDone('${dt}','${sid}')" title="${isDone?'Mark not done':'Mark done'}" style="width:16px;height:16px;min-width:16px;border-radius:50%;border:2px solid ${catColor};background:${isDone?catColor:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#fff':catColor};padding:0;flex-shrink:0;">${isDone?'✓':''}</button>
         ${_hasMtgNote?`<span class="mi dv-note-badge" title="Has meeting notes" style="font-size:12px;color:var(--blue);flex-shrink:0;">description</span>`:''}
-        <div class="dv-main-input dv-drag-input" contenteditable="true" spellcheck="false" data-sid="${sid}" data-dt="${dt}" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;outline:none;border-radius:3px;padding:0 2px;" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){event.preventDefault();this.blur();}" onfocus="this.style.cursor='text';this.style.background='rgba(255,255,255,.06)';" onblur="this.style.cursor='grab';this.style.background='';dvTitleEditSave(this);">${isMeetingBlock(s)?'<span class="meeting-chop-tag">Meeting</span>':''}${(s.text||'').replace(/</g,'&lt;')}</div>
+        <div class="dv-main-input dv-drag-input" contenteditable="true" spellcheck="false" data-sid="${sid}" data-dt="${dt}" style="color:${catColor};font-size:${dvFs}px;font-weight:700;cursor:grab;overflow:hidden;white-space:normal;word-break:break-word;flex:1;min-width:0;outline:none;border-radius:3px;padding:0 2px;" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){event.preventDefault();this.blur();}" onfocus="this.style.cursor='text';this.style.background='rgba(255,255,255,.06)';" onblur="this.style.cursor='grab';this.style.background='';dvTitleEditSave(this);">${isMeetingBlock(s)?'<span class="meeting-chop-tag" title="Meeting"></span>':''}${(s.text||'').replace(/</g,'&lt;')}</div>
         <span style="font-size:9px;color:var(--dim);flex-shrink:0;">${durLabel}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:1px;overflow:visible;flex:1;">
@@ -1220,7 +1220,13 @@ function addManualWin(dt){
   if(!D.reflections[dt]) D.reflections[dt]={};
   if(!D.reflections[dt].manualWins) D.reflections[dt].manualWins=[];
   D.reflections[dt].manualWins.push(val);
+  const evDate=checkWinForScheduledEvent(val);
   save();renderWinsTab();
+  if(evDate){
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML='📅 Event created for '+new Date(dateObj(evDate)).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2200);}
+    renderCalendar();
+  }
 }
 function addFocusToTomorrow(dt){
   const text=document.getElementById('refFocusTmrw')?.value?.trim();

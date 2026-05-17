@@ -72,10 +72,15 @@ if('serviceWorker' in navigator){
     </div>
     <div class="date-label" id="dateLabel"></div>
     <div class="view-toggle" id="viewToggle">
-      <button class="vt-btn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> Day</button>
+      <div class="vt-dropdown">
+        <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
+        <div class="vt-day-menu" id="vtDayMenu">
+          <button onclick="D.selectedDate=todayStr();setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Today';">Today</button>
+          <button onclick="var t=new Date();t.setDate(t.getDate()+1);D.selectedDate=dateStr(t);setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Tomorrow';">Tomorrow</button>
+        </div>
+      </div>
       <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
       <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
-      <button class="vt-btn" onclick="setCalView('tomorrow',this)"><span class="mi" style="font-size:14px;">wb_sunny</span> Tomorrow</button>
     </div>
   </div>
 
@@ -185,9 +190,8 @@ if('serviceWorker' in navigator){
       <button class="right-panel-toggle" id="rightPanelToggle" onclick="toggleRightPanel()" title="Toggle right panel">◀</button>
       <!-- Mobile view toggle -->
       <div class="mobile-view-toggle" id="mobileViewToggle">
-        <button class="mvt-btn active" onclick="setCalView('day',this);updateMvt(this)"><span class="mi" style="font-size:14px;">today</span> Day</button>
-        <button class="mvt-btn" onclick="setCalView('week',this);updateMvt(this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
-        <button class="mvt-btn" onclick="setCalView('month',this);updateMvt(this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
+        <button class="mvt-btn active" onclick="setCalView('day');updateMvt('day')"><span class="mi" style="font-size:14px;">today</span> Today</button>
+        <button class="mvt-btn" onclick="setCalView('tomorrow');updateMvt('tomorrow')"><span class="mi" style="font-size:14px;">arrow_forward</span> Tomorrow</button>
         <span class="mvt-date" id="mvtDate"></span>
       </div>
       <div id="cal-main-area">
@@ -400,6 +404,7 @@ if('serviceWorker' in navigator){
             <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap;">
               <button class="t-btn primary" onclick="saveMeetingToList()" style="font-size:10px;"><span class="mi" style="font-size:13px;">save</span> Save</button>
               <button class="t-btn mtg-notion-save-btn" onclick="saveAndQueueNotion()" style="font-size:10px;"><span class="mi" style="font-size:13px;">upload</span> Save + Notion</button>
+              <button class="t-btn" onclick="cleanUpMeetingNotes()" style="font-size:10px;border-color:rgba(129,140,248,.3);color:var(--indigo);"><span class="mi" style="font-size:13px;">auto_fix_high</span> Clean Up</button>
               <button class="t-btn" onclick="clearMeetingNotes()" style="font-size:10px;">Clear</button>
               <span style="flex:1;"></span>
               <button class="t-btn" onclick="copyMeetingNotes()" style="font-size:10px;"><span class="mi" style="font-size:13px;">content_copy</span> Copy</button>
@@ -620,15 +625,19 @@ function mobNav(tab,btn){
   document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
   else{const b=document.querySelector(`.mob-nav-btn[data-tab="${tab}"]`);if(b)b.classList.add('active');}
-  if(tab==='cal'){D.calView='day';save();}
+  if(tab==='cal'&&D.calView!=='tomorrow'){D.calView='day';save();}
   switchTab(tab,document.querySelector(`.tab-btn[onclick*="'${tab}'"]`));
 }
 function closeMobileMore(){document.getElementById('mobileMoreMenu').classList.remove('show');}
-function updateMvt(btn){
+function updateMvt(view){
   document.querySelectorAll('.mvt-btn').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
+  const btns=document.querySelectorAll('.mvt-btn');
+  btns.forEach(b=>{if(b.textContent.trim().toLowerCase().includes(view==='tomorrow'?'tomorrow':'today'))b.classList.add('active');});
   const d=document.getElementById('mvtDate');
-  if(d)d.textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  if(d){
+    const dt=view==='tomorrow'?new Date(Date.now()+86400000):new Date();
+    d.textContent=dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  }
 }
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.innerWidth<=900){D.calView='day';save();}

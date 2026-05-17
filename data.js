@@ -138,7 +138,7 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     if(d.tasks)d.tasks.forEach(t=>{if(t.cat==='exercise')t.cat='personal';if(t.cat==='errands')t.cat='personal';});
     if(d.days)Object.values(d.days).forEach(tl=>{if(Array.isArray(tl))tl.forEach(s=>{if(s.cls==='exercise')s.cls='personal';if(s.cls==='errands')s.cls='personal';});});
     if(d.cats){
-      if(d.cats.chop)d.cats.chop.color='#14b8a6';
+      if(d.cats.chop)d.cats.chop.color='#60a5fa';
       if(d.cats.personal)d.cats.personal.color='#60a5fa';
       if(d.cats.mcat)d.cats.mcat.color='#818cf8';
       delete d.cats.exercise;delete d.cats.errands;
@@ -230,7 +230,7 @@ function defaults(){
   const today=todayStr();
   return{
     cats:{
-      chop:{emoji:'🔬',label:'CHOP',color:'#14b8a6'},
+      chop:{emoji:'🔬',label:'CHOP',color:'#60a5fa'},
       personal:{emoji:'🏠',label:'Personal',color:'#60a5fa'},
       mcat:{emoji:'📚',label:'MCAT',color:'#818cf8'},
       medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
@@ -287,6 +287,71 @@ function autoAddWin(text,dt){
     if(typeof renderQuickWins==='function')renderQuickWins();
     if(typeof renderWinsTab==='function')renderWinsTab();
   }
+}
+function checkWinForScheduledEvent(text){
+  const lc=text.toLowerCase();
+  const m=lc.match(/scheduled\s+(?:for\s+)?(.+)/i);
+  if(!m)return null;
+  const rest=m[1].trim();
+  const today=new Date();
+  const todayDow=today.getDay();
+  const dowNames=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const dowShort=['sun','mon','tue','wed','thu','fri','sat'];
+  const monthNames=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const monthShort=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  let evDate=null;
+  if(/^tomorrow\b/i.test(rest)){
+    const d=new Date(today);d.setDate(d.getDate()+1);evDate=dateStr(d);
+  } else if(/^today\b/i.test(rest)){
+    evDate=todayStr();
+  }
+  if(!evDate){
+    const nextDowRe=new RegExp('^(?:next\\s+|this\\s+)?('+dowNames.join('|')+'|'+dowShort.join('|')+')\\b','i');
+    const dowM=rest.match(nextDowRe);
+    if(dowM){
+      const dayName=dowM[1].toLowerCase();
+      let targetDow=dowNames.indexOf(dayName);
+      if(targetDow===-1)targetDow=dowShort.indexOf(dayName);
+      if(targetDow!==-1){
+        const isNext=/next/i.test(dowM[0]);
+        let diff=targetDow-todayDow;
+        if(diff<=0)diff+=7;
+        if(isNext&&diff<7)diff+=7;
+        const d=new Date(today);d.setDate(d.getDate()+diff);evDate=dateStr(d);
+      }
+    }
+  }
+  if(!evDate){
+    const mdRe=new RegExp('^('+monthNames.join('|')+'|'+monthShort.join('|')+')\\s+(\\d{1,2})\\b','i');
+    const mdM=rest.match(mdRe);
+    if(mdM){
+      const mName=mdM[1].toLowerCase();
+      let mi=monthNames.indexOf(mName);
+      if(mi===-1)mi=monthShort.indexOf(mName);
+      const day=parseInt(mdM[2]);
+      const d=new Date(today.getFullYear(),mi,day);
+      if(d<today)d.setFullYear(d.getFullYear()+1);
+      evDate=dateStr(d);
+    }
+  }
+  if(!evDate){
+    const slashM=rest.match(/^(\d{1,2})\/(\d{1,2})\b/);
+    if(slashM){
+      const mo=parseInt(slashM[1])-1,day=parseInt(slashM[2]);
+      const d=new Date(today.getFullYear(),mo,day);
+      if(d<today)d.setFullYear(d.getFullYear()+1);
+      evDate=dateStr(d);
+    }
+  }
+  if(!evDate)return null;
+  const cleanTitle=text.replace(/\s*scheduled\s+(?:for\s+)?.*$/i,'').trim()||text;
+  const tl=getTimeline(evDate)||[];
+  const dup=tl.some(s=>s.text===cleanTitle);
+  if(dup)return evDate;
+  tl.push({t:'9:00 AM',text:cleanTitle,cls:'personal',sm:'From wins',loc:''});
+  tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+  setTimeline(evDate,tl);
+  return evDate;
 }
 function getWeekDates(dt){const d=dateObj(dt);const day=d.getDay();const mon=new Date(d);mon.setDate(d.getDate()-(day===0?6:day-1));const dates=[];for(let i=0;i<7;i++){const dd=new Date(mon);dd.setDate(mon.getDate()+i);dates.push(dateStr(dd));}return dates;}
 

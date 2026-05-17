@@ -59,6 +59,13 @@ button,input,select,textarea{font-family:inherit;}
 .vt-btn{font-family:'Inter',-apple-system,sans-serif;padding:5px 12px;border:none;background:transparent;color:var(--dim);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:3px;}
 .vt-btn:hover{color:var(--text);}
 .vt-btn.active{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(96,165,250,.1);}
+.vt-dropdown{position:relative;}
+.vt-caret{font-size:9px;margin-left:2px;cursor:pointer;color:var(--dim);}
+.vt-day-menu{display:none;position:absolute;top:100%;left:0;margin-top:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:200;min-width:120px;overflow:hidden;}
+.vt-day-menu.show{display:block;}
+.vt-day-menu button{display:block;width:100%;text-align:left;background:none;border:none;padding:8px 14px;cursor:pointer;font-size:11px;color:var(--text);font-family:inherit;transition:background .1s;}
+.vt-day-menu button:hover{background:rgba(96,165,250,.1);}
+.vt-day-menu button+button{border-top:1px solid var(--border);}
 
 /* TABS */
 .tabs{display:flex;gap:3px;margin:0 auto;background:var(--bg);border-radius:10px;padding:3px;border:1px solid var(--border);}
@@ -252,7 +259,7 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .wk-focus-note{background:rgba(4,120,87,.06);border-color:rgba(4,120,87,.2);color:#047857;}
 
 /* Block colors — TEAL=CHOP, BLUE=personal/tasks, INDIGO=MCAT, RED=deadlines, YELLOW outline=meetings */
-.wk-block.chop{background:rgba(20,184,166,.18);border-color:#14b8a6;color:#5eead4;}
+.wk-block.chop{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}
 .wk-block.mcat{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}
 .wk-block.gma{background:rgba(244,114,182,.2);border-color:#ec4899;color:#f9a8d4;}
 .wk-block.personal{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}
@@ -266,8 +273,8 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block.deadline{background:rgba(248,113,113,.22);border-color:#f87171;color:#fca5a5;}
 .wk-block.health{background:rgba(52,211,153,.18);border-color:#34d399;color:#86efac;}
 .wk-block.is-meeting{outline:2px solid rgba(252,211,77,.7)!important;outline-offset:-1px;}
-.meeting-chop-tag{display:inline-block;font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(252,211,77,.4);color:#78350f;margin-right:3px;letter-spacing:.3px;vertical-align:middle;}
-.dv-block .meeting-chop-tag{font-size:8px;padding:1px 5px;border-radius:4px;margin-right:4px;}
+.meeting-chop-tag{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fbbf24;margin-right:4px;vertical-align:middle;flex-shrink:0;}
+.dv-block .meeting-chop-tag{width:9px;height:9px;margin-right:5px;}
 /* Location-only blocks — slim glowing vertical strip */
 .wk-block.loc-only{
   width:8px!important;
@@ -380,7 +387,7 @@ button,input,select,textarea{font-family:inherit;}
 .dv-add-go:hover{background:var(--blue);border-color:var(--blue);color:white;box-shadow:0 0 12px rgba(99,102,241,.3);}
 
 /* Day view colors */
-.dv-ev.chop{background:rgba(252,211,77,.1);border-color:#fcd34d;color:#fef08a;}
+.dv-ev.chop{background:rgba(96,165,250,.1);border-color:#60a5fa;color:#93c5fd;}
 .dv-ev.mcat{background:rgba(96,165,250,.1);border-color:#60a5fa;color:#93c5fd;}
 .dv-ev.gma{background:rgba(244,114,182,.1);border-color:#ec4899;color:#f9a8d4;}
 .dv-ev.personal{background:rgba(52,211,153,.1);border-color:#34d399;color:#86efac;}
@@ -499,7 +506,7 @@ button,input,select,textarea{font-family:inherit;}
 .emoji-pick.selected{border-color:var(--blue);background:rgba(96,165,250,.15);}
 
 /* ====== LIGHT MODE BLOCK OVERRIDES ====== */
-:root.light .wk-block.chop{background:rgba(20,184,166,.12);color:#115e59;border-color:#14b8a6;}
+:root.light .wk-block.chop{background:rgba(59,130,246,.1);color:#1d4ed8;border-color:#3b82f6;}
 :root.light .wk-block.mcat{background:rgba(59,130,246,.1);color:#1d4ed8;border-color:#3b82f6;}
 :root.light .wk-block.gma{background:rgba(219,39,119,.08);color:#be185d;}
 :root.light .wk-block.personal{background:rgba(59,130,246,.1);color:#1d4ed8;border-color:#3b82f6;}
@@ -512,7 +519,7 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .wk-block.health{background:rgba(5,150,105,.1);color:#047857;border-color:#10b981;}
 :root.light .wk-block.is-meeting{outline:2px solid rgba(234,179,8,.8)!important;outline-offset:-1px;}
 :root.light .dv-block{border-width:1px 1px 1px 4px!important;box-shadow:0 1px 3px rgba(0,0,0,.08);}
-:root.light .dv-ev.chop{background:rgba(20,184,166,.1);color:#115e59;border-color:#14b8a6;}
+:root.light .dv-ev.chop{background:rgba(59,130,246,.07);color:#1d4ed8;border-color:#3b82f6;}
 :root.light .dv-ev.mcat{background:rgba(59,130,246,.07);color:#1e40af;}
 :root.light .dv-ev.gma{background:rgba(219,39,119,.06);color:#9d174d;}
 :root.light .dv-ev.personal{background:rgba(59,130,246,.06);color:#1d4ed8;}
@@ -1073,8 +1080,11 @@ button,input,select,textarea{font-family:inherit;}
 
 /* ====== MOBILE VIEW TOGGLE ====== */
 .mobile-view-toggle{display:none;}
+.mvt-btn{background:none;border:1px solid var(--border);color:var(--dim);padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;transition:all .15s;}
+.mvt-btn.active{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.3);color:var(--blue);font-weight:600;}
+.mvt-date{font-size:11px;color:var(--dim);margin-left:auto;}
 @media(max-width:900px){
-  .mobile-view-toggle{display:none!important;}
+  .mobile-view-toggle{display:flex!important;align-items:center;gap:6px;padding:8px 4px 4px;flex-wrap:wrap;}
 }
 
 /* ====== MOBILE BOTTOM NAV ====== */
@@ -1180,11 +1190,21 @@ button,input,select,textarea{font-family:inherit;}
   #cal-right-panel.collapsed{display:none!important;}
   .right-panel-toggle{font-size:10px!important;padding:3px 8px!important;}
 
-  /* Force day view only on mobile */
+  /* Force day/tomorrow view only on mobile */
   #calWeekView{display:none!important;}
   #calMonthView{display:none!important;}
   #calDayView{display:block!important;}
   .day-view{max-width:100%!important;padding-bottom:20px!important;}
+
+  /* Meeting notes clean-up button */
+  .mtg-compose-section .t-btn{min-height:36px;font-size:12px;}
+
+  /* View toggle dropdown on mobile */
+  .vt-dropdown{position:static;}
+  .vt-day-menu{left:0;right:0;max-width:200px;}
+
+  /* Data dropdown */
+  .data-menu{right:0;left:auto;max-width:240px;}
 
   /* Popovers — full width on mobile */
   .dv-popover.show,.wk-popover.show{

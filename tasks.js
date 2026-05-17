@@ -1156,7 +1156,7 @@ function renderCalRightStash(){
   if(badge){badge.textContent=totalWithSnoozed;badge.classList.toggle('stash-pulse',totalWithSnoozed>5);}
   if(!total&&!snoozedTasks.length){el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Queue is clear — nice!</p>';return;}
 
-  const STASH_LIMIT=6;
+  const STASH_LIMIT=3;
   const allItems=[];
 
   laterTasks.forEach(t=>{
@@ -1218,7 +1218,7 @@ function renderCalRightStash(){
 
   html+=allItems.slice(0,STASH_LIMIT).map(i=>i.html).join('');
   if(allItems.length>STASH_LIMIT){
-    html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">See ${allItems.length-STASH_LIMIT} more</button>`;
+    html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">View all ${allItems.length} parked items →</button>`;
     html+=`<div id="stashOverflow" style="display:none;">${allItems.slice(STASH_LIMIT).map(i=>i.html).join('')}</div>`;
   }
 
@@ -1501,10 +1501,16 @@ function addQuickWinSidebar(){
   if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
   D.reflections[today].manualWins.push(text);
   window._quickWins.push({text,checked:true,added:today});
+  const evDate=checkWinForScheduledEvent(text);
   inp.value='';
   save();renderSidebarWins();renderQuickWins();
   const toast=document.getElementById('saveToast');
-  if(toast){toast.innerHTML='✨ Saved to today\'s wins!';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+  if(evDate){
+    if(toast){toast.innerHTML='📅 Event created for '+new Date(dateObj(evDate)).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2200);}
+    if(typeof renderCalendar==='function')renderCalendar();
+  } else {
+    if(toast){toast.innerHTML='✨ Saved to today\'s wins!';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+  }
   if(typeof renderWinsTab==='function')renderWinsTab();
 }
 

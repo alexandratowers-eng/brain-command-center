@@ -699,6 +699,20 @@ function startMtgPrepFor(dt,dayIdx){
   document.getElementById('mtgNotes').focus();
 }
 
+function getWeekKey(dt){
+  if(!dt||dt==='undated')return 'undated';
+  var d=dateObj(dt);
+  var day=d.getDay();
+  var mon=new Date(d);mon.setDate(d.getDate()-(day===0?6:day-1));
+  return dateStr(mon);
+}
+function getWeekLabel(weekStart){
+  if(weekStart==='undated')return 'Undated';
+  var d=dateObj(weekStart);
+  var end=new Date(d);end.setDate(d.getDate()+6);
+  return 'Week of '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
 function renderSavedMeetings(){
   const list=D.meetings||[];
   const countEl=document.getElementById('savedMtgCount');
@@ -707,22 +721,25 @@ function renderSavedMeetings(){
   if(!el)return;
   if(!list.length){el.innerHTML='<p style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">No saved notes yet</p>';return;}
 
-  const grouped={};
+  const weekGroups={};
   list.forEach(m=>{
-    const key=m.date||'undated';
-    if(!grouped[key])grouped[key]=[];
-    grouped[key].push(m);
+    const wk=getWeekKey(m.date);
+    if(!weekGroups[wk])weekGroups[wk]=[];
+    weekGroups[wk].push(m);
   });
-  const sortedDates=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+  const sortedWeeks=Object.keys(weekGroups).sort((a,b)=>b.localeCompare(a));
 
-  el.innerHTML=sortedDates.map(dt=>{
-    const d=dt!=='undated'?dateObj(dt):null;
-    const dateLabel=d?d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}):'Undated';
-    return `<div class="mtg-saved-group">
-      <div class="mtg-saved-date" onclick="if('${dt}'!=='undated'){D.selectedDate='${dt}';setCalView('day');renderMiniCal();}">
-        <span class="mi" style="font-size:13px;color:var(--dim);">calendar_today</span> ${dateLabel}
+  el.innerHTML=sortedWeeks.map(wk=>{
+    const weekLabel=getWeekLabel(wk);
+    const meetings=weekGroups[wk];
+    return `<div class="mtg-saved-group" style="margin-bottom:12px;">
+      <div class="mtg-saved-date" style="font-size:11px;font-weight:700;color:var(--indigo);padding:6px 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+        <span class="mi" style="font-size:14px;color:var(--indigo);">folder</span> ${weekLabel}
+        <span class="badge" style="background:rgba(129,140,248,.12);color:var(--indigo);margin-left:auto;">${meetings.length}</span>
       </div>
-      ${grouped[dt].map(m=>{
+      ${meetings.map(m=>{
+        const d=m.date?dateObj(m.date):null;
+        const dayLabel=d?d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):'';
         const synced=m.notionSynced===true;
         const pending=m.notionSynced==='pending';
         const notionLabel=synced?'<span class="mtg-notion-badge synced" title="Synced to Notion">✓ Notion</span>':pending?'<span class="mtg-notion-badge pending" title="Queued for Notion sync">⏳ Pending</span>':`<button class="mtg-notion-btn" onclick="event.stopPropagation();markForNotion(${m.id});" title="Send to Notion"><span class="mi" style="font-size:11px;">upload</span> Notion</button>`;
@@ -730,12 +747,39 @@ function renderSavedMeetings(){
         <span class="mi" style="color:var(--blue);font-size:14px;">description</span>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.title}</div>
+          <div style="font-size:9px;color:var(--dim);">${dayLabel}</div>
         </div>
         ${notionLabel}
         <button class="task-act-btn" onclick="event.stopPropagation();deleteMeeting(${m.id});" title="Delete">x</button>
       </div>`;}).join('')}
     </div>`;
   }).join('');
+}
+
+function cleanUpMeetingNotes(){
+  var notes=document.getElementById('mtgNotes');
+  if(!notes||!notes.value.trim())return;
+  var raw=notes.value;
+  var lines=raw.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  var cleaned=[];
+  var sections={actions:[],decisions:[],notes:[],followup:[]};
+  lines.forEach(function(line){
+    var lc=line.toLowerCase();
+    if(/^[-*]\s*\[[ x]\]/.test(line)||/action|todo|follow.?up|next.?step/i.test(lc)){
+      sections.actions.push(line.replace(/^[-*]\s*/,'- '));
+    } else if(/decision|agreed|resolved/i.test(lc)){
+      sections.decisions.push('- '+line.replace(/^[-*]\s*/,''));
+    } else {
+      sections.notes.push('- '+line.replace(/^[-*]\s*/,''));
+    }
+  });
+  cleaned.push('### Notes');
+  cleaned=cleaned.concat(sections.notes.length?sections.notes:['- (none)']);
+  if(sections.decisions.length){cleaned.push('');cleaned.push('### Decisions');cleaned=cleaned.concat(sections.decisions);}
+  if(sections.actions.length){cleaned.push('');cleaned.push('### Action Items');cleaned=cleaned.concat(sections.actions);}
+  notes.value=cleaned.join('\n');
+  saveMeetingNotes();
+  var t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Notes cleaned up';t.classList.add('show');clearTimeout(_st);_st=setTimeout(function(){t.classList.remove('show');},1500);}
 }
 
 function loadSavedMeeting(id){

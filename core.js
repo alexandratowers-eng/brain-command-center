@@ -456,6 +456,17 @@ function setCalView(v,el){
     renderCalendar();
   }
 }
+function toggleDayDropdown(){
+  document.getElementById('vtDayMenu').classList.toggle('show');
+}
+function closeDayDropdown(){
+  document.getElementById('vtDayMenu').classList.remove('show');
+}
+document.addEventListener('click',function(e){
+  var menu=document.getElementById('vtDayMenu');
+  if(menu&&!e.target.closest('.vt-dropdown'))menu.classList.remove('show');
+});
+
 function renderCalendar(){
   document.getElementById('calWeekView').style.display=D.calView==='week'?'block':'none';
   document.getElementById('calDayView').style.display=(D.calView==='day'||D.calView==='tomorrow')?'block':'none';
