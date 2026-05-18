@@ -184,15 +184,14 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     d._chopBlue=true;
   }
   // Re-introduce exercise as its own category (split from personal)
-  if(!d._exerciseCat){
+  if(!d._exerciseCatV2){
     if(!d.cats)d.cats={};
-    if(!d.cats.exercise)d.cats.exercise={emoji:'🏃',label:'Exercise',color:'#2dd4bf'};
-    // Reorder so exercise sits after personal
+    d.cats.exercise={emoji:'🏃',label:'Exercise',color:'#2dd4bf'};
     const ordered={};
     ['chop','personal','exercise','mcat','medapp','deadline','health','braindump'].forEach(k=>{if(d.cats[k])ordered[k]=d.cats[k];});
     Object.keys(d.cats).forEach(k=>{if(!ordered[k])ordered[k]=d.cats[k];});
     d.cats=ordered;
-    d._exerciseCat=true;
+    d._exerciseCatV2=true;
   }
   return d;}}catch(e){}return defaults();}
 let _st=null;
