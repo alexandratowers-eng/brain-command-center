@@ -791,27 +791,35 @@ function renderDayView(){
   </div>`;
 
 
-  // Task strip — only tasks dated today; overdue tasks show in right panel
-  const _dayTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
-  const _allTasks=[..._dayTasks];
+  // Task strip — tasks dated today (active + completed)
+  const _activeTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
+  const _doneTasks=D.tasks.filter(t=>t.date===dt&&t.done).sort((a,b)=>b.id-a.id);
+  const _allTasks=[..._activeTasks,..._doneTasks];
   if(_allTasks.length){
     html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:6px 8px;background:var(--card);border:1px solid var(--border);border-radius:8px;">`;
     _allTasks.forEach(t=>{
       const cat=D.cats[t.cat];
       const color=cat?cat.color:'var(--blue)';
       const emoji=cat?cat.emoji:'📋';
-      const isOD=false;
       const needsTrunc=t.text.length>28;
       const short=needsTrunc?t.text.slice(0,28)+'…':t.text;
-      const urgentBadge=t.urgent?'<span style="color:var(--red);font-size:9px;flex-shrink:0;">⚡</span>':'';
-      html+=`<div draggable="true" data-task-id="${t.id}" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" title="${t.text.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${color}18;border:1px solid ${color}40;border-radius:6px;font-size:10px;cursor:grab;${isOD?'border-left:3px solid var(--red);':''}">
-        <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
-        ${urgentBadge}
-        <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
-        <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
-        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();togTask(${t.id});" title="Done">✓</button>
-        <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();trashTask(${t.id});renderCalendar();renderCalTasks();renderAllTasks();updateStats();" title="Delete">✕</button>
-      </div>`;
+      if(t.done){
+        html+=`<div title="${t.text.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:6px;font-size:10px;opacity:.55;">
+          <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
+          <span style="color:var(--green);font-size:10px;flex-shrink:0;">✓</span>
+          <span style="text-decoration:line-through;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${short}</span>
+        </div>`;
+      } else {
+        const urgentBadge=t.urgent?'<span style="color:var(--red);font-size:9px;flex-shrink:0;">⚡</span>':'';
+        html+=`<div draggable="true" data-task-id="${t.id}" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" title="${t.text.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${color}18;border:1px solid ${color}40;border-radius:6px;font-size:10px;cursor:grab;">
+          <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
+          ${urgentBadge}
+          <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
+          <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
+          <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();togTask(${t.id});" title="Done">✓</button>
+          <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();trashTask(${t.id});renderCalendar();renderCalTasks();renderAllTasks();updateStats();" title="Delete">✕</button>
+        </div>`;
+      }
     });
     html+=`</div>`;
   }

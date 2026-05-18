@@ -45,7 +45,6 @@ function init(){
   renderDistractions();
   renderTomorrowMode();
   checkOverdueTasks();
-  surfaceLaterItems();
   renderSidebarTasks();
   updateDynamicBlockCSS();
   renderCalendar();

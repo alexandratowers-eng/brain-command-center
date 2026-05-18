@@ -140,6 +140,21 @@ if('serviceWorker' in navigator){
       </div>
     </div>
 
+    <!-- Wins & Done -->
+    <div class="s-card" data-card="calright-wins-done" style="border-color:rgba(52,211,153,.25);">
+      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">emoji_events</span> Wins & Done <span class="badge" id="calRightWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-wins-done',this)">▾</button></div>
+      <div class="s-body" id="cardBody-calright-wins-done">
+        <div id="calRightWinsDoneList"></div>
+      </div>
+    </div>
+    <!-- Trash -->
+    <div class="s-card" data-card="calright-trash">
+      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--dim);">delete</span> Trash <span class="badge" id="calRightTrashBadge" style="background:rgba(248,113,113,.12);color:var(--red);">0</span><button class="s-collapse" onclick="toggleCard('calright-trash',this)">▾</button></div>
+      <div class="s-body" id="cardBody-calright-trash">
+        <div id="calRightTrashList"></div>
+      </div>
+    </div>
+
     <!-- Hidden compat containers for sidebar quickwins/weekly -->
     <div id="sidebarWinsList" style="display:none;"></div>
     <div id="sidebarWinsBadge" style="display:none;">0</div>
@@ -208,13 +223,6 @@ if('serviceWorker' in navigator){
             </div>
           </div>
         </div>
-        <!-- Wins & Done -->
-        <div class="s-card" data-card="calright-wins-done" style="border-color:rgba(52,211,153,.25);">
-          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">emoji_events</span> Wins & Done <span class="badge" id="calRightWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-wins-done',this)">▾</button></div>
-          <div class="s-body" id="cardBody-calright-wins-done">
-            <div id="calRightWinsDoneList"></div>
-          </div>
-        </div>
         <!-- Parked / Later -->
         <div class="s-card" data-card="calright-stash">
           <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--purple);">inbox</span> On Deck <span class="badge" id="calRightStashBadge" style="background:rgba(192,132,252,.15);color:#c084fc;">0</span><button class="s-collapse" onclick="toggleCard('calright-stash',this)">▾</button></div>
@@ -239,13 +247,6 @@ if('serviceWorker' in navigator){
               </div>
               <div id="modePriList"></div>
             </div>
-          </div>
-        </div>
-        <!-- Trash -->
-        <div class="s-card" data-card="calright-trash">
-          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--dim);">delete</span> Trash <span class="badge" id="calRightTrashBadge" style="background:rgba(248,113,113,.12);color:var(--red);">0</span><button class="s-collapse" onclick="toggleCard('calright-trash',this)">▾</button></div>
-          <div class="s-body" id="cardBody-calright-trash">
-            <div id="calRightTrashList"></div>
           </div>
         </div>
         <!-- Quick Wins removed from right panel — now in sidebar -->
