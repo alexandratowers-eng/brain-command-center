@@ -740,6 +740,24 @@ function promptBlockItem(dt,sid){
 }
 
 // ===== DAY VIEW =====
+function toggleDaySpot(dt,key){
+  if(!D.daySpots)D.daySpots={};
+  if(!D.daySpots[dt])D.daySpots[dt]=[];
+  const idx=D.daySpots[dt].indexOf(key);
+  if(idx>=0)D.daySpots[dt].splice(idx,1);
+  else D.daySpots[dt].push(key);
+  save();renderCalendar();
+}
+function addDaySpotCustom(dt){
+  const text=prompt('New spot name:');if(!text||!text.trim())return;
+  if(!D.customSpots)D.customSpots=[];
+  const key='custom_'+Date.now();
+  D.customSpots.push({key,icon:'📍',label:text.trim(),desc:''});
+  if(!D.daySpots)D.daySpots={};
+  if(!D.daySpots[dt])D.daySpots[dt]=[];
+  D.daySpots[dt].push(key);
+  save();renderCalendar();
+}
 function renderDayView(){
   const dt=D.selectedDate;
   const tl=getTimeline(dt)||[];
@@ -762,6 +780,16 @@ function renderDayView(){
       ${!isToday?`<button onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
     <button class="ics-btn" onclick="exportICS()" style="margin-left:auto;">Export .ics</button>
+  </div>`;
+
+  // Location picker
+  if(!D.daySpots)D.daySpots={};
+  const _lPicked=D.daySpots[dt]||[];
+  const _allSpots=[...(typeof SPOT_SUGGESTIONS!=='undefined'?SPOT_SUGGESTIONS:[]),...(D.customSpots||[])];
+  html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;">
+    <span style="font-size:10px;color:var(--dim);white-space:nowrap;">📍 Today's spot:</span>
+    ${_allSpots.map(s=>`<button class="spot-pill${_lPicked.includes(s.key)?' selected':''}" onclick="toggleDaySpot('${dt}','${s.key}')" title="${(s.desc||'').replace(/"/g,'&quot;')}" style="font-size:10px;padding:3px 8px;">${s.icon} ${s.label}</button>`).join('')}
+    <button class="spot-pill spot-pill-add" onclick="addDaySpotCustom('${dt}')" title="Add a spot" style="font-size:10px;padding:3px 8px;">+</button>
   </div>`;
 
   // Yesterday's focus nudge

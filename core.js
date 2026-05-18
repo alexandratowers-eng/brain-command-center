@@ -58,8 +58,8 @@ function init(){
   if(typeof checkDailyMotivation==='function')checkDailyMotivation();
   if(typeof checkReminders==='function')checkReminders();
   setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();if(typeof checkReminders==='function')checkReminders();},60000);
-  // On mobile, default to day view for easier use
-  if(window.innerWidth<=900&&D.calView==='week'){setCalView('day');}
+  // Always start in day view
+  if(D.calView!=='day'){setCalView('day');}
 }
 
 // ===== DATA DROPDOWN =====

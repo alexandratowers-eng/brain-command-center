@@ -95,13 +95,8 @@ if('serviceWorker' in navigator){
         <div id="sidebarWeekStrip"></div>
       </div>
     </div>
-    <!-- Tomorrow Preview -->
-    <div class="s-card" data-card="tmrw-preview">
-      <div class="s-title" style="color:var(--indigo);"><span class="mi" style="font-size:14px;">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('tmrw-preview',this)">▾</button></div>
-      <div class="s-body" id="cardBody-tmrw-preview">
-        <div id="sidebarTmrwPreview"></div>
-      </div>
-    </div>
+    <!-- Tomorrow Preview (hidden compat) -->
+    <div id="sidebarTmrwPreview" style="display:none;"></div>
 
     <!-- ADHD Coach -->
     <div class="s-card coach-card" data-card="coach">
