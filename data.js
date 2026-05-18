@@ -183,6 +183,17 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     if(d.cats&&d.cats.chop)d.cats.chop.color='#60a5fa';
     d._chopBlue=true;
   }
+  // Re-introduce exercise as its own category (split from personal)
+  if(!d._exerciseCat){
+    if(!d.cats)d.cats={};
+    if(!d.cats.exercise)d.cats.exercise={emoji:'🏃',label:'Exercise',color:'#2dd4bf'};
+    // Reorder so exercise sits after personal
+    const ordered={};
+    ['chop','personal','exercise','mcat','medapp','deadline','health','braindump'].forEach(k=>{if(d.cats[k])ordered[k]=d.cats[k];});
+    Object.keys(d.cats).forEach(k=>{if(!ordered[k])ordered[k]=d.cats[k];});
+    d.cats=ordered;
+    d._exerciseCat=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -236,6 +247,7 @@ function defaults(){
     cats:{
       chop:{emoji:'🔬',label:'CHOP',color:'#60a5fa'},
       personal:{emoji:'🏠',label:'Personal',color:'#60a5fa'},
+      exercise:{emoji:'🏃',label:'Exercise',color:'#2dd4bf'},
       mcat:{emoji:'📚',label:'MCAT',color:'#818cf8'},
       medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
       deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#f87171'},
