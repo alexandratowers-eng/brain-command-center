@@ -1078,8 +1078,14 @@ function renderCalRightWinsDone(){
   const badge=document.getElementById('calRightWinsBadge');
   if(badge)badge.textContent=todayItems.length;
 
+  // Quick-add win input (always shown)
+  const winInputHtml=`<div style="display:flex;gap:4px;margin-bottom:8px;">
+    <input type="text" id="quickAddWinInput" placeholder="+ log a win..." onkeydown="if(event.key==='Enter')quickAddWin()" style="flex:1;padding:5px 8px;font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;">
+    <button class="t-btn" onclick="quickAddWin()" style="font-size:10px;padding:4px 10px;border-color:var(--green);color:var(--green);font-weight:600;">+</button>
+  </div>`;
+
   if(!todayItems.length){
-    el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing completed yet — you got this!</p>';
+    el.innerHTML=winInputHtml+'<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Nothing completed yet — you got this!</p>';
     return;
   }
 
@@ -1092,7 +1098,8 @@ function renderCalRightWinsDone(){
   });
   const sorted=Object.entries(groups).sort((a,b)=>b[1].items.length-a[1].items.length);
 
-  let html='<div style="font-size:9px;font-weight:700;color:var(--green);margin-bottom:4px;">TODAY — '+todayItems.length+' completed</div>';
+  let html=winInputHtml;
+  html+='<div style="font-size:9px;font-weight:700;color:var(--green);margin-bottom:4px;">TODAY — '+todayItems.length+' completed</div>';
   sorted.forEach(([key,g])=>{
     html+=`<div style="margin-bottom:4px;">`;
     html+=`<div style="font-size:8px;color:var(--dim);font-weight:600;margin-bottom:2px;">${g.emoji} ${g.items.length}</div>`;
@@ -1137,6 +1144,16 @@ function renderCalRightWinsDone(){
 
   el.innerHTML=html;
 }
+function quickAddWin(){
+  const inp=document.getElementById('quickAddWinInput');if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  const today=todayStr();
+  autoAddWin(text,today);
+  inp.value='';
+  renderCalRightWinsDone();
+  renderCalendar();
+}
+
 // Legacy compat — redirect old calls to unified stash
 function renderCalRightLater(){renderCalRightStash();}
 function renderCalRightParking(){renderCalRightStash();}

@@ -961,6 +961,33 @@ function renderDayView(){
     </div>`;
   }
 
+  // Completed items section — done tasks + manual wins as crossed-out blocks
+  const _doneT=D.tasks.filter(t=>t.done&&t.date===dt&&t.cat!=='braindump');
+  const _manWins=(D.reflections&&D.reflections[dt]&&D.reflections[dt].manualWins)||[];
+  if(_doneT.length||_manWins.length){
+    html+=`<div style="margin-top:10px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;">
+      <div style="font-size:10px;font-weight:600;color:var(--green);margin-bottom:6px;">✓ Completed · ${_doneT.length+_manWins.length}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+    _doneT.forEach(t=>{
+      const cat=D.cats[t.cat];
+      const color=cat?cat.color:'var(--dim)';
+      const emoji=cat?cat.emoji:'';
+      html+=`<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:${color}12;border:1px solid ${color}30;border-left:3px solid ${color};border-radius:6px;opacity:.55;">
+        <span style="font-size:11px;">${emoji}</span>
+        <span style="color:var(--green);font-size:10px;">✓</span>
+        <span style="font-size:10px;text-decoration:line-through;color:var(--dim);">${t.text}</span>
+      </div>`;
+    });
+    _manWins.forEach(w=>{
+      html+=`<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-left:3px solid var(--green);border-radius:6px;opacity:.55;">
+        <span style="font-size:11px;">✨</span>
+        <span style="color:var(--green);font-size:10px;">✓</span>
+        <span style="font-size:10px;text-decoration:line-through;color:var(--dim);">${w}</span>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
   el.innerHTML=html;
   initBlockDrag();
   initGridClick();
