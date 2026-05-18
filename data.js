@@ -193,6 +193,10 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     d.cats=ordered;
     d._exerciseCatV2=true;
   }
+  if(!d._defaultDay){
+    d.calView='day';
+    d._defaultDay=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -267,7 +271,7 @@ function defaults(){
     reflections:{},
     energy:3,pomo:0,brainDump:'',parking:'',parkingItems:[],backlog:[],worryLog:{},lists:[],nextId:20,
     selectedDate:today,
-    calView:'week',
+    calView:'day',
     miniMonth:new Date().getMonth(),
     miniYear:new Date().getFullYear(),
     mcatSteps:[

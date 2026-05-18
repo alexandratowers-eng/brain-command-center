@@ -155,10 +155,17 @@ if('serviceWorker' in navigator){
       </div>
     </div>
 
-    <!-- Hidden compat containers for sidebar quickwins/weekly -->
+    <!-- Hidden compat containers for sidebar quickwins -->
     <div id="sidebarWinsList" style="display:none;"></div>
     <div id="sidebarWinsBadge" style="display:none;">0</div>
-    <div id="weeklyGoalWidget" style="display:none;"></div>
+
+    <!-- Weekly Progress / Call Tracker -->
+    <div class="s-card" data-card="weeklygoal">
+      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">trending_up</span> Weekly Progress<button class="s-collapse" onclick="toggleCard('weeklygoal',this)">▾</button></div>
+      <div class="s-body" id="cardBody-weeklygoal">
+        <div id="weeklyGoalWidget"></div>
+      </div>
+    </div>
 
     <!-- Weekly Later Review -->
     <div class="s-card" id="weeklyReviewCard" style="display:none;" data-card="weekly-review">
