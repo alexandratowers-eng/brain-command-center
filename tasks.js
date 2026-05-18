@@ -1170,6 +1170,33 @@ function renderCalRightTrash(){
   el.innerHTML=html;
 }
 
+function initTrashDropZone(){
+  const trashCard=document.querySelector('[data-card="calright-trash"]');
+  if(!trashCard)return;
+  trashCard.addEventListener('dragover',function(e){
+    const data=e.dataTransfer.types.includes('text/plain');
+    if(!data)return;
+    e.preventDefault();e.dataTransfer.dropEffect='move';
+    trashCard.classList.add('trash-drag-active');
+  });
+  trashCard.addEventListener('dragleave',function(e){
+    if(trashCard.contains(e.relatedTarget))return;
+    trashCard.classList.remove('trash-drag-active');
+  });
+  trashCard.addEventListener('drop',function(e){
+    e.preventDefault();trashCard.classList.remove('trash-drag-active');
+    const raw=e.dataTransfer.getData('text/plain');
+    if(!raw||!raw.startsWith('task:'))return;
+    const id=parseInt(raw.replace('task:',''));
+    if(isNaN(id))return;
+    trashTask(id);
+    renderCalRightTrash();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML='🗑 Moved to trash';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
+  });
+}
+initTrashDropZone();
+
 function renderCalRightStash(){
   const el=document.getElementById('calRightStashList');if(!el)return;
   const today=todayStr();
@@ -1610,7 +1637,7 @@ function renderCatList(){
     </button>
     <input type="text" value="${v.label}" onchange="D.cats['${k}'].label=this.value.trim();save();" style="flex:1;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);font-size:13px;font-weight:500;outline:none;padding:2px 0;font-family:inherit;" onfocus="this.style.borderBottomColor='var(--blue)'" onblur="this.style.borderBottomColor='transparent'">
     <label style="cursor:pointer;position:relative;flex-shrink:0;">
-      <span class="cat-color-dot" data-key="${k}" style="width:22px;height:22px;border-radius:6px;background:${v.color};display:inline-block;vertical-align:middle;border:2px solid rgba(255,255,255,.1);"></span>
+      <span class="cat-color-dot" data-key="${k}" style="width:22px;height:22px;border-radius:6px;background:${v.color};display:inline-block;vertical-align:middle;border:2px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .15s,box-shadow .15s;" title="Click to change color"></span>
       <input type="color" value="${v.color}" style="position:absolute;opacity:0;width:0;height:0;" onchange="updateCatColor('${k}',this.value,this)">
     </label>
     <button class="task-act-btn" onclick="if(confirm('Delete this category?')){delete D.cats['${k}'];save();renderCatList();}" style="font-size:13px;" title="Delete">x</button>

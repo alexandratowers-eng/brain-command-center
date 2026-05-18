@@ -206,20 +206,39 @@ function toggleRightPanel(){
   }
 })();
 
-// ===== LEFT SIDEBAR CARD DRAG REORDER =====
+// ===== UNIFIED CARD DRAG — CROSS-PANEL REORDER =====
 (function(){
-  const panel=document.getElementById('sidebarEl');
-  if(!panel)return;
-  let dragCard=null,placeholder=null,startY=0;
-  function getCards(){return [...panel.querySelectorAll('.s-card')];}
+  const sidebar=document.getElementById('sidebarEl');
+  const rightPanel=document.getElementById('cal-right-panel');
+  if(!sidebar||!rightPanel)return;
+  const panels=[sidebar,rightPanel];
+  const storageKeys={'sidebarEl':'sidebarCardOrder','cal-right-panel':'rpCardOrder'};
+  let dragCard=null,placeholder=null,startY=0,sourcePanel=null,currentPanel=null;
 
-  panel.addEventListener('mousedown',e=>{
+  function getCards(p){return [...p.querySelectorAll('.s-card')];}
+
+  function panelUnderCursor(x,y){
+    for(const p of panels){
+      const r=p.getBoundingClientRect();
+      if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return p;
+    }
+    return null;
+  }
+
+  function saveOrder(p){
+    const key=storageKeys[p.id];
+    if(key)localStorage.setItem(key,JSON.stringify(getCards(p).map(c=>c.dataset.card)));
+  }
+
+  document.addEventListener('mousedown',e=>{
     const handle=e.target.closest('.rp-drag-handle');
     if(!handle)return;
-    if(!handle.closest('#sidebarEl'))return;
+    const card=handle.closest('.s-card');
+    if(!card)return;
+    const panel=panels.find(p=>p.contains(card));
+    if(!panel)return;
     e.preventDefault();e.stopPropagation();
-    dragCard=handle.closest('.s-card');
-    if(!dragCard)return;
+    dragCard=card;sourcePanel=panel;currentPanel=panel;
     startY=e.clientY;
     const rect=dragCard.getBoundingClientRect();
     placeholder=document.createElement('div');
@@ -239,127 +258,53 @@ function toggleRightPanel(){
   });
 
   document.addEventListener('mousemove',e=>{
-    if(!dragCard||!placeholder||!dragCard.closest('body'))return;
-    if(!dragCard.style.position)return;
+    if(!dragCard||!placeholder)return;
     const dy=e.clientY-startY;
-    const origTop=parseFloat(dragCard.style.top);
-    dragCard.style.top=(origTop+dy)+'px';
+    dragCard.style.top=(parseFloat(dragCard.style.top)+dy)+'px';
     startY=e.clientY;
-    const cards=getCards().filter(c=>c!==dragCard);
-    const midY=e.clientY;
+    const target=panelUnderCursor(e.clientX,e.clientY)||currentPanel;
+    if(target!==currentPanel){
+      currentPanel=target;
+      panels.forEach(p=>p.classList.toggle('card-drop-target',p===target&&p!==sourcePanel));
+    }
+    if(placeholder.parentNode!==currentPanel)currentPanel.appendChild(placeholder);
+    const cards=getCards(currentPanel).filter(c=>c!==dragCard);
     let insertBefore=null;
     for(const c of cards){
       const r=c.getBoundingClientRect();
-      if(midY<r.top+r.height/2){insertBefore=c;break;}
+      if(e.clientY<r.top+r.height/2){insertBefore=c;break;}
     }
-    if(insertBefore){panel.insertBefore(placeholder,insertBefore);}
-    else{panel.appendChild(placeholder);}
+    if(insertBefore)currentPanel.insertBefore(placeholder,insertBefore);
+    else currentPanel.appendChild(placeholder);
   });
 
   document.addEventListener('mouseup',()=>{
     if(!dragCard||!placeholder)return;
-    panel.insertBefore(dragCard,placeholder);
+    currentPanel.insertBefore(dragCard,placeholder);
     placeholder.remove();
     dragCard.style.position='';dragCard.style.top='';dragCard.style.left='';
     dragCard.style.width='';dragCard.style.zIndex='';dragCard.style.opacity='';
     dragCard.style.boxShadow='';dragCard.style.pointerEvents='';
     document.body.style.cursor='';document.body.style.userSelect='';
-    const order=getCards().map(c=>c.dataset.card);
-    localStorage.setItem('sidebarCardOrder',JSON.stringify(order));
-    dragCard=null;placeholder=null;
+    panels.forEach(p=>p.classList.remove('card-drop-target'));
+    saveOrder(sourcePanel);
+    if(currentPanel!==sourcePanel)saveOrder(currentPanel);
+    dragCard=null;placeholder=null;sourcePanel=null;currentPanel=null;
   });
 
-  const saved=localStorage.getItem('sidebarCardOrder');
-  if(saved){
-    try{
-      const order=JSON.parse(saved);
-      const cards=getCards();
-      const map={};cards.forEach(c=>{map[c.dataset.card]=c;});
-      order.forEach(key=>{if(map[key])panel.appendChild(map[key]);});
-      cards.forEach(c=>{if(!order.includes(c.dataset.card))panel.appendChild(c);});
-    }catch(e){}
-  }
-})();
-
-// ===== RIGHT PANEL CARD DRAG REORDER =====
-(function(){
-  const panel=document.getElementById('cal-right-panel');
-  if(!panel)return;
-  let dragCard=null,placeholder=null,startY=0;
-  function getCards(){return [...panel.querySelectorAll('.s-card')];}
-
-  panel.addEventListener('mousedown',e=>{
-    const handle=e.target.closest('.rp-drag-handle');
-    if(!handle)return;
-    e.preventDefault();
-    e.stopPropagation();
-    dragCard=handle.closest('.s-card');
-    if(!dragCard)return;
-    startY=e.clientY;
-    const rect=dragCard.getBoundingClientRect();
-    placeholder=document.createElement('div');
-    placeholder.className='rp-drop-placeholder';
-    placeholder.style.height=rect.height+'px';
-    dragCard.parentNode.insertBefore(placeholder,dragCard);
-    dragCard.style.position='fixed';
-    dragCard.style.top=rect.top+'px';
-    dragCard.style.left=rect.left+'px';
-    dragCard.style.width=rect.width+'px';
-    dragCard.style.zIndex='999';
-    dragCard.style.opacity='.85';
-    dragCard.style.boxShadow='0 4px 20px rgba(0,0,0,.3)';
-    dragCard.style.pointerEvents='none';
-    document.body.style.cursor='grabbing';
-    document.body.style.userSelect='none';
-  });
-
-  document.addEventListener('mousemove',e=>{
-    if(!dragCard||!placeholder)return;
-    const dy=e.clientY-startY;
-    const origTop=parseFloat(dragCard.style.top);
-    dragCard.style.top=(origTop+dy)+'px';
-    startY=e.clientY;
-    const cards=getCards().filter(c=>c!==dragCard);
-    const midY=e.clientY;
-    let insertBefore=null;
-    for(const c of cards){
-      const r=c.getBoundingClientRect();
-      if(midY<r.top+r.height/2){insertBefore=c;break;}
+  panels.forEach(p=>{
+    const key=storageKeys[p.id];
+    const saved=key&&localStorage.getItem(key);
+    if(saved){
+      try{
+        const order=JSON.parse(saved);
+        const cards=getCards(p);
+        const map={};cards.forEach(c=>{map[c.dataset.card]=c;});
+        order.forEach(k=>{if(map[k])p.appendChild(map[k]);});
+        cards.forEach(c=>{if(!order.includes(c.dataset.card))p.appendChild(c);});
+      }catch(e){}
     }
-    if(insertBefore){panel.insertBefore(placeholder,insertBefore);}
-    else{panel.appendChild(placeholder);}
   });
-
-  document.addEventListener('mouseup',()=>{
-    if(!dragCard||!placeholder)return;
-    panel.insertBefore(dragCard,placeholder);
-    placeholder.remove();
-    dragCard.style.position='';
-    dragCard.style.top='';
-    dragCard.style.left='';
-    dragCard.style.width='';
-    dragCard.style.zIndex='';
-    dragCard.style.opacity='';
-    dragCard.style.boxShadow='';
-    dragCard.style.pointerEvents='';
-    document.body.style.cursor='';
-    document.body.style.userSelect='';
-    const order=getCards().map(c=>c.dataset.card);
-    localStorage.setItem('rpCardOrder',JSON.stringify(order));
-    dragCard=null;placeholder=null;
-  });
-
-  // Restore saved order
-  const saved=localStorage.getItem('rpCardOrder');
-  if(saved){
-    try{
-      const order=JSON.parse(saved);
-      const cards=getCards();
-      const map={};cards.forEach(c=>{map[c.dataset.card]=c;});
-      order.forEach(key=>{if(map[key])panel.appendChild(map[key]);});
-      cards.forEach(c=>{if(!order.includes(c.dataset.card))panel.appendChild(c);});
-    }catch(e){}
-  }
 })();
 
 // ===== RIGHT PANEL CARD TITLE EDITING =====

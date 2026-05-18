@@ -1024,6 +1024,9 @@ button,input,select,textarea{font-family:inherit;}
 .s-card:hover .rp-drag-handle{opacity:.7;}
 .rp-drag-handle:hover{opacity:1!important;}
 .rp-drop-placeholder{border:2px dashed var(--border);border-radius:8px;margin:4px 0;transition:height .15s;}
+.card-drop-target{outline:2px dashed var(--blue);outline-offset:-2px;background:rgba(96,165,250,.04)!important;transition:outline .15s,background .15s;}
+.trash-drag-active{outline:2px solid var(--red)!important;outline-offset:-2px;background:rgba(248,113,113,.08)!important;transition:outline .15s,background .15s;}
+.cat-color-dot:hover{transform:scale(1.2);box-shadow:0 0 0 3px rgba(255,255,255,.15);}
 
 /* Right panel resize handle */
 .right-resize-handle{cursor:col-resize;position:relative;z-index:10;flex-shrink:0;background:transparent;transition:background .15s;}
