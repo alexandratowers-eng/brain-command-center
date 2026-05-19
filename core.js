@@ -47,8 +47,16 @@ function init(){
       }
     });
   }
-  // Always start in day view — set before first render to avoid flash
-  D.calView='day';
+  // Always default to week view + today on load — avoids "blank day with no events" feeling
+  D.calView='week';
+  D.selectedDate=todayStr();
+  // Sync the Day/Week/Month button active state to match
+  setTimeout(()=>{
+    document.querySelectorAll('.vt-btn').forEach(b=>{
+      const t=(b.textContent||'').toLowerCase();
+      b.classList.toggle('active',t.includes('week'));
+    });
+  },0);
   const _tbd=document.getElementById('topbarDate');if(_tbd)_tbd.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   if(D.logoIcon) document.getElementById('logoIcon').textContent=D.logoIcon;
   if(D.logoText) document.getElementById('logoText').value=D.logoText;

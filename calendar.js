@@ -272,6 +272,9 @@ function dropTaskOnWeekCell(e,dt,hr){
   if(typeof renderCalRightTasks==='function')renderCalRightTasks();
   if(typeof renderAllTasks==='function')renderAllTasks();
 }
+function dropTaskOnDayCell(e,dt,hr){
+  dropTaskOnWeekCell(e,dt,hr);
+}
 function renderWeekView(){
   const dates=getWeekDates(D.selectedDate);
   const today=todayStr();
@@ -373,8 +376,8 @@ function renderWeekView(){
       const y=e.clientY-rect.top-40;
       if(x<0||y<0)return null;
       const gW=rect.width-50;
-      const colFr=[1,1,1,1,1,.5,.5];
-      const totalFr=6;
+      const colFr=[1,1,1,1,1,1,1];
+      const totalFr=7;
       let accum=0;
       let colIdx=6;
       for(let c=0;c<7;c++){
@@ -405,8 +408,8 @@ function renderWeekBlocks(container, dates, startHr, endHr){
   if(!grid)return;
   grid.style.position='relative';
   const gridW=grid.offsetWidth||800;
-  const colFr=[1,1,1,1,1,.5,.5];
-  const totalFr=6;
+  const colFr=[1,1,1,1,1,1,1];
+  const totalFr=7;
   function colLeft(ci){let s=0;for(let j=0;j<ci;j++)s+=colFr[j];return s/totalFr;}
   function colWidth(ci){return colFr[ci]/totalFr;}
   const cellW=(gridW-50)*colFr[0]/totalFr; // approx for weekday drag (used elsewhere)
@@ -953,9 +956,9 @@ function renderDayView(){
   for(let hr=startHr;hr<endHr;hr++){
     const top=(hr-startHr)*ROW_H;
     const label=hr<12?hr+' AM':hr===12?'12 PM':(hr-12)+' PM';
-    html+=`<div class="dv-hour-row" data-hour="${hr}" style="position:absolute;top:${top}px;left:0;right:0;height:${ROW_H}px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;z-index:1;" >
-      <div style="width:64px;padding:4px 8px 0 0;text-align:right;font-size:10px;color:var(--dim);flex-shrink:0;user-select:none;">${label}</div>
-      <div style="flex:1;height:100%;border-left:1px solid var(--border);position:relative;">
+    html+=`<div class="dv-hour-row" data-hour="${hr}" style="position:absolute;top:${top}px;left:0;right:0;height:${ROW_H}px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;z-index:1;" ondragover="event.preventDefault();event.dataTransfer.dropEffect='move';this.style.background='rgba(52,211,153,.10)';" ondragleave="this.style.background='';" ondrop="event.preventDefault();this.style.background='';dropTaskOnDayCell(event,'${dt}',${hr});">
+      <div style="width:64px;padding:4px 8px 0 0;text-align:right;font-size:10px;color:var(--dim);flex-shrink:0;user-select:none;pointer-events:none;">${label}</div>
+      <div style="flex:1;height:100%;border-left:1px solid var(--border);position:relative;pointer-events:none;">
         <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;color:var(--border);opacity:0;transition:opacity .15s;pointer-events:none;" class="dv-hour-hint">+ click to add</div>
       </div>
     </div>`;
