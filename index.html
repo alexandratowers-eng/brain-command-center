@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260518i">
-<script src="sync-config.js?v=20260518i" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260518j">
+<script src="sync-config.js?v=20260518j" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -50,22 +50,21 @@ if('serviceWorker' in navigator){
   <div class="topbar">
     <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Menu"><span class="mi" style="font-size:20px;">menu</span></button>
     <div class="topbar-left">
-      <span class="logo-icon-only" id="logoIcon" onclick="openLogoPicker()" title="Click to change icon">🦋</span>
       <input type="text" class="logo-text" id="logoText" value="Brain Command Center" style="display:none;" onchange="D.logoText=this.value;save();">
       <div class="topbar-actions">
         <div class="topbar-search" id="topbarSearch">
-          <button class="tb-icon-btn" onclick="toggleSearch()" title="Search (Cmd+K)"><span class="mi">search</span></button>
+          <button class="tb-icon-btn" onclick="toggleSearch()" title="Search (Cmd+K)"><span class="mi mi-filled">search</span></button>
           <div class="search-input-wrap" id="searchInputWrap" style="display:none;">
             <input type="text" id="globalSearchInput" placeholder="Search events, tasks, notes..." autocomplete="off" oninput="runGlobalSearch(this.value)" onkeydown="handleSearchKey(event)">
             <button onclick="closeSearch()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;">✕</button>
           </div>
           <div class="search-results" id="searchResults" style="display:none;"></div>
         </div>
-        <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status"><span class="mi">cloud</span></button>
-        <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders"><span class="mi">notifications</span></button>
-        <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme"><span class="mi">light_mode</span></button>
+        <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status"><span class="mi mi-filled">cloud</span></button>
+        <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders"><span class="mi mi-filled">notifications</span></button>
+        <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme"><span class="mi mi-filled">light_mode</span></button>
         <div class="topbar-dropdown" id="dataDropdown">
-          <button class="tb-icon-btn" onclick="toggleDataMenu()" title="Data management"><span class="mi">settings</span></button>
+          <button class="tb-icon-btn" onclick="toggleDataMenu()" title="Data management"><span class="mi mi-filled">settings</span></button>
           <div class="topbar-dropdown-menu" id="dataMenu">
             <button onclick="exportData();toggleDataMenu();">⬇ Download Backup</button>
             <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
@@ -75,17 +74,6 @@ if('serviceWorker' in navigator){
     </div>
     <div class="topbar-center">
       <div class="topbar-date" id="topbarDate"></div>
-      <div class="view-toggle" id="viewToggle">
-        <div class="vt-dropdown">
-          <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:16px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
-          <div class="vt-day-menu" id="vtDayMenu">
-            <button onclick="D.selectedDate=todayStr();setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Today';">Today</button>
-            <button onclick="var t=new Date();t.setDate(t.getDate()+1);D.selectedDate=dateStr(t);setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Tomorrow';">Tomorrow</button>
-          </div>
-        </div>
-        <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:16px;">date_range</span> Week</button>
-        <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:16px;">calendar_view_month</span> Month</button>
-      </div>
     </div>
     <div class="topbar-right">
       <div class="tabs">
@@ -622,12 +610,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260518i"></script>
-<script src="core.js?v=20260518i"></script>
-<script src="calendar.js?v=20260518i"></script>
-<script src="tasks.js?v=20260518i"></script>
-<script src="features.js?v=20260518i"></script>
-<script src="sync.js?v=20260518i"></script>
+<script src="data.js?v=20260518j"></script>
+<script src="core.js?v=20260518j"></script>
+<script src="calendar.js?v=20260518j"></script>
+<script src="tasks.js?v=20260518j"></script>
+<script src="features.js?v=20260518j"></script>
+<script src="sync.js?v=20260518j"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

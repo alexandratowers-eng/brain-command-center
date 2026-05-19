@@ -280,15 +280,16 @@ function renderWeekView(){
   const el=document.getElementById('calWeekView');
 
   // Header row
-  let html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-  html+=`<div style="display:flex;gap:6px;align-items:center;">
-    <button class="t-btn" onclick="navWeek(-1)" style="padding:3px 8px;">&lt;</button>
-    <span style="font-size:13px;font-weight:600;">${formatWeekRange(dates)}</span>
-    <button class="t-btn" onclick="navWeek(1)" style="padding:3px 8px;">&gt;</button>
-    <button class="t-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();" style="font-size:10px;padding:3px 8px;">Today</button>
+  let html=`<div class="cal-header-bar">
+    <div class="cal-header-nav">
+      <button class="cal-nav-btn" onclick="navWeek(-1)" title="Previous week">‹</button>
+      <h2 class="cal-header-title">${formatWeekRange(dates)}</h2>
+      <button class="cal-nav-btn" onclick="navWeek(1)" title="Next week">›</button>
+      <button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
+    </div>
+    ${renderViewToggleInline('week')}
+    <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
-  html+=`<button class="ics-btn" onclick="exportICS()">Export .ics</button>`;
-  html+='</div>';
 
   // Grid
   html+='<div class="week-grid" style="max-height:calc(100vh - 140px);overflow-y:auto;">';
@@ -820,6 +821,13 @@ function collapseSpotRow(dt){
   D.spotRowExpanded[dt]=false;
   save();renderCalendar();
 }
+function renderViewToggleInline(active){
+  return `<div class="view-toggle view-toggle-inline">
+    <button class="vt-btn${active==='day'?' active':''}" onclick="setCalView('day',this)"><span class="mi" style="font-size:15px;">today</span> Day</button>
+    <button class="vt-btn${active==='week'?' active':''}" onclick="setCalView('week',this)"><span class="mi" style="font-size:15px;">date_range</span> Week</button>
+    <button class="vt-btn${active==='month'?' active':''}" onclick="setCalView('month',this)"><span class="mi" style="font-size:15px;">calendar_view_month</span> Month</button>
+  </div>`;
+}
 function renderDayView(){
   const dt=D.selectedDate;
   const tl=getTimeline(dt)||[];
@@ -832,16 +840,15 @@ function renderDayView(){
   const ROW_H=56;
 
   const dayTitle=isToday?'Today — '+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  let html=`<div class="dv-header">
-    <div class="dv-nav">
-      <button onclick="navDay(-1)">&lt;</button>
+  let html=`<div class="cal-header-bar">
+    <div class="cal-header-nav">
+      <button class="cal-nav-btn" onclick="navDay(-1)" title="Previous day">‹</button>
+      <h2 class="cal-header-title">${dayTitle}</h2>
+      <button class="cal-nav-btn" onclick="navDay(1)" title="Next day">›</button>
+      ${!isToday?`<button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
-    <h2>${dayTitle}</h2>
-    <div class="dv-nav">
-      <button onclick="navDay(1)">&gt;</button>
-      ${!isToday?`<button onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
-    </div>
-    <button class="ics-btn" onclick="exportICS()" style="margin-left:auto;">Export .ics</button>
+    ${renderViewToggleInline('day')}
+    <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
   // Location picker
@@ -2204,12 +2211,14 @@ function renderMonthView(){
   const daysInMonth=new Date(year,month+1,0).getDate();
   const el=document.getElementById('calMonthView');
 
-  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <div style="display:flex;gap:6px;align-items:center;">
-      <button class="t-btn" onclick="navMonth(-1)" style="padding:3px 8px;">&lt;</button>
-      <span style="font-size:14px;font-weight:600;">${first.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>
-      <button class="t-btn" onclick="navMonth(1)" style="padding:3px 8px;">&gt;</button>
+  let html=`<div class="cal-header-bar">
+    <div class="cal-header-nav">
+      <button class="cal-nav-btn" onclick="navMonth(-1)" title="Previous month">‹</button>
+      <h2 class="cal-header-title">${first.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</h2>
+      <button class="cal-nav-btn" onclick="navMonth(1)" title="Next month">›</button>
+      <button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
     </div>
+    ${renderViewToggleInline('month')}
   </div>`;
 
   html+='<div class="month-grid">';
