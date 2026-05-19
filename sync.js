@@ -166,6 +166,17 @@ window.SyncEngine=(function(){
       const ids=new Set(merged.parkingItems.map(p=>p.id));
       local.parkingItems.forEach(p=>{if(!ids.has(p.id))merged.parkingItems.push(p);});
     }
+    // Merge trash — dedupe by task id
+    if(Array.isArray(local.trash)||Array.isArray(merged.trash)){
+      const byId={};
+      (merged.trash||[]).forEach(t=>{if(t&&t.id!=null)byId[t.id]=t;});
+      (local.trash||[]).forEach(t=>{
+        if(!t||t.id==null)return;
+        const prev=byId[t.id];
+        if(!prev||(t._trashedAt||0)>(prev._trashedAt||0))byId[t.id]=t;
+      });
+      merged.trash=Object.values(byId);
+    }
     // Keep higher nextId
     if(local.nextId>merged.nextId)merged.nextId=local.nextId;
     // Preserve client-local UI state that shouldn't be overwritten by remote

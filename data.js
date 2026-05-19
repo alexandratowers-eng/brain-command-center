@@ -322,7 +322,8 @@ function trashTask(id){
   const task=D.tasks.splice(idx,1)[0];
   task._trashedAt=Date.now();
   if(!D.trash)D.trash=[];
-  D.trash.push(task);
+  // Don't re-add if task with same id already in trash
+  if(!D.trash.some(t=>t.id===task.id))D.trash.push(task);
   save();
 }
 function restoreTask(idx){

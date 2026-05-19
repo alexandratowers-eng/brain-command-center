@@ -91,6 +91,23 @@ function init(){
       }
     });
   }
+  // Dedupe trash by id (keep the most recently trashed copy)
+  if(Array.isArray(D.trash)&&D.trash.length){
+    const byId={};
+    D.trash.forEach(t=>{
+      if(!t||t.id==null){return;}
+      const prev=byId[t.id];
+      if(!prev||(t._trashedAt||0)>(prev._trashedAt||0))byId[t.id]=t;
+    });
+    // Also dedupe items with same text+no id (older entries)
+    const byText={};
+    Object.values(byId).forEach(t=>{
+      const key=t.id!=null?'id:'+t.id:'text:'+(t.text||'');
+      const prev=byText[key];
+      if(!prev||(t._trashedAt||0)>(prev._trashedAt||0))byText[key]=t;
+    });
+    D.trash=Object.values(byText);
+  }
   // Always default to week view + today on load — avoids "blank day with no events" feeling
   D.calView='week';
   D.selectedDate=todayStr();
