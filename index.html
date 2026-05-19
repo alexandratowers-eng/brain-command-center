@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260518d">
-<script src="sync-config.js?v=20260518d" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260518e">
+<script src="sync-config.js?v=20260518e" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -49,6 +49,10 @@ if('serviceWorker' in navigator){
   <!-- TOPBAR -->
   <div class="topbar">
     <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Menu"><span class="mi" style="font-size:20px;">menu</span></button>
+    <div class="logo" id="bccLogo">
+      <span class="logo-icon" id="logoIcon" onclick="openLogoPicker()" title="Click to change icon">🦋</span>
+      <input type="text" class="logo-text" id="logoText" value="Brain Command Center" onchange="D.logoText=this.value;save();" placeholder="My Planner">
+    </div>
     <div class="view-toggle" id="viewToggle">
       <div class="vt-dropdown">
         <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
@@ -60,29 +64,6 @@ if('serviceWorker' in navigator){
       <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
       <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
     </div>
-    <div class="date-label" id="dateLabel"></div>
-    <div class="logo">
-      <span class="logo-icon" id="logoIcon" onclick="openLogoPicker()" title="Click to change icon">🧠</span>
-      <input type="text" class="logo-text" id="logoText" value="Brain Command Center" onchange="D.logoText=this.value;save();" placeholder="My Planner">
-    </div>
-    <div class="topbar-dropdown" id="dataDropdown">
-      <button class="topbar-dropdown-btn" onclick="toggleDataMenu()" title="Data management">⚙ Data ▾</button>
-      <div class="topbar-dropdown-menu" id="dataMenu">
-        <button onclick="exportData();toggleDataMenu();">⬇ Download Backup</button>
-        <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
-      </div>
-    </div>
-    <div class="topbar-search" id="topbarSearch">
-      <button class="search-icon-btn" onclick="toggleSearch()" title="Search (Cmd+K)"><span class="mi" style="font-size:18px;">search</span></button>
-      <div class="search-input-wrap" id="searchInputWrap" style="display:none;">
-        <input type="text" id="globalSearchInput" placeholder="Search events, tasks, notes..." autocomplete="off" oninput="runGlobalSearch(this.value)" onkeydown="handleSearchKey(event)">
-        <button onclick="closeSearch()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;">✕</button>
-      </div>
-      <div class="search-results" id="searchResults" style="display:none;"></div>
-    </div>
-    <button id="syncStatusBtn" data-state="disabled" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Sync status">🔗</button>
-    <button id="notifToggleBtn" onclick="showNotifSetup()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;opacity:.5;" title="Click to enable event reminders">🔔</button>
-    <button id="themeBtn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:14px;transition:all .15s;" title="Toggle theme">☀️</button>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
       <button class="tab-btn" onclick="switchTab('wins',this)"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
@@ -90,6 +71,26 @@ if('serviceWorker' in navigator){
       <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
       <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
       <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-search" id="topbarSearch">
+        <button class="tb-icon-btn" onclick="toggleSearch()" title="Search (Cmd+K)"><span class="mi">search</span></button>
+        <div class="search-input-wrap" id="searchInputWrap" style="display:none;">
+          <input type="text" id="globalSearchInput" placeholder="Search events, tasks, notes..." autocomplete="off" oninput="runGlobalSearch(this.value)" onkeydown="handleSearchKey(event)">
+          <button onclick="closeSearch()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;">✕</button>
+        </div>
+        <div class="search-results" id="searchResults" style="display:none;"></div>
+      </div>
+      <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status">☁️</button>
+      <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders">🔔</button>
+      <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+      <div class="topbar-dropdown" id="dataDropdown">
+        <button class="tb-icon-btn" onclick="toggleDataMenu()" title="Data management"><span class="mi">settings</span></button>
+        <div class="topbar-dropdown-menu" id="dataMenu">
+          <button onclick="exportData();toggleDataMenu();">⬇ Download Backup</button>
+          <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -616,12 +617,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260518d"></script>
-<script src="core.js?v=20260518d"></script>
-<script src="calendar.js?v=20260518d"></script>
-<script src="tasks.js?v=20260518d"></script>
-<script src="features.js?v=20260518d"></script>
-<script src="sync.js?v=20260518d"></script>
+<script src="data.js?v=20260518e"></script>
+<script src="core.js?v=20260518e"></script>
+<script src="calendar.js?v=20260518e"></script>
+<script src="tasks.js?v=20260518e"></script>
+<script src="features.js?v=20260518e"></script>
+<script src="sync.js?v=20260518e"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

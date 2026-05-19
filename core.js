@@ -38,7 +38,7 @@ function init(){
   applyAutoTheme();
   // Always start in day view — set before first render to avoid flash
   D.calView='day';
-  document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const _dl=document.getElementById('dateLabel');if(_dl)_dl.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   if(D.logoIcon) document.getElementById('logoIcon').textContent=D.logoIcon;
   if(D.logoText) document.getElementById('logoText').value=D.logoText;
   const savedHide=localStorage.getItem('sidebarHidden');
