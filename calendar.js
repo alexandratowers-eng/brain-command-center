@@ -276,7 +276,7 @@ function renderWeekView(){
   const dates=getWeekDates(D.selectedDate);
   const today=todayStr();
   const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();
-  const startHr=7,endHr=24;
+  const startHr=7,endHr=22;
   const el=document.getElementById('calWeekView');
 
   // Header row
@@ -287,7 +287,6 @@ function renderWeekView(){
       <button class="cal-nav-btn" onclick="navWeek(1)" title="Next week">›</button>
       <button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
     </div>
-    ${renderViewToggleInline('week')}
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
@@ -847,7 +846,6 @@ function renderDayView(){
       <button class="cal-nav-btn" onclick="navDay(1)" title="Next day">›</button>
       ${!isToday?`<button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
-    ${renderViewToggleInline('day')}
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
@@ -2218,7 +2216,6 @@ function renderMonthView(){
       <button class="cal-nav-btn" onclick="navMonth(1)" title="Next month">›</button>
       <button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
     </div>
-    ${renderViewToggleInline('month')}
   </div>`;
 
   html+='<div class="month-grid">';

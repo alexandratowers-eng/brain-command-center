@@ -162,12 +162,17 @@ function getCurrentWeeklyGoal(){
 }
 
 function openWeeklyGoalSetup(){
+  if(!D.weeklyGoals)D.weeklyGoals=[];
   const label=prompt('What are you tracking? (e.g. "CHOP Calls"):','CHOP Calls');
-  if(!label)return;
-  const lo=parseInt(prompt('Comfortable low end of your range:','20'))||20;
-  const hi=parseInt(prompt('Stretch high end:','40'))||40;
-  const unit=prompt('Unit (calls, attempts, questions, etc.):','calls')||'calls';
-  D.weeklyGoals.push({id:Date.now(),label,rangeLow:lo,rangeHigh:hi,target:hi,current:0,unit,sessions:[],created:new Date().toISOString()});
+  if(!label||!label.trim())return;
+  const loRaw=prompt('Comfortable low end of your range:','20');
+  if(loRaw===null)return;
+  const hiRaw=prompt('Stretch high end:','40');
+  if(hiRaw===null)return;
+  const unit=(prompt('Unit (calls, attempts, questions, etc.):','calls')||'calls').trim();
+  const lo=parseInt(loRaw)||20;
+  const hi=parseInt(hiRaw)||40;
+  D.weeklyGoals.push({id:Date.now(),label:label.trim(),rangeLow:lo,rangeHigh:hi,target:hi,current:0,unit,sessions:[],created:new Date().toISOString()});
   save();renderWeeklyGoal();
 }
 
