@@ -36,20 +36,7 @@ function updateThemeBtn(){
   btn.title=isLight?'Switch to night mode':'Switch to day mode';
 }
 
-// ===== UNIVERSAL PROMPT/CONFIRM (works in PWA standalone where window.prompt/confirm fail) =====
-// Shim window.prompt so legacy callers don't crash in PWA mode (they get null + a toast instead)
-(function(){
-  try{
-    const t=window.prompt;t&&t('','');// test if it works
-  }catch(e){
-    window.prompt=function(msg,def){
-      const toast=document.getElementById('saveToast');
-      if(toast){toast.innerHTML='⚠️ Tap-to-edit not yet available here';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000);}
-      console.warn('[BCC] prompt() blocked in this context — use bccPrompt:',msg);
-      return null;
-    };
-  }
-})();
+// ===== UNIVERSAL PROMPT (bccPrompt) — used in place of window.prompt() everywhere =====
 function bccPrompt(message,defaultVal,callback){
   // Modal-based prompt — returns via callback(value) where value is null on cancel
   const existing=document.getElementById('bccPromptModal');if(existing)existing.remove();

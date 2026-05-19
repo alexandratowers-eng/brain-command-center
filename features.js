@@ -1741,23 +1741,22 @@ function dropOverdueTask(id){
 }
 function rescheduleOverdueTask(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
-  const newDate=prompt('Move to which date? (YYYY-MM-DD)',todayStr());
-  if(!newDate||!/^\d{4}-\d{2}-\d{2}$/.test(newDate))return;
-  t.date=newDate;
-  // Also create an amber "task" block on that date's calendar
-  const tl=getTimeline(newDate)||[];
-  const alreadyExists=tl.some(s=>s._taskId===t.id);
-  if(!alreadyExists){
-    // Find a free slot starting at 9am
-    let startMin=9*60;
-    tl.forEach(s=>{const em=s.end?parseMin(s.end):parseMin(s.t)+30;if(parseMin(s.t)<=startMin&&em>startMin)startMin=em;});
-    if(startMin>=22*60)startMin=9*60;
-    const endMin=Math.min(24*60,startMin+30);
-    tl.push({t:minToTime(startMin),text:'📋 '+t.text,cls:'_task',sm:'Carried over',end:minToTime(endMin),_taskId:t.id,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
-    tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
-    setTimeline(newDate,tl);
-  }
-  save();checkOverdueTasks();renderCalTasks();renderAllTasks();renderCalendar();renderMiniCal();updateStats();
+  bccPrompt('Move "'+t.text+'" to which date? (YYYY-MM-DD)',todayStr(),(newDate)=>{
+    if(!newDate||!/^\d{4}-\d{2}-\d{2}$/.test(newDate))return;
+    t.date=newDate;
+    const tl=getTimeline(newDate)||[];
+    const alreadyExists=tl.some(s=>s._taskId===t.id);
+    if(!alreadyExists){
+      let startMin=9*60;
+      tl.forEach(s=>{const em=s.end?parseMin(s.end):parseMin(s.t)+30;if(parseMin(s.t)<=startMin&&em>startMin)startMin=em;});
+      if(startMin>=22*60)startMin=9*60;
+      const endMin=Math.min(24*60,startMin+30);
+      tl.push({t:minToTime(startMin),text:'📋 '+t.text,cls:'_task',sm:'Carried over',end:minToTime(endMin),_taskId:t.id,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+      tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+      setTimeline(newDate,tl);
+    }
+    save();checkOverdueTasks();renderCalTasks();renderAllTasks();renderCalendar();renderMiniCal();updateStats();
+  });
 }
 
 function renderBacklog(){

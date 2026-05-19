@@ -268,13 +268,17 @@ window.SyncEngine=(function(){
   function copyShareLink(){
     const cfg=getConfig();if(!cfg){alert('Not connected yet.');return;}
     const link=window.location.origin+window.location.pathname+'#BCC:'+cfg.gistId+':'+cfg.token;
+    function showLinkModal(){
+      if(typeof bccPrompt==='function'){bccPrompt('Copy this link and open it on your other device:',link,()=>{});}
+      else {/* last-ditch fallback */ alert(link);}
+    }
     if(navigator.clipboard){
       navigator.clipboard.writeText(link).then(()=>{
         const toast=document.getElementById('saveToast');
         if(toast){toast.innerHTML='✓ Share link copied — open on your other device';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3000);}
-      }).catch(()=>{prompt('Copy this and open it on your other device:',link);});
+      }).catch(showLinkModal);
     } else {
-      prompt('Copy this and open it on your other device:',link);
+      showLinkModal();
     }
   }
 
