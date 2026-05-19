@@ -850,7 +850,8 @@ function renderDayView(){
   const _allSpots=[...(typeof SPOT_SUGGESTIONS!=='undefined'?SPOT_SUGGESTIONS:[]),...(D.customSpots||[])];
   const _spotMeta=(D.daySpotMeta&&D.daySpotMeta[dt])||{};
   if(!D.spotRowExpanded)D.spotRowExpanded={};
-  const _expanded=!!D.spotRowExpanded[dt]||_lPicked.length===0;
+  // tri-state: undefined = auto (collapse always), true = expanded, false = explicitly collapsed
+  const _expanded=D.spotRowExpanded[dt]===true;
   if(!_expanded){
     // Compact summary: show selected spots inline, or a "+ Set spot" chip
     const selSpots=_lPicked.map(k=>_allSpots.find(s=>s.key===k)).filter(Boolean);

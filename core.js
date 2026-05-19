@@ -30,7 +30,9 @@ function updateThemeBtn(){
   const btn=document.getElementById('themeBtn');
   if(!btn)return;
   const isLight=document.documentElement.classList.contains('light');
-  btn.textContent=isLight?'🌙':'☀️';
+  const ic=btn.querySelector('.mi');
+  if(ic)ic.textContent=isLight?'dark_mode':'light_mode';
+  else btn.textContent=isLight?'🌙':'☀️';
   btn.title=isLight?'Switch to night mode':'Switch to day mode';
 }
 
@@ -38,7 +40,6 @@ function init(){
   applyAutoTheme();
   // Always start in day view — set before first render to avoid flash
   D.calView='day';
-  const _dl=document.getElementById('dateLabel');if(_dl)_dl.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const _tbd=document.getElementById('topbarDate');if(_tbd)_tbd.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   if(D.logoIcon) document.getElementById('logoIcon').textContent=D.logoIcon;
   if(D.logoText) document.getElementById('logoText').value=D.logoText;

@@ -19,8 +19,11 @@ window.SyncEngine=(function(){
   function setStatus(state,msg){
     _state=state;
     const el=document.getElementById('syncStatusBtn');if(!el)return;
-    const icons={idle:'☁️',syncing:'🔄',error:'⚠️',offline:'📴',disabled:'🔗'};
-    el.textContent=icons[state]||'☁️';
+    const icons={idle:'cloud',syncing:'cloud_sync',error:'cloud_off',offline:'cloud_off',disabled:'cloud_queue'};
+    const emoji={idle:'☁️',syncing:'🔄',error:'⚠️',offline:'📴',disabled:'🔗'};
+    const ic=el.querySelector('.mi');
+    if(ic)ic.textContent=icons[state]||'cloud';
+    else el.textContent=emoji[state]||'☁️';
     el.title=msg||state;
     el.dataset.state=state;
   }
@@ -165,6 +168,20 @@ window.SyncEngine=(function(){
     }
     // Keep higher nextId
     if(local.nextId>merged.nextId)merged.nextId=local.nextId;
+    // Preserve client-local UI state that shouldn't be overwritten by remote
+    ['spotRowExpanded','daySpots','daySpotMeta','customSpots'].forEach(k=>{
+      if(local[k]!==undefined){
+        if(Array.isArray(local[k])){
+          merged[k]=Array.isArray(merged[k])?[...merged[k]]:[];
+          const seen=new Set(merged[k].map(x=>x&&x.key));
+          local[k].forEach(x=>{if(x&&!seen.has(x.key))merged[k].push(x);});
+        } else if(typeof local[k]==='object'&&local[k]){
+          merged[k]={...(merged[k]||{}),...local[k]};
+        } else {
+          merged[k]=local[k];
+        }
+      }
+    });
     return merged;
   }
 

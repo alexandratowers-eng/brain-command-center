@@ -1,4 +1,4 @@
-const CACHE='bcc-v31';
+const CACHE='bcc-v32';
 const ASSETS=[
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS=[
   './tasks.js',
   './features.js',
   './sync.js',
+  './sync-config.js',
   './manifest.json'
 ];
 
