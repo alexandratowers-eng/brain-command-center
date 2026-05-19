@@ -2,8 +2,15 @@
 // ===== THEME =====
 function applyAutoTheme(){
   const manual=localStorage.getItem('alex_theme_override');
-  // Only go light if user explicitly toggled it on
-  document.documentElement.classList.toggle('light',manual==='light');
+  if(manual==='light'){
+    document.documentElement.classList.add('light');
+  } else if(manual==='dark'){
+    document.documentElement.classList.remove('light');
+  } else {
+    // No preference saved — follow system
+    const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('light',!prefersDark);
+  }
   updateThemeBtn();
 }
 function toggleTheme(){
@@ -30,8 +37,9 @@ function updateThemeBtn(){
 }
 
 function init(){
-  localStorage.removeItem('alex_theme_override');
   applyAutoTheme();
+  // Always start in day view — set before first render to avoid flash
+  D.calView='day';
   document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   if(D.logoIcon) document.getElementById('logoIcon').textContent=D.logoIcon;
   if(D.logoText) document.getElementById('logoText').value=D.logoText;
@@ -58,8 +66,6 @@ function init(){
   if(typeof checkDailyMotivation==='function')checkDailyMotivation();
   if(typeof checkReminders==='function')checkReminders();
   setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();if(typeof checkReminders==='function')checkReminders();},60000);
-  // Always start in day view
-  if(D.calView!=='day'){setCalView('day');}
 }
 
 // ===== DATA DROPDOWN =====
