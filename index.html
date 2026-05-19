@@ -10,8 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
-<link rel="stylesheet" href="styles.css?v=20260518">
-<script src="sync-config.js?v=20260518" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260518b">
+<script src="sync-config.js?v=20260518b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -40,6 +40,18 @@ if('serviceWorker' in navigator){
   <!-- TOPBAR -->
   <div class="topbar">
     <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Menu"><span class="mi" style="font-size:20px;">menu</span></button>
+    <div class="view-toggle" id="viewToggle">
+      <div class="vt-dropdown">
+        <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
+        <div class="vt-day-menu" id="vtDayMenu">
+          <button onclick="D.selectedDate=todayStr();setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Today';">Today</button>
+          <button onclick="var t=new Date();t.setDate(t.getDate()+1);D.selectedDate=dateStr(t);setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Tomorrow';">Tomorrow</button>
+        </div>
+      </div>
+      <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
+      <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
+    </div>
+    <div class="date-label" id="dateLabel"></div>
     <div class="logo">
       <span class="logo-icon" id="logoIcon" onclick="openLogoPicker()" title="Click to change icon">🧠</span>
       <input type="text" class="logo-text" id="logoText" value="Brain Command Center" onchange="D.logoText=this.value;save();" placeholder="My Planner">
@@ -69,18 +81,6 @@ if('serviceWorker' in navigator){
       <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
       <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
       <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
-    </div>
-    <div class="date-label" id="dateLabel"></div>
-    <div class="view-toggle" id="viewToggle">
-      <div class="vt-dropdown">
-        <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
-        <div class="vt-day-menu" id="vtDayMenu">
-          <button onclick="D.selectedDate=todayStr();setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Today';">Today</button>
-          <button onclick="var t=new Date();t.setDate(t.getDate()+1);D.selectedDate=dateStr(t);setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Tomorrow';">Tomorrow</button>
-        </div>
-      </div>
-      <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
-      <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
     </div>
   </div>
 
@@ -607,12 +607,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260518"></script>
-<script src="core.js?v=20260518"></script>
-<script src="calendar.js?v=20260518"></script>
-<script src="tasks.js?v=20260518"></script>
-<script src="features.js?v=20260518"></script>
-<script src="sync.js?v=20260518"></script>
+<script src="data.js?v=20260518b"></script>
+<script src="core.js?v=20260518b"></script>
+<script src="calendar.js?v=20260518b"></script>
+<script src="tasks.js?v=20260518b"></script>
+<script src="features.js?v=20260518b"></script>
+<script src="sync.js?v=20260518b"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){
