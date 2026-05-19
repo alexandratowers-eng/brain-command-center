@@ -38,6 +38,15 @@ function updateThemeBtn(){
 
 function init(){
   applyAutoTheme();
+  // Dedupe any existing manualWins (one-time cleanup of old duplicates)
+  if(D.reflections){
+    Object.keys(D.reflections).forEach(dt=>{
+      const r=D.reflections[dt];
+      if(r&&Array.isArray(r.manualWins)){
+        r.manualWins=[...new Set(r.manualWins)];
+      }
+    });
+  }
   // Always start in day view — set before first render to avoid flash
   D.calView='day';
   const _tbd=document.getElementById('topbarDate');if(_tbd)_tbd.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});

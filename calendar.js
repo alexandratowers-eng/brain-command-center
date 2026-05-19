@@ -1395,6 +1395,7 @@ function addManualWin(dt){
   if(!D.reflections) D.reflections={};
   if(!D.reflections[dt]) D.reflections[dt]={};
   if(!D.reflections[dt].manualWins) D.reflections[dt].manualWins=[];
+  if(D.reflections[dt].manualWins.includes(val)){inp.value='';return;}
   D.reflections[dt].manualWins.push(val);
   const evDate=checkWinForScheduledEvent(val);
   save();renderWinsTab();

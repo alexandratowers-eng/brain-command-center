@@ -874,7 +874,7 @@ function parkingItemDone(id){
     if(!D.reflections)D.reflections={};
     if(!D.reflections[today])D.reflections[today]={};
     if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
-    D.reflections[today].manualWins.push(item.text);
+    if(!D.reflections[today].manualWins.includes(item.text))D.reflections[today].manualWins.push(item.text);
   }
   D.parkingItems=D.parkingItems.filter(p=>p.id!==id);
   save();renderParkingList();
@@ -1497,7 +1497,7 @@ function addQuickWin(){
   if(!D.reflections)D.reflections={};
   if(!D.reflections[today])D.reflections[today]={};
   if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
-  D.reflections[today].manualWins.push(text);
+  if(!D.reflections[today].manualWins.includes(text))D.reflections[today].manualWins.push(text);
   window._quickWins.push({text,checked:true,added:today});
   inp.value='';
   save();renderQuickWins();renderSidebarWins();
@@ -1513,15 +1513,17 @@ function toggleQuickWin(idx){
   if(!window._quickWins[idx])return;
   const w=window._quickWins[idx];
   w.checked=!w.checked;
+  const today=todayStr();
+  if(!D.reflections)D.reflections={};
+  if(!D.reflections[today])D.reflections[today]={};
+  if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
   if(w.checked){
-    const today=todayStr();
-    if(!D.reflections)D.reflections={};
-    if(!D.reflections[today])D.reflections[today]={};
-    if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
-    D.reflections[today].manualWins.push(w.text);
-    save();
-    if(typeof renderWinsTab==='function')renderWinsTab();
+    if(!D.reflections[today].manualWins.includes(w.text))D.reflections[today].manualWins.push(w.text);
+  } else {
+    D.reflections[today].manualWins=D.reflections[today].manualWins.filter(x=>x!==w.text);
   }
+  save();
+  if(typeof renderWinsTab==='function')renderWinsTab();
   renderQuickWins();
 }
 function deleteQuickWin(idx){
@@ -1533,7 +1535,7 @@ function moveCheckedWinsToWins(){
   if(!D.reflections[today])D.reflections[today]={};
   if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
   const checked=window._quickWins.filter(w=>w.checked);
-  checked.forEach(w=>D.reflections[today].manualWins.push(w.text));
+  checked.forEach(w=>{if(!D.reflections[today].manualWins.includes(w.text))D.reflections[today].manualWins.push(w.text);});
   window._quickWins=window._quickWins.filter(w=>!w.checked);
   save();renderQuickWins();
   const toast=document.getElementById('saveToast');
@@ -1562,7 +1564,7 @@ function addQuickWinSidebar(){
   if(!D.reflections)D.reflections={};
   if(!D.reflections[today])D.reflections[today]={};
   if(!D.reflections[today].manualWins)D.reflections[today].manualWins=[];
-  D.reflections[today].manualWins.push(text);
+  if(!D.reflections[today].manualWins.includes(text))D.reflections[today].manualWins.push(text);
   window._quickWins.push({text,checked:true,added:today});
   const evDate=checkWinForScheduledEvent(text);
   inp.value='';

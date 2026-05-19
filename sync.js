@@ -223,20 +223,67 @@ window.SyncEngine=(function(){
 
   function showPairingModal(){
     const existing=document.getElementById('syncPairModal');if(existing)existing.remove();
+    const cfg=getConfig();
+    const isConnected=!!cfg;
     const modal=document.createElement('div');modal.id='syncPairModal';
-    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.innerHTML=`<div style="background:var(--card);border-radius:16px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid var(--border);">
-      <h3 style="margin:0 0 8px;font-size:16px;">☁️ Connect Cloud Sync</h3>
-      <p style="font-size:12px;color:var(--dim);margin:0 0 16px;">Paste your GitHub token below to sync between devices.</p>
-      <input type="text" id="syncPairInput" placeholder="ghp_your_token_here" style="width:100%;padding:12px 14px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none;font-family:monospace;box-sizing:border-box;">
-      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
-        <button onclick="document.getElementById('syncPairModal').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">Cancel</button>
-        <button onclick="SyncEngine.completePairing()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:white;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">Connect</button>
+    modal.style.cssText='position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+    modal.innerHTML=`<div style="background:var(--card);border-radius:16px;padding:24px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border);">
+      <h3 style="margin:0 0 4px;font-size:17px;display:flex;align-items:center;gap:8px;"><span class="mi" style="color:var(--blue);">cloud</span> Cloud Sync ${isConnected?'<span style="font-size:11px;color:var(--green);font-weight:500;margin-left:auto;">● Connected</span>':''}</h3>
+      <p style="font-size:12px;color:var(--dim);margin:0 0 14px;">Sync your data between your laptop and phone. Free, private, takes 2 minutes once.</p>
+
+      ${isConnected?`<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:2px;">✓ You're already synced</div>
+        <div style="font-size:11px;color:var(--dim);">To add another device, copy the share link below.</div>
+      </div>
+      <button onclick="SyncEngine.copyShareLink()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--blue);background:rgba(99,102,241,.08);color:var(--blue);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;margin-bottom:10px;">📋 Copy share link for another device</button>
+      <div style="border-top:1px solid var(--border);margin:14px 0;padding-top:14px;"></div>
+      `:`
+      <details style="margin-bottom:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text);outline:none;">How does this work? (one-time setup)</summary>
+        <ol style="font-size:11px;color:var(--dim);line-height:1.7;margin:10px 0 4px 18px;padding:0;">
+          <li>Go to <a href="https://github.com/settings/tokens/new?scopes=gist&description=BCC%20Sync" target="_blank" style="color:var(--blue);text-decoration:underline;">github.com/settings/tokens/new</a> (opens in a new tab)</li>
+          <li>Make sure "gist" is the only checkbox ticked</li>
+          <li>Click "Generate token" at the bottom</li>
+          <li>Copy the token (starts with <code style="background:var(--card);padding:1px 4px;border-radius:3px;">ghp_</code>) and paste below</li>
+          <li>That's it — your data lives in a private gist on your GitHub account</li>
+        </ol>
+      </details>
+      `}
+
+      <label style="font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:6px;">${isConnected?'Replace token':'Paste your GitHub token or share link'}</label>
+      <input type="password" id="syncPairInput" placeholder="ghp_xxxxxxxxxxxxxxxx" style="width:100%;padding:12px 14px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none;font-family:monospace;box-sizing:border-box;">
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between;align-items:center;">
+        ${isConnected?`<button onclick="SyncEngine.disconnectSync()" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);cursor:pointer;font-family:inherit;font-size:11px;">Disconnect</button>`:'<span></span>'}
+        <div style="display:flex;gap:8px;">
+          <button onclick="document.getElementById('syncPairModal').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">Close</button>
+          <button onclick="SyncEngine.completePairing()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:white;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">${isConnected?'Update':'Connect'}</button>
+        </div>
       </div>
     </div>`;
     modal.onclick=e=>{if(e.target===modal)modal.remove();};
     document.body.appendChild(modal);
-    document.getElementById('syncPairInput').focus();
+    setTimeout(()=>{const i=document.getElementById('syncPairInput');if(i)i.focus();},50);
+  }
+
+  function copyShareLink(){
+    const cfg=getConfig();if(!cfg){alert('Not connected yet.');return;}
+    const link=window.location.origin+window.location.pathname+'#BCC:'+cfg.gistId+':'+cfg.token;
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(link).then(()=>{
+        const toast=document.getElementById('saveToast');
+        if(toast){toast.innerHTML='✓ Share link copied — open on your other device';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3000);}
+      }).catch(()=>{prompt('Copy this and open it on your other device:',link);});
+    } else {
+      prompt('Copy this and open it on your other device:',link);
+    }
+  }
+
+  function disconnectSync(){
+    if(!confirm('Disconnect cloud sync? Your data stays on this device, but will no longer sync.'))return;
+    localStorage.removeItem('bcc_sync_cfg');
+    localStorage.removeItem('bcc_sync_token');
+    document.getElementById('syncPairModal')?.remove();
+    setStatus('disabled','Tap to connect sync');
   }
 
   function completePairing(){
@@ -281,18 +328,18 @@ window.SyncEngine=(function(){
     const cfg=getConfig();
     const el=document.getElementById('syncStatusBtn');
     if(el)el.addEventListener('click',()=>{
+      // Not connected → just open pairing
       if(_state==='error'||_state==='disabled'){showPairingModal();return;}
-      // Show sync menu
+      // Connected → small menu with Sync Now + Settings
       const old=document.getElementById('syncMenu');if(old)old.remove();
       const m=document.createElement('div');m.id='syncMenu';
       const r=el.getBoundingClientRect();
-      m.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+4}px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:140px;`;
+      m.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+6}px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:180px;`;
       m.innerHTML=`
-        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.pull();">☁️ Pull from cloud</button>
-        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.push();">⬆️ Push to cloud</button>
-        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.forcePull();">⬇️ Force pull (overwrite local)</button>
-        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.forcePush();">⬆️ Force push (overwrite cloud)</button>
-        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.showPairingModal();">🔧 Change token</button>`;
+        <div style="font-size:9px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:4px 10px 6px;">● Synced</div>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.pull();">🔄 Sync now</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.copyShareLink();">📋 Copy share link</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.showPairingModal();"><span class="mi" style="font-size:13px;vertical-align:-2px;">settings</span> Settings</button>`;
       document.body.appendChild(m);
       const dismiss=ev=>{if(!m.contains(ev.target)&&ev.target!==el){m.remove();document.removeEventListener('mousedown',dismiss);}};
       setTimeout(()=>document.addEventListener('mousedown',dismiss),10);
@@ -308,5 +355,5 @@ window.SyncEngine=(function(){
     });
   }
 
-  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing};
+  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync};
 })();
