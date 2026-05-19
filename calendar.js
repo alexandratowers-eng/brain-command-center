@@ -757,8 +757,9 @@ function removeBlockItem(dt,sid,itemIdx){
   setTimeline(dt,tl);renderCalendar();
 }
 function promptBlockItem(dt,sid){
-  const text=prompt('Add checklist item:');
-  if(text&&text.trim())addBlockItem(dt,sid,text.trim());
+  bccPrompt('Add checklist item:','',(text)=>{
+    if(text&&text.trim())addBlockItem(dt,sid,text.trim());
+  });
 }
 
 // ===== DAY VIEW =====
@@ -804,14 +805,16 @@ function openSpotDurationPop(ev,dt,key){
   },0);
 }
 function addDaySpotCustom(dt){
-  const text=prompt('New spot name:');if(!text||!text.trim())return;
-  if(!D.customSpots)D.customSpots=[];
-  const key='custom_'+Date.now();
-  D.customSpots.push({key,icon:'📍',label:text.trim(),desc:''});
-  if(!D.daySpots)D.daySpots={};
-  if(!D.daySpots[dt])D.daySpots[dt]=[];
-  D.daySpots[dt].push(key);
-  save();renderCalendar();
+  bccPrompt('New spot name:','',(text)=>{
+    if(!text||!text.trim())return;
+    if(!D.customSpots)D.customSpots=[];
+    const key='custom_'+Date.now();
+    D.customSpots.push({key,icon:'📍',label:text.trim(),desc:''});
+    if(!D.daySpots)D.daySpots={};
+    if(!D.daySpots[dt])D.daySpots[dt]=[];
+    D.daySpots[dt].push(key);
+    save();renderCalendar();
+  });
 }
 function toggleSpotRow(dt){
   if(!D.spotRowExpanded)D.spotRowExpanded={};
@@ -2365,20 +2368,21 @@ function sidebarBumpToToday(fromDt,idx){
   const fromTl=getTimeline(fromDt);
   if(idx<0||idx>=fromTl.length)return;
   const slot=fromTl[idx];
-  const timeStr=prompt('Move "'+slot.text+'" to today at what time?\n(e.g. 2pm, 1:30pm, or press Cancel to keep '+slot.t+')');
-  if(timeStr===null)return;
-  if(timeStr.trim()){
-    const parsed=parseTimeStr(timeStr.trim().replace(/\s+/g,'').replace(/(\d)(am|pm)/i,'$1 $2'));
-    if(parsed!==null){slot.t=minToTime(parsed);if(slot.end){const dur=parseMin(slot.end)-parseMin(slot.t);slot.end=minToTime(parsed+(dur>0?dur:30));}}
-  }
-  fromTl.splice(idx,1);
-  setTimeline(fromDt,fromTl);
-  const today=todayStr();
-  const toTl=getTimeline(today)||[];
-  toTl.push(slot);
-  toTl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
-  setTimeline(today,toTl);
-  renderCalendar();renderMiniCal();
+  bccPrompt('Move "'+slot.text+'" to today at what time?\n(e.g. 2pm, 1:30pm — leave blank to keep '+slot.t+')',slot.t,(timeStr)=>{
+    if(timeStr===null)return;
+    if(timeStr.trim()){
+      const parsed=parseTimeStr(timeStr.trim().replace(/\s+/g,'').replace(/(\d)(am|pm)/i,'$1 $2'));
+      if(parsed!==null){slot.t=minToTime(parsed);if(slot.end){const dur=parseMin(slot.end)-parseMin(slot.t);slot.end=minToTime(parsed+(dur>0?dur:30));}}
+    }
+    fromTl.splice(idx,1);
+    setTimeline(fromDt,fromTl);
+    const today=todayStr();
+    const toTl=getTimeline(today)||[];
+    toTl.push(slot);
+    toTl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+    setTimeline(today,toTl);
+    renderCalendar();renderMiniCal();
+  });
 }
 
 function sidebarBumpToTomorrow(fromDt,idx){

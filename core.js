@@ -36,6 +36,63 @@ function updateThemeBtn(){
   btn.title=isLight?'Switch to night mode':'Switch to day mode';
 }
 
+// ===== UNIVERSAL PROMPT/CONFIRM (works in PWA standalone where window.prompt/confirm fail) =====
+// Shim window.prompt so legacy callers don't crash in PWA mode (they get null + a toast instead)
+(function(){
+  try{
+    const t=window.prompt;t&&t('','');// test if it works
+  }catch(e){
+    window.prompt=function(msg,def){
+      const toast=document.getElementById('saveToast');
+      if(toast){toast.innerHTML='⚠️ Tap-to-edit not yet available here';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000);}
+      console.warn('[BCC] prompt() blocked in this context — use bccPrompt:',msg);
+      return null;
+    };
+  }
+})();
+function bccPrompt(message,defaultVal,callback){
+  // Modal-based prompt — returns via callback(value) where value is null on cancel
+  const existing=document.getElementById('bccPromptModal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='bccPromptModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+  const isMultiline=(message||'').length>80||(message||'').includes('\n');
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:20px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border);">
+    <div style="font-size:13px;color:var(--text);margin-bottom:12px;white-space:pre-line;">${(message||'').replace(/</g,'&lt;')}</div>
+    <input type="text" id="bccPromptInput" value="${(defaultVal==null?'':String(defaultVal)).replace(/"/g,'&quot;')}" style="width:100%;padding:10px 12px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;">
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+      <button id="bccPromptCancel" style="padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">Cancel</button>
+      <button id="bccPromptOk" style="padding:7px 14px;border-radius:7px;border:none;background:var(--blue);color:white;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">OK</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  const inp=document.getElementById('bccPromptInput');
+  setTimeout(()=>{inp.focus();inp.select();},20);
+  function done(val){modal.remove();if(typeof callback==='function')callback(val);}
+  document.getElementById('bccPromptOk').onclick=()=>done(inp.value);
+  document.getElementById('bccPromptCancel').onclick=()=>done(null);
+  modal.onclick=e=>{if(e.target===modal)done(null);};
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();done(inp.value);}else if(e.key==='Escape'){done(null);}};
+}
+function bccConfirm(message,callback){
+  const existing=document.getElementById('bccConfirmModal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='bccConfirmModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:20px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border);">
+    <div style="font-size:13px;color:var(--text);margin-bottom:14px;white-space:pre-line;">${(message||'').replace(/</g,'&lt;')}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button id="bccConfirmCancel" style="padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">Cancel</button>
+      <button id="bccConfirmOk" style="padding:7px 14px;border-radius:7px;border:none;background:var(--blue);color:white;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">OK</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  function done(val){modal.remove();if(typeof callback==='function')callback(val);}
+  document.getElementById('bccConfirmOk').onclick=()=>done(true);
+  document.getElementById('bccConfirmCancel').onclick=()=>done(false);
+  modal.onclick=e=>{if(e.target===modal)done(false);};
+}
+
 function init(){
   applyAutoTheme();
   // Dedupe any existing manualWins (one-time cleanup of old duplicates)
@@ -352,13 +409,14 @@ function toggleRightPanel(){
         e.stopPropagation();
         const textNodes=[...title.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());
         const currentText=textNodes.length?textNodes[0].textContent.trim():'';
-        const newName=prompt('Rename card:',currentText);
-        if(newName!==null&&newName.trim()){
-          if(textNodes.length)textNodes[0].textContent=' '+newName.trim()+' ';
-          const titles=JSON.parse(localStorage.getItem('rpCardTitles')||'{}');
-          titles[cardId]=newName.trim();
-          localStorage.setItem('rpCardTitles',JSON.stringify(titles));
-        }
+        bccPrompt('Rename card:',currentText,(newName)=>{
+          if(newName!==null&&newName.trim()){
+            if(textNodes.length)textNodes[0].textContent=' '+newName.trim()+' ';
+            const titles=JSON.parse(localStorage.getItem('rpCardTitles')||'{}');
+            titles[cardId]=newName.trim();
+            localStorage.setItem('rpCardTitles',JSON.stringify(titles));
+          }
+        });
       };
       const collapse=title.querySelector('.s-collapse');
       if(collapse)title.insertBefore(btn,collapse);

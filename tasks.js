@@ -580,14 +580,15 @@ function setReminderTomorrow9(id){
 
 function remindCustom(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
-  const dt=prompt('Remind date & time (YYYY-MM-DD HH:MM):',todayStr()+' 17:00');
-  if(!dt)return;
-  const parsed=new Date(dt.replace(' ','T'));
-  if(isNaN(parsed.getTime())){alert('Invalid date/time format');return;}
-  t.remindAt=parsed.toISOString();
-  save();renderCalTasks();renderAllTasks();updateStats();
-  const label=parsed.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · '+label;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2000);}
+  bccPrompt('Remind date & time (YYYY-MM-DD HH:MM):',todayStr()+' 17:00',(dt)=>{
+    if(!dt)return;
+    const parsed=new Date(dt.replace(' ','T'));
+    if(isNaN(parsed.getTime())){alert('Invalid date/time format');return;}
+    t.remindAt=parsed.toISOString();
+    save();renderCalTasks();renderAllTasks();updateStats();
+    const label=parsed.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · '+label;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2000);}
+  });
 }
 
 function unsnooze(id){
@@ -1300,11 +1301,12 @@ function addToStash(inp){
 
 function dateParkingItem(id){
   const p=(D.parkingItems||[]).find(x=>x.id===id);if(!p)return;
-  const dt=prompt('Remind date (YYYY-MM-DD):',p.remindDate||todayStr());
-  if(!dt)return;
-  p.remindDate=dt;
-  save();renderCalRightStash();
-  if(typeof renderParkingList==='function')renderParkingList();
+  bccPrompt('Remind date (YYYY-MM-DD):',p.remindDate||todayStr(),(dt)=>{
+    if(!dt)return;
+    p.remindDate=dt;
+    save();renderCalRightStash();
+    if(typeof renderParkingList==='function')renderParkingList();
+  });
 }
 function addCalRightParking(inp){addToStash(inp);}
 
@@ -1398,12 +1400,13 @@ function openDailyStashCheckin(){
 }
 function stashSetDate(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
-  const dt=prompt('Set date (YYYY-MM-DD):',todayStr());
-  if(!dt||!/^\d{4}-\d{2}-\d{2}$/.test(dt))return;
-  t.date=dt;
-  save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
-  if(typeof renderCalRightStash==='function')renderCalRightStash();
-  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📅 Scheduled for '+dt;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+  bccPrompt('Set date (YYYY-MM-DD):',todayStr(),(dt)=>{
+    if(!dt||!/^\d{4}-\d{2}-\d{2}$/.test(dt))return;
+    t.date=dt;
+    save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
+    if(typeof renderCalRightStash==='function')renderCalRightStash();
+    const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📅 Scheduled for '+dt;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+  });
 }
 function openParkingReview(){
   const old=document.getElementById('parkingReviewModal');if(old)old.remove();

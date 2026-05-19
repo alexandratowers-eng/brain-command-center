@@ -163,17 +163,52 @@ function getCurrentWeeklyGoal(){
 
 function openWeeklyGoalSetup(){
   if(!D.weeklyGoals)D.weeklyGoals=[];
-  const label=prompt('What are you tracking? (e.g. "CHOP Calls"):','CHOP Calls');
-  if(!label||!label.trim())return;
-  const loRaw=prompt('Comfortable low end of your range:','20');
-  if(loRaw===null)return;
-  const hiRaw=prompt('Stretch high end:','40');
-  if(hiRaw===null)return;
-  const unit=(prompt('Unit (calls, attempts, questions, etc.):','calls')||'calls').trim();
-  const lo=parseInt(loRaw)||20;
-  const hi=parseInt(hiRaw)||40;
-  D.weeklyGoals.push({id:Date.now(),label:label.trim(),rangeLow:lo,rangeHigh:hi,target:hi,current:0,unit,sessions:[],created:new Date().toISOString()});
-  save();renderWeeklyGoal();
+  const existing=document.getElementById('wgSetupModal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='wgSetupModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border);">
+    <h3 style="margin:0 0 4px;font-size:17px;display:flex;align-items:center;gap:8px;">📊 New Weekly Tracker</h3>
+    <p style="font-size:12px;color:var(--dim);margin:0 0 16px;">Track something you want to do weekly — no pressure, just awareness.</p>
+
+    <label style="font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:4px;">What are you tracking?</label>
+    <input id="wgLabel" type="text" value="CHOP Calls" placeholder="e.g. CHOP Calls, Workouts, MCAT Questions" style="width:100%;padding:9px 12px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:12px;">
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:4px;">Comfortable low</label>
+        <input id="wgLo" type="number" value="20" min="0" style="width:100%;padding:9px 12px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:4px;">Stretch high</label>
+        <input id="wgHi" type="number" value="40" min="0" style="width:100%;padding:9px 12px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <label style="font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:4px;">Unit</label>
+    <input id="wgUnit" type="text" value="calls" placeholder="calls, reps, questions..." style="width:100%;padding:9px 12px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:16px;">
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button id="wgCancel" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">Cancel</button>
+      <button id="wgCreate" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:white;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">Create tracker</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>{const l=document.getElementById('wgLabel');if(l){l.focus();l.select();}},20);
+  function close(){modal.remove();}
+  function create(){
+    const label=(document.getElementById('wgLabel').value||'').trim();
+    if(!label){document.getElementById('wgLabel').focus();return;}
+    const lo=parseInt(document.getElementById('wgLo').value)||20;
+    const hi=parseInt(document.getElementById('wgHi').value)||40;
+    const unit=((document.getElementById('wgUnit').value)||'units').trim();
+    D.weeklyGoals.push({id:Date.now(),label,rangeLow:lo,rangeHigh:hi,target:hi,current:0,unit,sessions:[],created:new Date().toISOString()});
+    save();renderWeeklyGoal();close();
+  }
+  document.getElementById('wgCancel').onclick=close;
+  document.getElementById('wgCreate').onclick=create;
+  modal.onclick=e=>{if(e.target===modal)close();};
+  modal.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();create();}else if(e.key==='Escape')close();});
 }
 
 function bumpWeeklyGoal(n){
@@ -195,14 +230,15 @@ function editLastWeeklySession(){
   const goal=getCurrentWeeklyGoal();
   if(!goal||!goal.sessions||!goal.sessions.length)return;
   const last=goal.sessions[goal.sessions.length-1];
-  const newCount=prompt('Edit last entry count (was +'+last.count+'):',last.count);
-  if(newCount===null)return;
-  const n=parseInt(newCount);
-  if(isNaN(n)||n<0)return;
-  const diff=n-last.count;
-  last.count=n;
-  goal.current=Math.max(0,goal.current+diff);
-  save();renderWeeklyGoal();
+  bccPrompt('Edit last entry count (was +'+last.count+'):',last.count,(newCount)=>{
+    if(newCount===null)return;
+    const n=parseInt(newCount);
+    if(isNaN(n)||n<0)return;
+    const diff=n-last.count;
+    last.count=n;
+    goal.current=Math.max(0,goal.current+diff);
+    save();renderWeeklyGoal();
+  });
 }
 
 function newWeeklyGoal(){
@@ -216,22 +252,29 @@ function newWeeklyGoal(){
 }
 
 function archiveWeeklyGoal(){
-  if(!confirm('Archive this tracker? You can start a new one.'))return;
-  const goal=getCurrentWeeklyGoal();
-  if(goal)goal.archived=true;
-  save();renderWeeklyGoal();
+  bccConfirm('Archive this tracker? You can start a new one.',(ok)=>{
+    if(!ok)return;
+    const goal=getCurrentWeeklyGoal();
+    if(goal)goal.archived=true;
+    save();renderWeeklyGoal();
+  });
 }
 
 function editWeeklyGoal(){
   const goal=getCurrentWeeklyGoal();
   if(!goal)return;
-  const newLabel=prompt('Tracker name:',goal.label);
-  if(newLabel)goal.label=newLabel;
-  const newLo=prompt('Range low:',goal.rangeLow||40);
-  if(newLo&&!isNaN(parseInt(newLo)))goal.rangeLow=parseInt(newLo);
-  const newHi=prompt('Range high:',goal.rangeHigh||45);
-  if(newHi&&!isNaN(parseInt(newHi))){goal.rangeHigh=parseInt(newHi);goal.target=parseInt(newHi);}
-  save();renderWeeklyGoal();
+  bccPrompt('Tracker name:',goal.label,(newLabel)=>{
+    if(newLabel===null)return;
+    if(newLabel.trim())goal.label=newLabel.trim();
+    bccPrompt('Range low:',goal.rangeLow||40,(newLo)=>{
+      if(newLo===null){save();renderWeeklyGoal();return;}
+      if(newLo&&!isNaN(parseInt(newLo)))goal.rangeLow=parseInt(newLo);
+      bccPrompt('Range high:',goal.rangeHigh||45,(newHi)=>{
+        if(newHi!==null&&newHi&&!isNaN(parseInt(newHi))){goal.rangeHigh=parseInt(newHi);goal.target=parseInt(newHi);}
+        save();renderWeeklyGoal();
+      });
+    });
+  });
 }
 
 // ===== MCAT =====
