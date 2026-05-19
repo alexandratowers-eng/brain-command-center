@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260518g">
-<script src="sync-config.js?v=20260518g" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260518h">
+<script src="sync-config.js?v=20260518h" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -61,9 +61,9 @@ if('serviceWorker' in navigator){
           </div>
           <div class="search-results" id="searchResults" style="display:none;"></div>
         </div>
-        <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status">☁️</button>
-        <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders">🔔</button>
-        <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+        <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status"><span class="mi">cloud</span></button>
+        <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders"><span class="mi">notifications</span></button>
+        <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme"><span class="mi">light_mode</span></button>
         <div class="topbar-dropdown" id="dataDropdown">
           <button class="tb-icon-btn" onclick="toggleDataMenu()" title="Data management"><span class="mi">settings</span></button>
           <div class="topbar-dropdown-menu" id="dataMenu">
@@ -77,28 +77,25 @@ if('serviceWorker' in navigator){
       <div class="topbar-date" id="topbarDate"></div>
       <div class="view-toggle" id="viewToggle">
         <div class="vt-dropdown">
-          <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
+          <button class="vt-btn" id="vtDayBtn" onclick="setCalView('day',this)"><span class="mi" style="font-size:16px;">today</span> <span id="vtDayLabel">Today</span> <span class="vt-caret" onclick="event.stopPropagation();toggleDayDropdown();">▾</span></button>
           <div class="vt-day-menu" id="vtDayMenu">
             <button onclick="D.selectedDate=todayStr();setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Today';">Today</button>
             <button onclick="var t=new Date();t.setDate(t.getDate()+1);D.selectedDate=dateStr(t);setCalView('day',document.getElementById('vtDayBtn'));closeDayDropdown();document.getElementById('vtDayLabel').textContent='Tomorrow';">Tomorrow</button>
           </div>
         </div>
-        <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
-        <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
+        <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:16px;">date_range</span> Week</button>
+        <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:16px;">calendar_view_month</span> Month</button>
       </div>
     </div>
-    <div class="topbar-right"></div>
-  </div>
-
-  <!-- SECTION NAV (sub-row) -->
-  <div class="subnav">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
-      <button class="tab-btn" onclick="switchTab('wins',this)"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
-      <button class="tab-btn" onclick="switchTab('tasks',this)"><span class="mi" style="color:var(--amber);">checklist</span> Tasks</button>
-      <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
-      <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
-      <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
+    <div class="topbar-right">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
+        <button class="tab-btn" onclick="switchTab('wins',this)"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
+        <button class="tab-btn" onclick="switchTab('tasks',this)"><span class="mi" style="color:var(--amber);">checklist</span> Tasks</button>
+        <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
+        <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
+        <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
+      </div>
     </div>
   </div>
 
@@ -625,12 +622,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260518g"></script>
-<script src="core.js?v=20260518g"></script>
-<script src="calendar.js?v=20260518g"></script>
-<script src="tasks.js?v=20260518g"></script>
-<script src="features.js?v=20260518g"></script>
-<script src="sync.js?v=20260518g"></script>
+<script src="data.js?v=20260518h"></script>
+<script src="core.js?v=20260518h"></script>
+<script src="calendar.js?v=20260518h"></script>
+<script src="tasks.js?v=20260518h"></script>
+<script src="features.js?v=20260518h"></script>
+<script src="sync.js?v=20260518h"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

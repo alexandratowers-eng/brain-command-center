@@ -810,6 +810,16 @@ function addDaySpotCustom(dt){
   D.daySpots[dt].push(key);
   save();renderCalendar();
 }
+function toggleSpotRow(dt){
+  if(!D.spotRowExpanded)D.spotRowExpanded={};
+  D.spotRowExpanded[dt]=!D.spotRowExpanded[dt];
+  save();renderCalendar();
+}
+function collapseSpotRow(dt){
+  if(!D.spotRowExpanded)D.spotRowExpanded={};
+  D.spotRowExpanded[dt]=false;
+  save();renderCalendar();
+}
 function renderDayView(){
   const dt=D.selectedDate;
   const tl=getTimeline(dt)||[];
@@ -839,16 +849,35 @@ function renderDayView(){
   const _lPicked=D.daySpots[dt]||[];
   const _allSpots=[...(typeof SPOT_SUGGESTIONS!=='undefined'?SPOT_SUGGESTIONS:[]),...(D.customSpots||[])];
   const _spotMeta=(D.daySpotMeta&&D.daySpotMeta[dt])||{};
-  html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;">
-    <span style="font-size:10px;color:var(--dim);white-space:nowrap;">📍 Today's spot:</span>
-    ${_allSpots.map(s=>{
-      const sel=_lPicked.includes(s.key);
-      const dur=_spotMeta[s.key];
-      return `<button class="spot-pill${sel?' selected':''}" onclick="toggleDaySpot('${dt}','${s.key}')" oncontextmenu="openSpotDurationPop(event,'${dt}','${s.key}')" title="${(s.desc||'').replace(/"/g,'&quot;')}${sel?'\nRight-click for duration':''}" style="font-size:10px;padding:3px 8px;">${s.icon} ${s.label}${sel&&dur?` <span class="spot-dur">· ${dur}</span>`:''}</button>`;
-    }).join('')}
-    <button class="spot-pill spot-pill-add" onclick="addDaySpotCustom('${dt}')" title="Add a spot" style="font-size:10px;padding:3px 8px;">+</button>
-    ${_lPicked.length>1?`<span style="font-size:9px;color:var(--dim);margin-left:4px;font-style:italic;">right-click a spot to set time of day</span>`:''}
-  </div>`;
+  if(!D.spotRowExpanded)D.spotRowExpanded={};
+  const _expanded=!!D.spotRowExpanded[dt]||_lPicked.length===0;
+  if(!_expanded){
+    // Compact summary: show selected spots inline, or a "+ Set spot" chip
+    const selSpots=_lPicked.map(k=>_allSpots.find(s=>s.key===k)).filter(Boolean);
+    html+=`<div class="spot-row-compact">
+      <button class="spot-row-toggle" onclick="toggleSpotRow('${dt}')" title="Click to change">
+        <span style="font-size:13px;">📍</span>
+        ${selSpots.length?selSpots.map(s=>`<span class="spot-chip-sm">${s.icon} ${s.label}${_spotMeta[s.key]?` · ${_spotMeta[s.key]}`:''}</span>`).join(''):'<span style="color:var(--dim);">+ Set today\'s spot</span>'}
+        <span class="mi" style="font-size:14px;color:var(--dim);margin-left:auto;">expand_more</span>
+      </button>
+    </div>`;
+  } else {
+    html+=`<div class="spot-row-expanded">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span style="font-size:11px;color:var(--dim);font-weight:600;">📍 Where are you working today?</span>
+        <button onclick="collapseSpotRow('${dt}')" style="margin-left:auto;background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;display:inline-flex;align-items:center;gap:2px;">collapse <span class="mi" style="font-size:14px;">expand_less</span></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        ${_allSpots.map(s=>{
+          const sel=_lPicked.includes(s.key);
+          const dur=_spotMeta[s.key];
+          return `<button class="spot-pill${sel?' selected':''}" onclick="toggleDaySpot('${dt}','${s.key}')" oncontextmenu="openSpotDurationPop(event,'${dt}','${s.key}')" title="${(s.desc||'').replace(/"/g,'&quot;')}${sel?'\nRight-click for duration':''}" style="font-size:11px;padding:5px 10px;">${s.icon} ${s.label}${sel&&dur?` <span class="spot-dur">· ${dur}</span>`:''}</button>`;
+        }).join('')}
+        <button class="spot-pill spot-pill-add" onclick="addDaySpotCustom('${dt}')" title="Add a spot" style="font-size:11px;padding:5px 10px;">+ add</button>
+      </div>
+      ${_lPicked.length>=1?`<div style="font-size:9px;color:var(--dim);margin-top:4px;font-style:italic;">tip: right-click any spot to set "half day", "few hours", etc.</div>`:''}
+    </div>`;
+  }
 
   // Yesterday's focus nudge
   const prevDate=dateStr(new Date(dateObj(dt).getTime()-86400000));
