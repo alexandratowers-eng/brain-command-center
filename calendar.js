@@ -253,6 +253,25 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 // ===== WEEK VIEW =====
+function dropTaskOnWeekCell(e,dt,hr){
+  const data=e.dataTransfer.getData('text/plain');
+  if(!data||!data.startsWith('task:'))return;
+  const taskId=parseInt(data.split(':')[1]);
+  const task=D.tasks.find(x=>x.id===taskId);
+  if(!task)return;
+  const mins=hr*60;
+  const tl=getTimeline(dt)||[];
+  const t=minToTime(mins);
+  const endTime=minToTime(mins+30);
+  let idx=tl.length;
+  for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>mins){idx=j;break;}}
+  tl.splice(idx,0,{t,text:task.text,cls:task.cat||'personal',sm:'',loc:'',end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+  setTimeline(dt,tl);
+  task.date=dt;
+  save();renderCalendar();
+  if(typeof renderCalRightTasks==='function')renderCalRightTasks();
+  if(typeof renderAllTasks==='function')renderAllTasks();
+}
 function renderWeekView(){
   const dates=getWeekDates(D.selectedDate);
   const today=todayStr();
@@ -294,7 +313,7 @@ function renderWeekView(){
     // Day cells
     dates.forEach((dt,idx)=>{
       const isWkend=idx>=5;
-      html+=`<div class="wk-cell ${isWkend?'wk-weekend':''} ${idx===5?'wk-weekend-start':''}" data-date="${dt}" data-hour="${hr}" oncontextmenu="event.preventDefault();openWkPopover(event,'${dt}',${hr})"></div>`;
+      html+=`<div class="wk-cell ${isWkend?'wk-weekend':''} ${idx===5?'wk-weekend-start':''}" data-date="${dt}" data-hour="${hr}" oncontextmenu="event.preventDefault();openWkPopover(event,'${dt}',${hr})" ondragover="event.preventDefault();event.dataTransfer.dropEffect='move';this.style.background='rgba(52,211,153,.12)';" ondragleave="this.style.background='';" ondrop="event.preventDefault();this.style.background='';dropTaskOnWeekCell(event,'${dt}',${hr});"></div>`;
     });
   }
   html+='</div>';

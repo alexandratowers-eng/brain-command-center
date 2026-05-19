@@ -172,7 +172,7 @@ function renderAllTasks(){
         const cat=D.cats[t.cat];
         const isOverdue=t.date&&t.date<today;
         const dl=isOverdue?new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-        h+=`<div class="simple-task-row" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+        h+=`<div class="simple-task-row" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.3';" ondragend="this.style.opacity='1';" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});" style="cursor:grab;">
           <div class="p-dot ${t.pri}"></div>
           <input type="checkbox" onchange="togTask(${t.id},this)">
           <div class="simple-task-content">
@@ -231,7 +231,7 @@ function renderAllTasks(){
         const cat=D.cats[t.cat];
         const remindDate=new Date(t.remindAt);
         const label=remindDate.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-        sh+=`<div class="simple-task-row" style="opacity:.6;">
+        sh+=`<div class="simple-task-row" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.3';" ondragend="this.style.opacity='.6';" style="opacity:.6;cursor:grab;">
           <div class="p-dot ${t.pri}"></div>
           <div class="simple-task-content">
             <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
@@ -274,7 +274,7 @@ function renderAllTasks(){
       laterTasks.forEach(t=>{
         const cat=D.cats[t.cat];
         const dl=t.date?new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-        h+=`<div class="simple-task-row" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+        h+=`<div class="simple-task-row" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.3';" ondragend="this.style.opacity='1';" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});" style="cursor:grab;">
           <div class="p-dot ${t.pri}"></div>
           <input type="checkbox" onchange="togTask(${t.id},this)">
           <div class="simple-task-content">
