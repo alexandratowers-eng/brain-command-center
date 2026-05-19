@@ -763,9 +763,42 @@ function toggleDaySpot(dt,key){
   if(!D.daySpots)D.daySpots={};
   if(!D.daySpots[dt])D.daySpots[dt]=[];
   const idx=D.daySpots[dt].indexOf(key);
-  if(idx>=0)D.daySpots[dt].splice(idx,1);
-  else D.daySpots[dt].push(key);
+  if(idx>=0){
+    D.daySpots[dt].splice(idx,1);
+    if(D.daySpotMeta&&D.daySpotMeta[dt])delete D.daySpotMeta[dt][key];
+  } else {
+    D.daySpots[dt].push(key);
+  }
   save();renderCalendar();
+}
+const SPOT_DURATIONS=['All day','Morning','Afternoon','Evening','Half day','Few hours','Quick stop'];
+function setSpotDuration(dt,key,label){
+  if(!D.daySpotMeta)D.daySpotMeta={};
+  if(!D.daySpotMeta[dt])D.daySpotMeta[dt]={};
+  if(label==='All day')delete D.daySpotMeta[dt][key];
+  else D.daySpotMeta[dt][key]=label;
+  // Ensure spot is selected
+  if(!D.daySpots)D.daySpots={};
+  if(!D.daySpots[dt])D.daySpots[dt]=[];
+  if(!D.daySpots[dt].includes(key))D.daySpots[dt].push(key);
+  document.querySelectorAll('.spot-duration-pop').forEach(p=>p.remove());
+  save();renderCalendar();
+}
+function openSpotDurationPop(ev,dt,key){
+  ev.preventDefault();ev.stopPropagation();
+  document.querySelectorAll('.spot-duration-pop').forEach(p=>p.remove());
+  const pop=document.createElement('div');
+  pop.className='spot-duration-pop';
+  pop.innerHTML=SPOT_DURATIONS.map(l=>`<button onclick="setSpotDuration('${dt}','${key}','${l}')">${l}</button>`).join('')+
+    `<button onclick="setSpotDuration('${dt}','${key}','All day')" style="border-top:1px solid var(--border);color:var(--dim);">Clear</button>`;
+  document.body.appendChild(pop);
+  const r=ev.target.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-180)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  setTimeout(()=>{
+    const dismiss=(e)=>{if(!pop.contains(e.target)){pop.remove();document.removeEventListener('click',dismiss);}};
+    document.addEventListener('click',dismiss);
+  },0);
 }
 function addDaySpotCustom(dt){
   const text=prompt('New spot name:');if(!text||!text.trim())return;
@@ -805,10 +838,16 @@ function renderDayView(){
   if(!D.daySpots)D.daySpots={};
   const _lPicked=D.daySpots[dt]||[];
   const _allSpots=[...(typeof SPOT_SUGGESTIONS!=='undefined'?SPOT_SUGGESTIONS:[]),...(D.customSpots||[])];
+  const _spotMeta=(D.daySpotMeta&&D.daySpotMeta[dt])||{};
   html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;">
     <span style="font-size:10px;color:var(--dim);white-space:nowrap;">📍 Today's spot:</span>
-    ${_allSpots.map(s=>`<button class="spot-pill${_lPicked.includes(s.key)?' selected':''}" onclick="toggleDaySpot('${dt}','${s.key}')" title="${(s.desc||'').replace(/"/g,'&quot;')}" style="font-size:10px;padding:3px 8px;">${s.icon} ${s.label}</button>`).join('')}
+    ${_allSpots.map(s=>{
+      const sel=_lPicked.includes(s.key);
+      const dur=_spotMeta[s.key];
+      return `<button class="spot-pill${sel?' selected':''}" onclick="toggleDaySpot('${dt}','${s.key}')" oncontextmenu="openSpotDurationPop(event,'${dt}','${s.key}')" title="${(s.desc||'').replace(/"/g,'&quot;')}${sel?'\nRight-click for duration':''}" style="font-size:10px;padding:3px 8px;">${s.icon} ${s.label}${sel&&dur?` <span class="spot-dur">· ${dur}</span>`:''}</button>`;
+    }).join('')}
     <button class="spot-pill spot-pill-add" onclick="addDaySpotCustom('${dt}')" title="Add a spot" style="font-size:10px;padding:3px 8px;">+</button>
+    ${_lPicked.length>1?`<span style="font-size:9px;color:var(--dim);margin-left:4px;font-style:italic;">right-click a spot to set time of day</span>`:''}
   </div>`;
 
   // Yesterday's focus nudge

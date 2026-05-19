@@ -168,16 +168,29 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._mcatJuneStart=true;
   }
-  // Personal statement blocks Mon-Fri May 18-22
+  // Personal statement blocks Mon-Fri May 18-22 (deprecated — replaced by resume + later-PS split below)
   if(!d._psWeekMay18){
+    d._psWeekMay18=true;
+  }
+  // v2: Resume blocks Mon-Fri May 18-22, then PS/experiences blocks starting Sat May 23
+  if(!d._resumeThenPsV2){
     if(!d.days)d.days={};
+    // Strip any prior PS blocks May 18-22 so resume blocks take their slot
     ['2026-05-18','2026-05-19','2026-05-20','2026-05-21','2026-05-22'].forEach((dt,i)=>{
+      if(d.days[dt])d.days[dt]=d.days[dt].filter(s=>!s._psBlock);
       if(!d.days[dt])d.days[dt]=[];
-      if(!d.days[dt].some(s=>s._psBlock)){
-        d.days[dt].push({t:'6:00 PM',text:'📝 Personal Statement + Experience Work',cls:'personal',sm:'PS draft + experience entries',loc:'',end:'7:00 PM',_psBlock:true,_id:'ps_may_'+(18+i)});
+      if(!d.days[dt].some(s=>s._resumeBlock)){
+        d.days[dt].push({t:'6:00 PM',text:'📄 Resume work',cls:'medapp',sm:'Polish resume + format for letter writers',loc:'',end:'7:00 PM',_resumeBlock:true,_id:'resume_may_'+(18+i)});
       }
     });
-    d._psWeekMay18=true;
+    // PS experiences + personal statement blocks starting Sat May 23 through Fri May 29
+    ['2026-05-23','2026-05-24','2026-05-25','2026-05-26','2026-05-27','2026-05-28','2026-05-29'].forEach((dt,i)=>{
+      if(!d.days[dt])d.days[dt]=[];
+      if(!d.days[dt].some(s=>s._psBlock)){
+        d.days[dt].push({t:'6:00 PM',text:'📝 PS + Experiences',cls:'personal',sm:'Personal statement draft + experience entries',loc:'',end:'7:30 PM',_psBlock:true,_id:'ps_may23_'+(23+i)});
+      }
+    });
+    d._resumeThenPsV2=true;
   }
   if(!d._chopBlue){
     if(d.cats&&d.cats.chop)d.cats.chop.color='#60a5fa';

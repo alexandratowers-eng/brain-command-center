@@ -7,9 +7,7 @@ function applyAutoTheme(){
   } else if(manual==='dark'){
     document.documentElement.classList.remove('light');
   } else {
-    // No preference saved — follow system
-    const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('light',!prefersDark);
+    document.documentElement.classList.add('light');
   }
   updateThemeBtn();
 }

@@ -6,12 +6,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BCC">
-<meta name="theme-color" content="#6366f1">
+<meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Brain Command Center</title>
-<link rel="stylesheet" href="styles.css?v=20260518b">
-<script src="sync-config.js?v=20260518b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<script>
+(function(){
+  try{
+    var m=localStorage.getItem('alex_theme_override');
+    if(m==='dark'){/* leave default dark */}
+    else{document.documentElement.classList.add('light');}
+  }catch(e){document.documentElement.classList.add('light');}
+})();
+</script>
+<link rel="stylesheet" href="styles.css?v=20260518d">
+<script src="sync-config.js?v=20260518d" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -607,12 +616,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260518b"></script>
-<script src="core.js?v=20260518b"></script>
-<script src="calendar.js?v=20260518b"></script>
-<script src="tasks.js?v=20260518b"></script>
-<script src="features.js?v=20260518b"></script>
-<script src="sync.js?v=20260518b"></script>
+<script src="data.js?v=20260518d"></script>
+<script src="core.js?v=20260518d"></script>
+<script src="calendar.js?v=20260518d"></script>
+<script src="tasks.js?v=20260518d"></script>
+<script src="features.js?v=20260518d"></script>
+<script src="sync.js?v=20260518d"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

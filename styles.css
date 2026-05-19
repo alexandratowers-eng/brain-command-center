@@ -1291,3 +1291,20 @@ button,input,select,textarea{font-family:inherit;}
 .sr-item .sr-icon{font-size:12px;opacity:.6;}
 .sr-empty{padding:16px;text-align:center;font-size:11px;color:var(--dim);}
 @media(max-width:600px){.search-input-wrap{width:200px;}.search-results{width:260px;right:-20px;}}
+
+/* On Deck (cleaned up) */
+.ondeck-status{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:9px;color:var(--dim);padding:4px 6px;margin-bottom:6px;background:rgba(192,132,252,.06);border-radius:6px;}
+.ondeck-sep{opacity:.4;margin:0 2px;}
+.ondeck-list{display:flex;flex-direction:column;gap:1px;}
+.ondeck-list .task-item{padding:4px 2px!important;border-bottom:1px dashed transparent;}
+.ondeck-list .task-item:hover{border-bottom-color:var(--border);}
+.ondeck-more-btn{width:100%;margin-top:6px;background:none;border:none;color:var(--purple);font-size:9px;cursor:pointer;padding:4px;font-family:inherit;opacity:.75;}
+.ondeck-more-btn:hover{opacity:1;text-decoration:underline;}
+.ondeck-review-btn{width:100%;margin-top:4px;background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.2);border-radius:6px;color:var(--purple);font-size:10px;cursor:pointer;padding:5px;font-family:inherit;font-weight:500;}
+.ondeck-review-btn:hover{background:rgba(192,132,252,.16);}
+
+/* Spot duration */
+.spot-dur{font-size:9px;opacity:.75;font-weight:500;margin-left:2px;}
+.spot-duration-pop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px;display:flex;flex-direction:column;min-width:140px;}
+.spot-duration-pop button{background:none;border:none;color:var(--text);padding:6px 10px;text-align:left;font-size:11px;cursor:pointer;border-radius:4px;font-family:inherit;}
+.spot-duration-pop button:hover{background:rgba(96,165,250,.12);color:var(--blue);}

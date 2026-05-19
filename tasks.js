@@ -1264,38 +1264,29 @@ function renderCalRightStash(){
 
   let html='';
 
-  // Snoozed reminders sub-section
-  if(snoozedTasks.length){
-    html+=`<div style="background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.15);border-radius:6px;padding:4px 6px;margin-bottom:6px;">
-      <div style="font-size:8px;font-weight:700;color:var(--pink);margin-bottom:2px;">⏰ ${snoozedToday.length?snoozedToday.length+' reminder'+(snoozedToday.length>1?'s':'')+' coming back today':''}${snoozedToday.length&&(snoozedTasks.length-snoozedToday.length)?' · ':''}${(snoozedTasks.length-snoozedToday.length)?(snoozedTasks.length-snoozedToday.length)+' snoozed':''}</div>`;
-    snoozedTasks.slice(0,3).forEach(t=>{
-      const cat=D.cats[t.cat];
-      const rd=new Date(t.remindAt);
-      const timeLabel=rd.toDateString()===new Date().toDateString()?rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):rd.toLocaleDateString([],{month:'short',day:'numeric'});
-      html+=`<div style="display:flex;align-items:center;gap:4px;padding:1px 0;font-size:9px;color:var(--dim);">
-        <span>⏰</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''} ${t.text}</span><span style="font-size:8px;color:var(--pink);">${timeLabel}</span>
-      </div>`;
-    });
-    if(snoozedTasks.length>3) html+=`<div style="font-size:8px;color:var(--dim);padding-left:14px;">+${snoozedTasks.length-3} more</div>`;
-    html+=`</div>`;
+  // Compact status row (snoozed + nudge folded into one line)
+  const statusBits=[];
+  if(snoozedToday.length) statusBits.push(`<span style="color:var(--pink);">⏰ ${snoozedToday.length} due today</span>`);
+  if(snoozedTasks.length-snoozedToday.length>0) statusBits.push(`<span>${snoozedTasks.length-snoozedToday.length} snoozed</span>`);
+  if(total>0) statusBits.push(`<span>${total} parked</span>`);
+  if(statusBits.length){
+    html+=`<div class="ondeck-status">${statusBits.join('<span class="ondeck-sep">·</span>')}</div>`;
   }
 
-  // Weekly stash nudge
-  const dayOfWeek=new Date().getDay();
-  if((dayOfWeek===0||dayOfWeek===1)&&total>3){
-    html+=`<div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:6px;padding:5px 8px;margin-bottom:6px;font-size:9px;color:var(--indigo);">
-      <b>📋 Weekly check-in:</b> You have ${total} stashed items. <span onclick="openParkingReview()" style="text-decoration:underline;cursor:pointer;font-weight:600;">Review & schedule them?</span>
-    </div>`;
-  }
-
+  // Items list (compact)
+  html+=`<div class="ondeck-list">`;
   html+=allItems.slice(0,STASH_LIMIT).map(i=>i.html).join('');
   if(allItems.length>STASH_LIMIT){
-    html+=`<button class="t-btn" onclick="this.style.display='none';document.getElementById('stashOverflow').style.display='block';" style="font-size:9px;width:100%;margin-top:4px;color:var(--purple);">View all ${allItems.length} parked items →</button>`;
     html+=`<div id="stashOverflow" style="display:none;">${allItems.slice(STASH_LIMIT).map(i=>i.html).join('')}</div>`;
   }
+  html+=`</div>`;
 
-  // Review Stash button
-  html+=`<button class="t-btn" onclick="openParkingReview()" style="font-size:9px;width:100%;margin-top:6px;border-color:var(--purple);color:var(--purple);">📋 Review Queue</button>`;
+  // Single combined footer action
+  const extraCount=allItems.length>STASH_LIMIT?allItems.length-STASH_LIMIT:0;
+  if(extraCount>0){
+    html+=`<button class="ondeck-more-btn" onclick="(function(b){var o=document.getElementById('stashOverflow');if(o.style.display==='none'){o.style.display='block';b.textContent='Show less';}else{o.style.display='none';b.textContent='Show ${extraCount} more →';}})(this);">Show ${extraCount} more →</button>`;
+  }
+  if(total>0) html+=`<button class="ondeck-review-btn" onclick="openParkingReview()">📋 Review queue</button>`;
 
   el.innerHTML=html;
 }
