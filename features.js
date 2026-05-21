@@ -2303,4 +2303,315 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();toggleSearch();}
 });
 
+// ===== REMIND LATER TODAY =====
+// Drops an amber-colored "⏰ <thought>" block onto the calendar at the chosen time.
+// If the time is already past, schedules for tomorrow at that time.
+function quickRemindLater(){
+  const inp=document.getElementById('rlInput');
+  const text=(inp?.value||'').trim();
+  if(!text){if(inp)inp.focus();return;}
+  // Find which chip is active. If none, default to 30m.
+  let targetDate=new Date();
+  const activeChip=document.querySelector('.rl-chip.rl-active');
+  const tInput=document.getElementById('rlTime');
+  if(tInput&&tInput.value){
+    const [hh,mm]=tInput.value.split(':').map(Number);
+    targetDate.setHours(hh,mm,0,0);
+  } else if(activeChip&&activeChip.dataset.rlAt){
+    const [hh,mm]=activeChip.dataset.rlAt.split(':').map(Number);
+    targetDate.setHours(hh,mm,0,0);
+  } else {
+    const mins=activeChip?parseInt(activeChip.dataset.rlMins,10):30;
+    targetDate=new Date(Date.now()+mins*60000);
+  }
+  if(targetDate.getTime()<=Date.now()+60000){
+    // Time already passed — push to tomorrow same time
+    targetDate.setDate(targetDate.getDate()+1);
+  }
+  const dateKey=dateStr(targetDate);
+  const startMin=targetDate.getHours()*60+targetDate.getMinutes();
+  const tl=getTimeline(dateKey)||[];
+  let idx=tl.length;
+  for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>startMin){idx=j;break;}}
+  const slot={
+    t:minToTime(startMin),
+    text:'⏰ '+text,
+    cls:'reminder',
+    sm:'Reminder',
+    loc:'',
+    end:minToTime(Math.min(24*60-1,startMin+15)),
+    _id:'rem_'+Date.now(),
+    _reminder:true
+  };
+  tl.splice(idx,0,slot);
+  setTimeline(dateKey,tl);
+  // Also surface via the existing remind-pill / toast system so a notification fires.
+  if(!D.tasks)D.tasks=[];
+  D.tasks.push({
+    id:(D.nextId||100)+Math.floor(Math.random()*9999),
+    text:text,
+    cat:'reminder',
+    pri:'med',
+    done:false,
+    date:'',
+    remindAt:targetDate.toISOString(),
+    _fromRemindLater:true
+  });
+  D.nextId=(D.nextId||100)+1;
+  save();
+  if(inp)inp.value='';
+  // Clear chip selection
+  document.querySelectorAll('.rl-chip.rl-active').forEach(c=>c.classList.remove('rl-active'));
+  if(tInput)tInput.value='';
+  renderCalendar();renderMiniCal();renderRemindLaterPending();
+  const isTomorrow=dateKey!==todayStr();
+  const label=targetDate.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+(isTomorrow?' tomorrow':'');
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='⏰ Reminder set · '+label;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+}
+
+function renderRemindLaterPending(){
+  const el=document.getElementById('rlPending');if(!el)return;
+  const now=Date.now();
+  const todayKey=todayStr();
+  const tl=getTimeline(todayKey)||[];
+  const upcoming=tl.filter(s=>s._reminder&&parseMin(s.t)*60000+dateObj(todayKey).getTime()>now)
+    .sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+  if(!upcoming.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="rl-pending-title">Next today</div>'+upcoming.slice(0,3).map(s=>{
+    return `<div class="rl-pending-row"><span class="rl-pending-t">${s.t}</span><span class="rl-pending-text">${(s.text||'').replace(/^⏰\s*/,'')}</span></div>`;
+  }).join('');
+}
+
+// Wire up chip selection
+document.addEventListener('click',function(e){
+  const chip=e.target.closest('.rl-chip');
+  if(!chip)return;
+  if(chip.classList.contains('rl-time'))return;
+  document.querySelectorAll('.rl-chip.rl-active').forEach(c=>c.classList.remove('rl-active'));
+  chip.classList.add('rl-active');
+  const tInput=document.getElementById('rlTime');
+  if(tInput)tInput.value='';
+});
+// Custom time picker clears chip selection
+document.addEventListener('input',function(e){
+  if(e.target&&e.target.id==='rlTime'){
+    document.querySelectorAll('.rl-chip.rl-active').forEach(c=>c.classList.remove('rl-active'));
+  }
+});
+
+// ===== TRANSCRIPT UPLOAD / SUMMARIZE / Q&A =====
+let _transcriptParsed=null;
+
+function loadTranscriptFile(ev){
+  const file=ev.target.files&&ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    document.getElementById('mtgTranscriptInput').value=e.target.result;
+    _transcriptParsed=null;
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML='📎 Loaded '+file.name;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+  };
+  reader.readAsText(file);
+  ev.target.value='';
+}
+
+function clearTranscript(){
+  document.getElementById('mtgTranscriptInput').value='';
+  document.getElementById('mtgTranscriptResult').innerHTML='';
+  const q=document.getElementById('mtgTranscriptQ');if(q)q.value='';
+  _transcriptParsed=null;
+}
+
+function parseTranscript(raw){
+  if(!raw||!raw.trim())return {lines:[],rawText:''};
+  const text=raw.replace(/\r\n?/g,'\n');
+  const lines=[];
+  // VTT/SRT detection
+  const isVtt=/^WEBVTT/m.test(text)||/-->/.test(text);
+  if(isVtt){
+    const blocks=text.split(/\n\s*\n/);
+    blocks.forEach(b=>{
+      const ls=b.split('\n').map(l=>l.trim()).filter(Boolean);
+      if(!ls.length)return;
+      // Drop cue numbers (pure digits) and timestamp lines
+      const content=ls.filter(l=>!/^\d+$/.test(l)&&!/-->/.test(l)&&!/^WEBVTT/i.test(l));
+      const joined=content.join(' ').trim();
+      if(joined){
+        const sm=joined.match(/^([A-Z][\w .'-]{0,30}):\s*(.+)$/);
+        if(sm)lines.push({speaker:sm[1].trim(),text:sm[2].trim()});
+        else lines.push({speaker:'',text:joined});
+      }
+    });
+  } else {
+    text.split(/\n+/).forEach(l=>{
+      const trimmed=l.trim();if(!trimmed)return;
+      const sm=trimmed.match(/^([A-Z][\w .'-]{0,30}):\s*(.+)$/);
+      if(sm)lines.push({speaker:sm[1].trim(),text:sm[2].trim()});
+      else lines.push({speaker:'',text:trimmed});
+    });
+  }
+  return {lines,rawText:text};
+}
+
+function ensureTranscriptParsed(){
+  const raw=document.getElementById('mtgTranscriptInput').value;
+  if(!raw||!raw.trim()){alert('Paste or upload a transcript first.');return null;}
+  if(!_transcriptParsed||_transcriptParsed.rawText!==raw){
+    _transcriptParsed=parseTranscript(raw);
+  }
+  return _transcriptParsed;
+}
+
+const _STOPWORDS=new Set(['the','a','an','and','or','but','if','then','of','to','in','on','at','for','with','is','are','was','were','be','been','being','it','this','that','these','those','i','you','we','they','he','she','my','our','your','their','his','her','as','by','from','about','into','out','up','down','so','not','no','yes','do','does','did','have','has','had','will','would','can','could','should','may','might','just','really','very','also','like','well','um','uh','okay','ok','yeah','right','kind','sort','lot','think','know','said','say','get','go','going','one','two','some','any','what','when','where','why','how','than','because','there','here','them','us']);
+
+function _tok(s){return (s||'').toLowerCase().split(/[^a-z0-9]+/).filter(w=>w&&w.length>2&&!_STOPWORDS.has(w));}
+
+function summarizeTranscript(parsed,mode){
+  const ACTION_RE=/\b(i'?ll|we'?ll|let'?s|need to|gonna|going to|will|action item|todo|to do|by (mon|tue|wed|thu|fri|sat|sun|next week|tomorrow|eod|end of (week|day)))\b/i;
+  const DECISION_RE=/\b(decided|agreed|resolved|final answer|let'?s go with|we'?re (going|gonna) (to|with)|the plan is)\b/i;
+  const actions=[];
+  const decisions=[];
+  const highlights=[];
+  parsed.lines.forEach(l=>{
+    const txt=l.text;
+    if(txt.length<3)return;
+    const prefix=l.speaker?`**${l.speaker}:** `:'';
+    if(ACTION_RE.test(txt))actions.push('- [ ] '+prefix+txt);
+    else if(DECISION_RE.test(txt))decisions.push('- '+prefix+txt);
+    else if(txt.length>60)highlights.push('- '+prefix+txt);
+  });
+  // Topic extraction: word frequency
+  const freq={};
+  parsed.lines.forEach(l=>_tok(l.text).forEach(w=>{freq[w]=(freq[w]||0)+1;}));
+  const topics=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8).map(e=>e[0]);
+  let md='';
+  if(mode==='actions'){
+    md='### Action Items\n'+(actions.length?actions.join('\n'):'- (none detected — try summarize full)');
+  } else {
+    md='### Summary\n';
+    if(topics.length)md+='**Topics:** '+topics.join(', ')+'\n\n';
+    md+='### Action Items\n'+(actions.length?actions.join('\n'):'- (none detected)')+'\n\n';
+    md+='### Decisions\n'+(decisions.length?decisions.join('\n'):'- (none detected)')+'\n\n';
+    md+='### Key Points\n'+(highlights.slice(0,10).join('\n')||'- (transcript too short)');
+  }
+  return md;
+}
+
+function runTranscriptSummary(mode){
+  const parsed=ensureTranscriptParsed();if(!parsed)return;
+  const md=summarizeTranscript(parsed,mode);
+  const notes=document.getElementById('mtgNotes');
+  const linkSel=document.getElementById('mtgLinkBlock');
+  if(linkSel&&linkSel.value){
+    // Pre-fill title/date from linked meeting
+    try{
+      const [dt,idxStr]=linkSel.value.split('|');
+      const idx=parseInt(idxStr,10);
+      const tl=getTimeline(dt)||[];
+      const slot=tl[idx];
+      if(slot){
+        if(!document.getElementById('mtgTitle').value)document.getElementById('mtgTitle').value=slot.text+' — Notes';
+        document.getElementById('mtgDate').value=dt;
+      }
+    }catch(e){}
+  } else if(!document.getElementById('mtgDate').value){
+    document.getElementById('mtgDate').value=todayStr();
+  }
+  const existing=notes.value.trim();
+  notes.value=(existing?existing+'\n\n':'')+md;
+  saveMeetingNotes();
+  const body=document.getElementById('mtgComposeBody');
+  if(body)body.style.display='block';
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='✓ Summary added to notes';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+}
+
+function askTranscript(){
+  const parsed=ensureTranscriptParsed();if(!parsed)return;
+  const q=document.getElementById('mtgTranscriptQ').value.trim();
+  if(!q){document.getElementById('mtgTranscriptResult').innerHTML='<div class="mt-empty">Type a question above.</div>';return;}
+  const qTokens=_tok(q);
+  if(!qTokens.length){document.getElementById('mtgTranscriptResult').innerHTML='<div class="mt-empty">Question needs more keywords.</div>';return;}
+  const scored=parsed.lines.map((l,i)=>{
+    const tokens=new Set(_tok(l.text));
+    let score=0;qTokens.forEach(t=>{if(tokens.has(t))score++;});
+    // Bonus for exact phrase
+    if(l.text.toLowerCase().includes(q.toLowerCase()))score+=5;
+    return {i,score,line:l};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
+  if(!scored.length){
+    document.getElementById('mtgTranscriptResult').innerHTML='<div class="mt-empty">No matching passages found. Try different keywords, or use "Copy for ChatGPT" for a deeper answer.</div>';
+    return;
+  }
+  let html='<div class="mt-result-title">Top matches:</div>';
+  scored.forEach(s=>{
+    const before=parsed.lines[s.i-1];
+    const after=parsed.lines[s.i+1];
+    html+='<div class="mt-result-block">';
+    if(before)html+='<div class="mt-result-context">'+(before.speaker?'<b>'+before.speaker+':</b> ':'')+_esc(before.text)+'</div>';
+    html+='<div class="mt-result-hit">'+(s.line.speaker?'<b>'+s.line.speaker+':</b> ':'')+_highlightQuery(s.line.text,qTokens)+'</div>';
+    if(after)html+='<div class="mt-result-context">'+(after.speaker?'<b>'+after.speaker+':</b> ':'')+_esc(after.text)+'</div>';
+    html+='</div>';
+  });
+  document.getElementById('mtgTranscriptResult').innerHTML=html;
+}
+
+function _esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function _highlightQuery(text,tokens){
+  let out=_esc(text);
+  tokens.forEach(t=>{
+    const re=new RegExp('\\b('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')\\b','gi');
+    out=out.replace(re,'<mark>$1</mark>');
+  });
+  return out;
+}
+
+function copyTranscriptForAI(){
+  const raw=document.getElementById('mtgTranscriptInput').value.trim();
+  if(!raw){alert('Paste or upload a transcript first.');return;}
+  const q=document.getElementById('mtgTranscriptQ').value.trim();
+  const linkSel=document.getElementById('mtgLinkBlock');
+  let header='Here is a meeting transcript.';
+  if(linkSel&&linkSel.value){
+    try{
+      const [dt,idxStr]=linkSel.value.split('|');
+      const tl=getTimeline(dt)||[];
+      const slot=tl[parseInt(idxStr,10)];
+      if(slot)header='Here is a transcript from the meeting "'+slot.text+'" on '+dt+(slot.t?' at '+slot.t:'')+'.';
+    }catch(e){}
+  }
+  const prompt=header+'\n\n'+raw+'\n\n'+(q?'Question: '+q:'Please summarize the meeting, list action items with owners, and call out any decisions.');
+  navigator.clipboard.writeText(prompt).then(()=>{
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML='✓ Copied — paste into ChatGPT or Claude';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2000);}
+  });
+}
+
+function populateLinkBlockOptions(){
+  const sel=document.getElementById('mtgLinkBlock');if(!sel)return;
+  const today=todayStr();
+  const tmrw=dateStr(new Date(Date.now()+86400000));
+  let html='<option value="">— link to a meeting (optional) —</option>';
+  [today,tmrw].forEach(dt=>{
+    const blocks=(typeof getMeetingBlocks==='function')?getMeetingBlocks(dt):[];
+    if(!blocks.length)return;
+    const label=dt===today?'Today':'Tomorrow';
+    html+='<optgroup label="'+label+'">';
+    blocks.forEach(b=>{
+      const t=b.t||'';const text=(b.text||'').replace(/"/g,'');
+      html+='<option value="'+dt+'|'+b._dayIdx+'">'+t+' — '+text.slice(0,40)+'</option>';
+    });
+    html+='</optgroup>';
+  });
+  sel.innerHTML=html;
+}
+
+// Re-populate the link dropdown whenever the transcript section is opened
+document.addEventListener('toggle',function(e){
+  if(e.target&&e.target.id==='mtgTranscriptBox'&&e.target.open){
+    populateLinkBlockOptions();
+  }
+},true);
+
 init();

@@ -206,6 +206,16 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     d.cats=ordered;
     d._exerciseCatV2=true;
   }
+  // Reminder category for "remind me later today" blocks
+  if(!d._reminderCat){
+    if(!d.cats)d.cats={};
+    if(!d.cats.reminder)d.cats.reminder={emoji:'⏰',label:'Reminder',color:'#fbbf24'};
+    const ordered={};
+    ['chop','personal','exercise','mcat','medapp','deadline','health','reminder','braindump'].forEach(k=>{if(d.cats[k])ordered[k]=d.cats[k];});
+    Object.keys(d.cats).forEach(k=>{if(!ordered[k])ordered[k]=d.cats[k];});
+    d.cats=ordered;
+    d._reminderCat=true;
+  }
   if(!d._defaultDay){
     d.calView='day';
     d._defaultDay=true;
@@ -249,6 +259,7 @@ function renderAll(){
   if(typeof renderSidebarWins==='function')renderSidebarWins();
   if(typeof checkWeeklyReview==='function')checkWeeklyReview();
   if(typeof renderWeeklyGoal==='function')renderWeeklyGoal();
+  if(typeof renderRemindLaterPending==='function')renderRemindLaterPending();
   if(typeof autoParkingReview==='function')autoParkingReview();
   document.getElementById('brainDump').value=D.brainDump||'';
   updateStats();updateTimerDisp();initMeetingNotes();
@@ -268,6 +279,7 @@ function defaults(){
       medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
       deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#f87171'},
       health:{emoji:'💚',label:'Health/Wellbeing',color:'#34d399'},
+      reminder:{emoji:'⏰',label:'Reminder',color:'#fbbf24'},
       braindump:{emoji:'🧠',label:'Brain Dump',color:'#a78bfa'},
     },
     tasks:[

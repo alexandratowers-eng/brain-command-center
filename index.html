@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260518p">
-<script src="sync-config.js?v=20260518p" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260520a">
+<script src="sync-config.js?v=20260520a" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -139,6 +139,26 @@ if('serviceWorker' in navigator){
             <button class="distraction-add-btn" onclick="quickParkThought()">+</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Remind Later Today -->
+    <div class="s-card" data-card="remind-later" style="border-color:rgba(251,191,36,.25);">
+      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--amber);">alarm</span> Remind Later Today<button class="s-collapse" onclick="toggleCard('remind-later',this)">▾</button></div>
+      <div class="s-body" id="cardBody-remind-later">
+        <div style="font-size:9px;color:var(--dim);margin-bottom:3px;">Drops on your calendar at the time you pick</div>
+        <div class="rl-input-row">
+          <input type="text" id="rlInput" placeholder="remind me about..." onkeydown="if(event.key==='Enter')quickRemindLater()">
+        </div>
+        <div class="rl-chip-row">
+          <button class="rl-chip" data-rl-mins="30">30m</button>
+          <button class="rl-chip" data-rl-mins="60">1h</button>
+          <button class="rl-chip" data-rl-mins="120">2h</button>
+          <button class="rl-chip" data-rl-at="18:00">6pm</button>
+          <input type="time" id="rlTime" class="rl-chip rl-time">
+          <button class="rl-add" onclick="quickRemindLater()" title="Add reminder">+</button>
+        </div>
+        <div id="rlPending"></div>
       </div>
     </div>
 
@@ -398,6 +418,32 @@ if('serviceWorker' in navigator){
               <button class="t-btn" onclick="loadMeetingTpl('general')" style="font-size:10px;"><span class="mi" style="font-size:13px;">edit_note</span> General Notes</button>
               <button class="t-btn" onclick="loadMeetingTpl('prep')" style="font-size:10px;"><span class="mi" style="font-size:13px;">checklist</span> Meeting Prep</button>
             </div>
+
+            <!-- TRANSCRIPT UPLOAD / Q&A -->
+            <details class="mtg-transcript" id="mtgTranscriptBox">
+              <summary><span class="mi" style="font-size:15px;color:var(--indigo);vertical-align:middle;">graphic_eq</span> Transcript &mdash; upload, summarize, ask</summary>
+              <div class="mtg-transcript-body">
+                <div class="mt-row">
+                  <label class="mt-file-btn" title="Upload .txt, .vtt, .srt, or .md">
+                    <span class="mi" style="font-size:14px;">upload_file</span> Upload file
+                    <input type="file" id="mtgTranscriptFile" accept=".txt,.vtt,.srt,.md,text/plain" onchange="loadTranscriptFile(event)" hidden>
+                  </label>
+                  <select id="mtgLinkBlock" class="mt-link" title="Link to a calendar meeting"></select>
+                </div>
+                <textarea id="mtgTranscriptInput" class="dump-area" placeholder="...or paste the transcript here" style="min-height:90px;font-size:11px;"></textarea>
+                <div class="mt-actions">
+                  <button class="t-btn primary" onclick="runTranscriptSummary('full')" style="font-size:10px;"><span class="mi" style="font-size:12px;">auto_awesome</span> Summarize → notes</button>
+                  <button class="t-btn" onclick="runTranscriptSummary('actions')" style="font-size:10px;"><span class="mi" style="font-size:12px;">checklist</span> Action items only</button>
+                  <button class="t-btn" onclick="clearTranscript()" style="font-size:10px;">Clear</button>
+                </div>
+                <div class="mt-qa">
+                  <input type="text" id="mtgTranscriptQ" placeholder="ask a question about this transcript..." onkeydown="if(event.key==='Enter')askTranscript()">
+                  <button class="t-btn" onclick="askTranscript()" style="font-size:10px;"><span class="mi" style="font-size:12px;">search</span> Find</button>
+                  <button class="t-btn" onclick="copyTranscriptForAI()" title="Copies the transcript + your question to clipboard, paste into ChatGPT/Claude" style="font-size:10px;"><span class="mi" style="font-size:12px;">content_copy</span> Copy for ChatGPT</button>
+                </div>
+                <div id="mtgTranscriptResult" class="mt-result"></div>
+              </div>
+            </details>
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
               <input type="text" id="mtgTitle" placeholder="Meeting title..." style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;font-family:inherit;" oninput="saveMeetingNotes()">
               <input type="date" id="mtgDate" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;outline:none;" onchange="saveMeetingNotes()">
@@ -436,26 +482,42 @@ if('serviceWorker' in navigator){
 <!-- DAY VIEW EVENT POPOVER -->
 <div class="dv-popover" id="dvPopover">
   <h4>+ New Block</h4>
-  <label>Date</label>
-  <input type="date" id="dpDate">
-  <label>Time</label>
-  <select id="dpTime"></select>
-  <label>Category</label>
-  <select id="dpCat"></select>
-  <label>Title</label>
-  <input type="text" id="dpTitle" placeholder="What's happening?" onkeydown="if(event.key==='Enter')dvPopoverSave();">
-  <label>Details</label>
-  <input type="text" id="dpDetails" placeholder="Optional details..." onkeydown="if(event.key==='Enter')dvPopoverSave();">
-  <label>Location</label>
-  <input type="text" id="dpLoc" placeholder="Optional location..." onkeydown="if(event.key==='Enter')dvPopoverSave();">
-  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
-    <input type="checkbox" id="dpLocOnly" style="width:14px;height:14px;cursor:pointer;">
-    Location-only block (transparent background)
-  </label>
-  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
-    <input type="checkbox" id="dpIsMeeting" style="width:14px;height:14px;cursor:pointer;">
-    <span class="mi" style="font-size:14px;color:var(--teal);">groups</span> Mark as meeting block
-  </label>
+  <div class="pop-field pop-full">
+    <label>Title</label>
+    <input type="text" id="dpTitle" placeholder="What's happening?" onkeydown="if(event.key==='Enter')dvPopoverSave();">
+  </div>
+  <div class="pop-row">
+    <div class="pop-field">
+      <label>Date</label>
+      <input type="date" id="dpDate">
+    </div>
+    <div class="pop-field">
+      <label>Time</label>
+      <select id="dpTime"></select>
+    </div>
+  </div>
+  <div class="pop-row">
+    <div class="pop-field">
+      <label>Category</label>
+      <select id="dpCat"></select>
+    </div>
+    <div class="pop-field">
+      <label>Location</label>
+      <input type="text" id="dpLoc" placeholder="Optional..." onkeydown="if(event.key==='Enter')dvPopoverSave();">
+    </div>
+  </div>
+  <div class="pop-field pop-full">
+    <label>Details</label>
+    <input type="text" id="dpDetails" placeholder="Optional details..." onkeydown="if(event.key==='Enter')dvPopoverSave();">
+  </div>
+  <div class="pop-row pop-check-row">
+    <label class="pop-check">
+      <input type="checkbox" id="dpLocOnly"> Location-only
+    </label>
+    <label class="pop-check">
+      <input type="checkbox" id="dpIsMeeting"> <span class="mi" style="font-size:13px;color:var(--teal);">groups</span> Meeting
+    </label>
+  </div>
   <div class="wp-btns">
     <button class="t-btn" onclick="closeDvPopover()">Cancel</button>
     <button class="t-btn" id="dpDeleteBtn" onclick="dvPopoverDelete()" style="display:none;color:var(--red);border-color:var(--red);">Delete</button>
@@ -466,26 +528,42 @@ if('serviceWorker' in navigator){
 <!-- WEEK VIEW EVENT POPOVER -->
 <div class="wk-popover" id="wkPopover">
   <h4>+ New Block</h4>
-  <label>Date</label>
-  <input type="date" id="wpDate">
-  <label>Time</label>
-  <select id="wpTime"></select>
-  <label>Category</label>
-  <select id="wpCat"></select>
-  <label>Title</label>
-  <input type="text" id="wpTitle" placeholder="What's happening?" onkeydown="if(event.key==='Enter')wkPopoverSave();">
-  <label>Details</label>
-  <input type="text" id="wpDetails" placeholder="Optional details..." onkeydown="if(event.key==='Enter')wkPopoverSave();">
-  <label>Location</label>
-  <input type="text" id="wpLoc" placeholder="Optional location..." onkeydown="if(event.key==='Enter')wkPopoverSave();">
-  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
-    <input type="checkbox" id="wpLocOnly" style="width:14px;height:14px;cursor:pointer;">
-    Location-only block (transparent background)
-  </label>
-  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;margin:6px 0;">
-    <input type="checkbox" id="wpIsMeeting" style="width:14px;height:14px;cursor:pointer;">
-    <span class="mi" style="font-size:14px;color:var(--teal);">groups</span> Mark as meeting block
-  </label>
+  <div class="pop-field pop-full">
+    <label>Title</label>
+    <input type="text" id="wpTitle" placeholder="What's happening?" onkeydown="if(event.key==='Enter')wkPopoverSave();">
+  </div>
+  <div class="pop-row">
+    <div class="pop-field">
+      <label>Date</label>
+      <input type="date" id="wpDate">
+    </div>
+    <div class="pop-field">
+      <label>Time</label>
+      <select id="wpTime"></select>
+    </div>
+  </div>
+  <div class="pop-row">
+    <div class="pop-field">
+      <label>Category</label>
+      <select id="wpCat"></select>
+    </div>
+    <div class="pop-field">
+      <label>Location</label>
+      <input type="text" id="wpLoc" placeholder="Optional..." onkeydown="if(event.key==='Enter')wkPopoverSave();">
+    </div>
+  </div>
+  <div class="pop-field pop-full">
+    <label>Details</label>
+    <input type="text" id="wpDetails" placeholder="Optional details..." onkeydown="if(event.key==='Enter')wkPopoverSave();">
+  </div>
+  <div class="pop-row pop-check-row">
+    <label class="pop-check">
+      <input type="checkbox" id="wpLocOnly"> Location-only
+    </label>
+    <label class="pop-check">
+      <input type="checkbox" id="wpIsMeeting"> <span class="mi" style="font-size:13px;color:var(--teal);">groups</span> Meeting
+    </label>
+  </div>
   <div class="wp-btns">
     <button class="t-btn" onclick="closeWkPopover()">Cancel</button>
     <button class="t-btn primary" onclick="wkPopoverSave()">Add</button>
@@ -614,12 +692,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260518p"></script>
-<script src="core.js?v=20260518p"></script>
-<script src="calendar.js?v=20260518p"></script>
-<script src="tasks.js?v=20260518p"></script>
-<script src="features.js?v=20260518p"></script>
-<script src="sync.js?v=20260518p"></script>
+<script src="data.js?v=20260520a"></script>
+<script src="core.js?v=20260520a"></script>
+<script src="calendar.js?v=20260520a"></script>
+<script src="tasks.js?v=20260520a"></script>
+<script src="features.js?v=20260520a"></script>
+<script src="sync.js?v=20260520a"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){
