@@ -1510,6 +1510,28 @@ button,input,select,textarea{font-family:inherit;}
 .wk-stack-chev{font-size:9px;opacity:.7;margin-left:2px;}
 :root.light .wk-stack{background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(139,92,246,.12))!important;color:#92400e!important;border-color:rgba(245,158,11,.55)!important;}
 
+/* Day-view reminder pill — slim, low-key, doesn't crowd the calendar */
+.dv-reminder-pill{
+  background:linear-gradient(90deg,rgba(251,191,36,.16),rgba(251,191,36,.08));
+  border:1px solid rgba(251,191,36,.45);
+  border-left:3px solid var(--amber);
+  color:var(--amber);
+  border-radius:8px;
+  display:flex;align-items:center;gap:8px;
+  padding:0 12px;
+  font-size:11px;font-weight:600;
+  cursor:pointer;
+  z-index:4;
+  transition:background .15s,transform .1s;
+}
+.dv-reminder-pill:hover{background:linear-gradient(90deg,rgba(251,191,36,.26),rgba(251,191,36,.14));transform:translateY(-1px);}
+.dv-reminder-pill .dvr-count{font-size:13px;font-weight:800;}
+.dv-reminder-pill .dvr-label{opacity:.85;}
+.dv-reminder-pill .dvr-range{margin-left:auto;font-size:10px;opacity:.75;font-variant-numeric:tabular-nums;}
+.dv-reminder-pill .dvr-chev{font-size:10px;opacity:.7;}
+:root.light .dv-reminder-pill{background:linear-gradient(90deg,rgba(245,158,11,.14),rgba(245,158,11,.06));color:#92400e;border-color:rgba(245,158,11,.5);}
+:root.light .dv-reminder-pill:hover{background:linear-gradient(90deg,rgba(245,158,11,.22),rgba(245,158,11,.12));}
+
 /* Stack popover */
 .wk-stack-popover{background:var(--card);border:1px solid var(--border);border-radius:12px;width:320px;max-width:calc(100vw - 16px);box-shadow:0 12px 32px rgba(0,0,0,.5);padding:0;overflow:hidden;}
 .wk-stack-pop-header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(251,191,36,.06);}

@@ -438,7 +438,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
       const isReminderFlag=slot._reminder===true;
       // Also bundle short braindump/personal blocks under 20 min — they're typically reminders too
       if(isReminderFlag||isReminderCat||(isShort&&(slot.text||'').length<60)){
-        stackable.push({idx:i,startM,hourBucket:Math.floor(startM/60)});
+        stackable.push({idx:i,startM,hourBucket:Math.floor(startM/120)});
       }
     });
     const stackGroups={};
@@ -451,7 +451,7 @@ function renderWeekBlocks(container, dates, startHr, endHr){
     const stackPills=[];
     if(!D._stackExpanded)D._stackExpanded={};
     Object.entries(stackGroups).forEach(([bucket,idxs])=>{
-      if(idxs.length<3)return;
+      if(idxs.length<2)return;
       const stackKey=dt+'|'+bucket;
       if(D._stackExpanded[stackKey])return; // user expanded this stack, render normally
       idxs.forEach(i=>stackedIdxs.add(i));
@@ -462,9 +462,9 @@ function renderWeekBlocks(container, dates, startHr, endHr){
 
     // Render stack pills first
     stackPills.forEach(stack=>{
-      const startM=stack.bucket*60;
+      const startM=stack.bucket*120;
       const topPx=((startM/60)-startHr)*60+40;
-      const heightPx=55; // ~one hour row visual
+      const heightPx=32; // slim — just enough to read the count
       const cLeft=colLeft(colIdx);
       const cWidth=colWidth(colIdx);
       const leftExpr=`calc(52px + ${cLeft} * (100% - 54px))`;
@@ -686,7 +686,8 @@ function openWkStackPopover(e,dt,idxs,stackKey){
 function refreshWkStackPopover(dt,stackKey){
   const pop=document.getElementById('wkStackPopover');if(!pop)return;
   // Re-derive idxs (they may have shifted if items were deleted)
-  const [stackDt,bucket]=stackKey.split('|');
+  const parts=stackKey.split('|');
+  const [stackDt,bucket]=parts[0]==='dv'?[parts[1],parts[2]]:parts;
   const tl=getTimeline(stackDt)||[];
   const idxs=[];
   tl.forEach((s,i)=>{
@@ -696,7 +697,7 @@ function refreshWkStackPopover(dt,stackKey){
     const startM=parseMin(s.t);
     const endM=s.end?parseMin(s.end):startM+60;
     const dur=endM-startM;
-    if(Math.floor(startM/60)!==parseInt(bucket,10))return;
+    if(Math.floor(startM/120)!==parseInt(bucket,10))return;
     if(s._reminder||s.cls==='reminder'||(dur>0&&dur<=20&&(s.text||'').length<60)){
       idxs.push(i);
     }
@@ -713,6 +714,11 @@ function deleteStackedSlot(dt,sid,stackKey){
   tl.splice(i,1);
   setTimeline(dt,tl);
   refreshWkStackPopover(dt,stackKey);
+}
+// Day-view reminder pill click: reuse the week-view stack popover
+function openDvStackPopover(e,dt,idxs,stackKey){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  openWkStackPopover(e,dt,idxs,stackKey);
 }
 function expandStack(stackKey){
   if(!D._stackExpanded)D._stackExpanded={};
@@ -1124,9 +1130,54 @@ function renderDayView(){
     }
   }
 
+  // Day-view reminder collapsing — bundle reminders that share a 2-hour window
+  const dvStackable=[];
+  tl.forEach((slot,i)=>{
+    if(!slot||slot._isMeeting||isMeetingBlock(slot)||slot._locOnly)return;
+    const sM=parseMin(slot.t);
+    const eM=slot.end?parseMin(slot.end):sM+60;
+    const dur=eM-sM;
+    const isReminderFlag=slot._reminder===true;
+    const isReminderCat=slot.cls==='reminder';
+    const isShort=dur>0&&dur<=20;
+    if(isReminderFlag||isReminderCat||(isShort&&(slot.text||'').length<60)){
+      dvStackable.push({idx:i,startM:sM,bucket:Math.floor(sM/120)}); // 2-hour buckets
+    }
+  });
+  if(!D._stackExpanded)D._stackExpanded={};
+  const dvStackedIdxs=new Set();
+  const dvStackPills=[];
+  const dvGroups={};
+  dvStackable.forEach(s=>{(dvGroups[s.bucket]=dvGroups[s.bucket]||[]).push(s.idx);});
+  Object.entries(dvGroups).forEach(([bucket,idxs])=>{
+    if(idxs.length<2)return;
+    const stackKey='dv|'+dt+'|'+bucket;
+    if(D._stackExpanded[stackKey])return;
+    idxs.forEach(i=>dvStackedIdxs.add(i));
+    dvStackPills.push({bucket:parseInt(bucket,10),idxs,stackKey});
+  });
+  dvStackPills.forEach(stack=>{
+    const startM=stack.bucket*120;
+    const topPx=(startM/60-startHr)*ROW_H;
+    const heightPx=36;
+    const isMobile=window.innerWidth<=900;
+    const leftBase=isMobile?48:68;
+    const rightBase=isMobile?4:8;
+    const fromLabel=minToTime(startM);
+    const toLabel=minToTime(Math.min(24*60-1,startM+120));
+    html+=`<div class="dv-reminder-pill" data-stack-key="${stack.stackKey}" data-dt="${dt}" style="position:absolute;top:${topPx}px;left:${leftBase}px;right:${rightBase}px;height:${heightPx}px;" onclick="openDvStackPopover(event,'${dt}',[${stack.idxs.join(',')}],'${stack.stackKey}')">
+      <span class="mi" style="font-size:14px;">notifications_active</span>
+      <span class="dvr-count">${stack.idxs.length}</span>
+      <span class="dvr-label">reminders</span>
+      <span class="dvr-range">${fromLabel} – ${toLabel}</span>
+      <span class="dvr-chev">▾</span>
+    </div>`;
+  });
+
   // Render blocks on top of the grid with overlap detection
   const overlaps=computeOverlaps(tl);
   tl.forEach((s,i)=>{
+    if(dvStackedIdxs.has(i))return; // bundled into the reminder pill
     if(!s._id)s._id='s'+Date.now()+'_'+i;
     const sid=s._id;
     const startM=parseMin(s.t);
