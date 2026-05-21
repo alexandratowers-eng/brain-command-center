@@ -724,6 +724,9 @@ function expandStack(stackKey){
 function openWkBlockMenu(e,dt,idx){
   // Remove any existing context menu
   const old=document.getElementById('wkCtxMenu');if(old)old.remove();
+  // Close any open Add/Edit popovers so they don't stack
+  const _dvp=document.getElementById('dvPopover');if(_dvp)_dvp.classList.remove('show');
+  const _wkp=document.getElementById('wkPopover');if(_wkp)_wkp.classList.remove('show');
   const tl=getTimeline(dt);
   const slot=tl[idx];
   const menu=document.createElement('div');
@@ -787,6 +790,8 @@ function navWeek(dir){
 let _wkPopDate=null, _wkPopMins=null;
 function openWkPopover(e, dt, hr){
   e.stopPropagation();
+  const _ctx=document.getElementById('wkCtxMenu');if(_ctx)_ctx.remove();
+  const _dvp=document.getElementById('dvPopover');if(_dvp)_dvp.classList.remove('show');
   const mins=hr*60;
   _wkPopDate=dt; _wkPopMins=mins;
   const pop=document.getElementById('wkPopover');
@@ -1351,6 +1356,8 @@ function applyTemplate(name){
 
 // Day view right-click context menu
 function openDvBlockMenu(e,dt,idx){
+  const _dvp=document.getElementById('dvPopover');if(_dvp)_dvp.classList.remove('show');
+  const _wkp=document.getElementById('wkPopover');if(_wkp)_wkp.classList.remove('show');
   const old=document.getElementById('wkCtxMenu');if(old)old.remove();
   const tl=getTimeline(dt);
   const slot=tl[idx];if(!slot)return;
@@ -1906,6 +1913,7 @@ let _gridDragCreated=false;
 // Day view popover
 let _dvPopDate=null, _dvPopMins=null, _dvPopEditIdx=null;
 function openDvPopover(e,dt,hr,mins,editIdx){
+  const _ctx=document.getElementById('wkCtxMenu');if(_ctx)_ctx.remove();
   _dvPopDate=dt;
   _dvPopMins=mins!=null?mins:(hr!=null?hr*60:9*60);
   _dvPopEditIdx=editIdx!=null?editIdx:null;
