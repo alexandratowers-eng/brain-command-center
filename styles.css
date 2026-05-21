@@ -301,11 +301,11 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .wk-day-hdr.wk-weekend-start{border-left:2px solid rgba(124,58,237,.15);}
 :root.light .wk-cell.wk-weekend-start{border-left:2px solid rgba(124,58,237,.1);}
 
-/* Block colors — TEAL=CHOP, BLUE=personal/tasks, INDIGO=MCAT, RED=deadlines, YELLOW outline=meetings */
-.wk-block.chop{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}
-.wk-block.mcat{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}
+/* Block colors — LIGHT BLUE=CHOP/tasks, TEAL=personal, INDIGO=MCAT, RED=deadlines, YELLOW=meetings */
+.wk-block.chop{background:rgba(96,165,250,.2);border-color:#60a5fa;color:#bfdbfe;}
+.wk-block.mcat{background:rgba(129,140,248,.2);border-color:#818cf8;color:#c7d2fe;}
 .wk-block.gma{background:rgba(244,114,182,.2);border-color:#ec4899;color:#f9a8d4;}
-.wk-block.personal{background:rgba(96,165,250,.18);border-color:#60a5fa;color:#93c5fd;}
+.wk-block.personal{background:rgba(45,212,191,.2);border-color:#2dd4bf;color:#99f6e4;}
 .wk-block.medapp{background:rgba(248,113,113,.18);border-color:#f87171;color:#fca5a5;}
 .wk-block.exercise{background:rgba(52,211,153,.18);border-color:#34d399;color:#86efac;}
 .wk-block.braindump{background:rgba(167,139,250,.18);border-color:var(--purple);color:#c4b5fd;}
@@ -315,7 +315,17 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block.focus::before{content:'💡 ';font-style:normal;}
 .wk-block.deadline{background:rgba(248,113,113,.22);border-color:#f87171;color:#fca5a5;}
 .wk-block.health{background:rgba(52,211,153,.18);border-color:#34d399;color:#86efac;}
-.wk-block.is-meeting,.dv-block.is-meeting{outline:none!important;border-left:4px solid #fbbf24!important;}
+/* Meeting/call/event: fully yellow fill, with a curved bright-yellow left bar */
+.wk-block.is-meeting,.dv-block.is-meeting{
+  background:rgba(250,204,21,.32)!important;
+  border:1px solid #facc15!important;
+  border-left:4px solid #fde047!important;
+  border-top-left-radius:10px!important;
+  border-bottom-left-radius:10px!important;
+  color:#fef08a!important;
+  outline:none!important;
+}
+.wk-block.is-meeting *,.dv-block.is-meeting *{color:#fef9c3!important;}
 .meeting-chop-tag{display:none;}
 .dv-block .meeting-chop-tag{display:none;}
 /* Location-only blocks — slim glowing vertical strip */
@@ -559,10 +569,10 @@ button,input,select,textarea{font-family:inherit;}
 .emoji-pick.selected{border-color:var(--blue);background:rgba(96,165,250,.15);}
 
 /* ====== LIGHT MODE BLOCK OVERRIDES ====== */
-:root.light .wk-block.chop{background:rgba(59,130,246,.1);color:#1d4ed8;border-color:#3b82f6;}
-:root.light .wk-block.mcat{background:rgba(59,130,246,.1);color:#1d4ed8;border-color:#3b82f6;}
+:root.light .wk-block.chop{background:rgba(59,130,246,.14);color:#1d4ed8;border-color:#60a5fa;}
+:root.light .wk-block.mcat{background:rgba(99,102,241,.12);color:#4338ca;border-color:#818cf8;}
 :root.light .wk-block.gma{background:rgba(219,39,119,.08);color:#be185d;}
-:root.light .wk-block.personal{background:rgba(59,130,246,.1);color:#1d4ed8;border-color:#3b82f6;}
+:root.light .wk-block.personal{background:rgba(13,148,136,.14);color:#0f766e;border-color:#0d9488;}
 :root.light .wk-block.medapp{background:rgba(239,68,68,.08);color:#b91c1c;border-color:#ef4444;}
 :root.light .wk-block.exercise{background:rgba(5,150,105,.1);color:#047857;border-color:#10b981;}
 :root.light .wk-block.errands{background:rgba(252,211,77,.15);color:#a16207;border-color:#fcd34d;}
@@ -570,7 +580,23 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .wk-block.free{background:rgba(79,70,229,.03);color:var(--dim);}
 :root.light .wk-block.deadline{background:rgba(239,68,68,.1);color:#b91c1c;border-color:#ef4444;}
 :root.light .wk-block.health{background:rgba(5,150,105,.1);color:#047857;border-color:#10b981;}
-:root.light .wk-block.is-meeting,:root.light .dv-block.is-meeting{outline:none!important;border-left:4px solid #eab308!important;}
+/* Meeting in light mode: brighter, readable yellow */
+:root.light .wk-block.is-meeting,:root.light .dv-block.is-meeting{
+  background:rgba(250,204,21,.38)!important;
+  border:1px solid #eab308!important;
+  border-left:4px solid #facc15!important;
+  border-top-left-radius:10px!important;
+  border-bottom-left-radius:10px!important;
+  color:#854d0e!important;
+  outline:none!important;
+}
+:root.light .wk-block.is-meeting *,:root.light .dv-block.is-meeting *{color:#713f12!important;}
+/* Expanded (double-click) blocks */
+.dv-block.dv-expanded,.wk-block.wk-expanded{overflow:visible!important;height:auto!important;}
+.dv-block.dv-expanded .dv-main-input{white-space:normal!important;overflow:visible!important;}
+.dv-block.dv-expanded .dv-sm-edit{-webkit-line-clamp:unset!important;display:block!important;overflow:visible!important;opacity:1!important;}
+.wk-block.wk-expanded{min-width:160px;}
+.wk-block.wk-expanded .wk-block-sub{-webkit-line-clamp:unset;white-space:normal;overflow:visible;}
 :root.light .dv-block{border-width:1px 1px 1px 4px!important;box-shadow:0 1px 3px rgba(0,0,0,.08);}
 :root.light .dv-ev.chop{background:rgba(59,130,246,.07);color:#1d4ed8;border-color:#3b82f6;}
 :root.light .dv-ev.mcat{background:rgba(59,130,246,.07);color:#1e40af;}

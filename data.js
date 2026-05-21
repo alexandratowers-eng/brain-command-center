@@ -220,6 +220,13 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     d.calView='day';
     d._defaultDay=true;
   }
+  // Personal → teal, exercise → green, keep CHOP light blue
+  if(!d._personalTealV1){
+    if(d.cats&&d.cats.personal)d.cats.personal.color='#2dd4bf';
+    if(d.cats&&d.cats.exercise)d.cats.exercise.color='#34d399';
+    if(d.cats&&d.cats.chop)d.cats.chop.color='#60a5fa';
+    d._personalTealV1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -273,8 +280,8 @@ function defaults(){
   return{
     cats:{
       chop:{emoji:'🔬',label:'CHOP',color:'#60a5fa'},
-      personal:{emoji:'🏠',label:'Personal',color:'#60a5fa'},
-      exercise:{emoji:'🏃',label:'Exercise',color:'#2dd4bf'},
+      personal:{emoji:'🏠',label:'Personal',color:'#2dd4bf'},
+      exercise:{emoji:'🏃',label:'Exercise',color:'#34d399'},
       mcat:{emoji:'📚',label:'MCAT',color:'#818cf8'},
       medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
       deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#f87171'},
