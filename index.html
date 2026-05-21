@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260521a">
-<script src="sync-config.js?v=20260521a" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260521b">
+<script src="sync-config.js?v=20260521b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -117,7 +117,7 @@ if('serviceWorker' in navigator){
           <div class="e-bar" id="eBar"></div>
         </div>
         <div id="coachSuggestions" style="margin-bottom:6px;"></div>
-        <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;">
+        <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;flex-wrap:wrap;">
           <button class="t-btn" id="breatheBtn" onclick="toggleBreathe()" style="font-size:9px;display:flex;align-items:center;gap:3px;">
             <span class="mi" style="font-size:13px;">air</span> Breathe
           </button>
@@ -125,6 +125,32 @@ if('serviceWorker' in navigator){
             <span class="mi" style="font-size:13px;">timer</span> Timer
             <span style="font-size:8px;color:var(--dim);" id="timerMiniDisp"></span>
           </button>
+          <button class="t-btn" onclick="openRescueModal()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--amber);color:var(--amber);" title="Stuck? Bike-hard sprint + breathing reset">
+            <span class="mi" style="font-size:13px;">bolt</span> Stuck?
+          </button>
+        </div>
+        <!-- Rescue modal -->
+        <div id="rescueModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;width:320px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.4);">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span class="mi" style="font-size:18px;color:var(--amber);">bolt</span><div style="font-size:14px;font-weight:700;color:var(--text);">Rescue — pick one</div></div>
+            <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">Stuck on a task? Move your body first, then re-enter.</div>
+            <div id="rescueChoices" style="display:flex;flex-direction:column;gap:6px;">
+              <button class="t-btn" onclick="startBikeSprint(5)" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;">🚴 Bike HARD — 5 min</button>
+              <button class="t-btn" onclick="startBikeSprint(8)" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;">🚴 Bike HARD — 8 min</button>
+              <button class="t-btn" onclick="startBikeSprint(10)" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;">🚴 Bike HARD — 10 min</button>
+              <button class="t-btn" onclick="startBikeBreatheCombo()" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;border-color:var(--amber);color:var(--amber);">⚡ Combo: 8 min bike → 2 min breathing</button>
+              <button class="t-btn" onclick="closeRescueModal()" style="font-size:11px;margin-top:6px;color:var(--dim);">Cancel</button>
+            </div>
+            <div id="rescueActive" style="display:none;text-align:center;">
+              <div id="rescueLabel" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;"></div>
+              <div id="rescueTime" style="font-family:'Quicksand',sans-serif;font-size:48px;font-weight:700;color:var(--amber);margin:8px 0;letter-spacing:-.5px;">5:00</div>
+              <div id="rescueHint" style="font-size:10px;color:var(--dim);margin-bottom:10px;">Pedal HARD. You can stop after this.</div>
+              <div style="display:flex;gap:6px;justify-content:center;">
+                <button class="t-btn" onclick="stopRescue()" style="font-size:11px;">Stop</button>
+                <button class="t-btn" onclick="closeRescueModal()" style="font-size:11px;color:var(--dim);">Close</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="breatheOverlay" style="display:none;text-align:center;padding:10px 0;">
           <div id="breatheCircle" class="breathe-circle"></div>
@@ -315,6 +341,10 @@ if('serviceWorker' in navigator){
 
     <!-- WINS TAB -->
     <div class="tab-panel" id="p-wins">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="t-btn" onclick="openWeeklyReflectManual()" style="font-size:11px;border-color:rgba(129,140,248,.4);color:var(--indigo);"><span class="mi" style="font-size:14px;">spa</span> Weekly reflection</button>
+        <button class="t-btn" onclick="openWeeklyReflectHistory()" style="font-size:11px;"><span class="mi" style="font-size:14px;">history</span> Past reflections</button>
+      </div>
       <div id="winsContent"></div>
     </div>
 
@@ -479,7 +509,8 @@ if('serviceWorker' in navigator){
             <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap;">
               <button class="t-btn primary" onclick="saveMeetingToList()" style="font-size:10px;"><span class="mi" style="font-size:13px;">save</span> Save</button>
               <button class="t-btn mtg-notion-save-btn" onclick="saveAndQueueNotion()" style="font-size:10px;"><span class="mi" style="font-size:13px;">upload</span> Save + Notion</button>
-              <button class="t-btn" onclick="cleanUpMeetingNotes()" style="font-size:10px;border-color:rgba(129,140,248,.3);color:var(--indigo);"><span class="mi" style="font-size:13px;">auto_fix_high</span> Clean Up</button>
+              <button class="t-btn" onclick="cleanUpMeetingNotes()" style="font-size:10px;border-color:rgba(129,140,248,.3);color:var(--indigo);" title="Sort into Goals / Questions / Talking points / Decisions / Action items"><span class="mi" style="font-size:13px;">auto_fix_high</span> Clean Up</button>
+              <button class="t-btn" onclick="refineMeetingNotes()" style="font-size:10px;border-color:rgba(192,132,252,.3);color:var(--purple);" title="Dedupe similar bullets and strip filler words (um, like, kinda...)"><span class="mi" style="font-size:13px;">auto_awesome</span> Refine</button>
               <button class="t-btn" onclick="clearMeetingNotes()" style="font-size:10px;">Clear</button>
               <span style="flex:1;"></span>
               <button class="t-btn" onclick="copyMeetingNotes()" style="font-size:10px;"><span class="mi" style="font-size:13px;">content_copy</span> Copy</button>
@@ -690,6 +721,55 @@ if('serviceWorker' in navigator){
   </div>
 </div>
 
+<!-- WEEKLY REFLECTION -->
+<div class="modal-bg" id="weeklyReflectModal" onclick="if(event.target===this)closeWeeklyReflect()">
+  <div class="modal weekly-reflect-modal">
+    <div class="wr-header">
+      <span class="mi wr-icon">spa</span>
+      <div>
+        <h3 class="wr-title">Weekly Reflection</h3>
+        <p class="wr-subtitle" id="wrSubtitle">A small pause before the next week.</p>
+      </div>
+      <button class="wr-close" onclick="closeWeeklyReflect()" title="Skip for now">✕</button>
+    </div>
+    <div class="wr-body">
+      <div class="wr-field">
+        <label class="wr-label"><span class="wr-emoji">🌟</span> Proud of this week</label>
+        <input type="text" id="wrProud" placeholder="A win, big or small..." maxlength="140">
+      </div>
+      <div class="wr-field">
+        <label class="wr-label"><span class="wr-emoji">💛</span> Grateful for</label>
+        <input type="text" id="wrGrateful" placeholder="Someone, a moment, anything..." maxlength="140">
+      </div>
+      <div class="wr-field">
+        <label class="wr-label"><span class="wr-emoji">🌱</span> Carrying forward</label>
+        <input type="text" id="wrCarry" placeholder="One thing to bring into next week..." maxlength="140">
+      </div>
+      <div class="wr-energy">
+        <label class="wr-label">How was your week overall?</label>
+        <div class="wr-energy-row">
+          <input type="range" id="wrEnergy" min="1" max="5" value="3" oninput="document.getElementById('wrEnergyVal').textContent=['heavy','tough','okay','good','glowing'][this.value-1];">
+          <span class="wr-energy-val" id="wrEnergyVal">okay</span>
+        </div>
+      </div>
+    </div>
+    <div class="wr-actions">
+      <button class="t-btn" onclick="openWeeklyReflectHistory()" style="font-size:10px;"><span class="mi" style="font-size:13px;">history</span> Past reflections</button>
+      <button class="t-btn" onclick="closeWeeklyReflect()" style="font-size:10px;">Skip</button>
+      <button class="t-btn primary" onclick="saveWeeklyReflect()" style="font-size:10px;"><span class="mi" style="font-size:13px;">favorite</span> Save reflection</button>
+    </div>
+  </div>
+</div>
+
+<!-- WEEKLY REFLECTION HISTORY -->
+<div class="modal-bg" id="weeklyReflectHistoryModal" onclick="if(event.target===this)closeWeeklyReflectHistory()">
+  <div class="modal" style="max-width:520px;">
+    <h3 style="display:flex;align-items:center;gap:8px;"><span class="mi" style="color:var(--indigo);">history</span> Past Reflections</h3>
+    <div id="wrHistoryList" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-btns"><button class="t-btn" onclick="closeWeeklyReflectHistory()">Close</button></div>
+  </div>
+</div>
+
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
   <button class="mob-nav-btn active" onclick="mobNav('cal',this)" data-tab="cal">
@@ -719,12 +799,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260521a"></script>
-<script src="core.js?v=20260521a"></script>
-<script src="calendar.js?v=20260521a"></script>
-<script src="tasks.js?v=20260521a"></script>
-<script src="features.js?v=20260521a"></script>
-<script src="sync.js?v=20260521a"></script>
+<script src="data.js?v=20260521b"></script>
+<script src="core.js?v=20260521b"></script>
+<script src="calendar.js?v=20260521b"></script>
+<script src="tasks.js?v=20260521b"></script>
+<script src="features.js?v=20260521b"></script>
+<script src="sync.js?v=20260521b"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

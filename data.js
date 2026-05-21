@@ -227,6 +227,82 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     if(d.cats&&d.cats.chop)d.cats.chop.color='#60a5fa';
     d._personalTealV1=true;
   }
+  // Soften the glaring red medapp blocks → warm coral, easier to live with
+  if(!d._medappSofterV1){
+    if(d.cats&&d.cats.medapp)d.cats.medapp.color='#fb923c';
+    d._medappSofterV1=true;
+  }
+  // June 18 plan: replace blanket "Resume work" with track-per-day specific micro-tasks
+  if(!d._june18PlanV1){
+    if(!d.days)d.days={};
+    // Strip out the old blanket resume/PS blocks
+    Object.keys(d.days).forEach(dt=>{
+      if(Array.isArray(d.days[dt])){
+        d.days[dt]=d.days[dt].filter(s=>!(s._resumeBlock||s._psBlock));
+      }
+    });
+    const resumeMicro=[
+      'Resume — header + contact polish',
+      'Resume — Education section formatting',
+      'Resume — Research section (CHOP entries)',
+      'Resume — Clinical/volunteer entries',
+      'Resume — Leadership + awards',
+      'Resume — Skills + final format pass',
+      'Resume — Read-through, ask Brandee for 1 thing',
+      'Resume — Final proof + send to letter writers'
+    ];
+    const expMicro=[
+      'Experience #1 (most meaningful) — 250 words',
+      'Experience #2 — 250 words',
+      'Experience #3 — 250 words',
+      'Experience #4 — 250 words',
+      'Experience #5 — 250 words',
+      'Experience #6 — 250 words',
+      'Experience #7 — 250 words',
+      'Experience #8 — 250 words'
+    ];
+    const psMicroWed=[
+      'PS — opening hook (1 paragraph)',
+      'PS — core "why medicine" paragraph',
+      'PS — clinical moment paragraph',
+      'PS — research + curiosity paragraph'
+    ];
+    const psBigSun=[
+      'PS deep work — full first draft (90 min)',
+      'PS deep work — revise structure, transitions',
+      'PS deep work — voice + show-don\'t-tell pass',
+      'PS deep work — final tighten + read aloud'
+    ];
+    // May 25 (Mon) → June 18 (Thu) — 25 days
+    let rIdx=0,eIdx=0,pIdx=0,sIdx=0;
+    const start=new Date(2026,4,25);
+    const end=new Date(2026,5,18);
+    for(let day=new Date(start);day<=end;day.setDate(day.getDate()+1)){
+      const dt=day.getFullYear()+'-'+String(day.getMonth()+1).padStart(2,'0')+'-'+String(day.getDate()).padStart(2,'0');
+      const dow=day.getDay(); // 0=Sun,1=Mon,...,6=Sat
+      if(!d.days[dt])d.days[dt]=[];
+      if(dow===6)continue; // Saturday off
+      let task=null,cat='medapp',sm='',start='6:00 PM',end2='6:30 PM',tag='_j18';
+      if(dow===1||dow===4){ // Mon/Thu — Resume
+        task=resumeMicro[rIdx%resumeMicro.length];rIdx++;
+        sm='Track: Resume · 30 min';
+      } else if(dow===2||dow===5){ // Tue/Fri — Experiences
+        task=expMicro[eIdx%expMicro.length];eIdx++;
+        sm='Track: Experiences · 30 min · ~250 words';
+      } else if(dow===3){ // Wed — PS paragraph
+        task=psMicroWed[pIdx%psMicroWed.length];pIdx++;
+        sm='Track: Personal Statement · 30 min';
+      } else if(dow===0){ // Sun — PS deep work 90m
+        task=psBigSun[sIdx%psBigSun.length];sIdx++;
+        sm='Track: PS deep work · 90 min · no work pressure window';
+        start='10:00 AM';end2='11:30 AM';
+      }
+      if(task&&!d.days[dt].some(s=>s._j18)){
+        d.days[dt].push({t:start,text:'📝 '+task,cls:'medapp',sm,loc:'',end:end2,_j18:true,_id:'j18_'+dt});
+      }
+    }
+    d._june18PlanV1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -273,7 +349,7 @@ function renderAll(){
   if(D.logoIcon)document.getElementById('logoIcon').textContent=D.logoIcon;
   if(D.logoText)document.getElementById('logoText').value=D.logoText;
 }
-function todayStr(){return new Date().toISOString().split('T')[0];}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
 function defaults(){
   const today=todayStr();

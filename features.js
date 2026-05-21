@@ -412,21 +412,13 @@ const MTG_TEMPLATES={
 **Date & time:**
 **With:**
 
-### My goals for this meeting
-1.
-2.
+### Brain dump
+*Write messy — questions, goals, talking points, anything. Then click* **Clean Up** *to auto-sort into sections, and* **Refine** *to dedupe and remove filler.*
 
-### Questions I need answered
--
 
-### Things to bring up
--
 
 ### Materials to have ready
 - [ ]
-- [ ]
-
-### Notes to review beforehand
 `
 };
 
@@ -804,30 +796,86 @@ function renderSavedMeetings(){
   }).join('');
 }
 
+// Smarter meeting cleanup: classifies into Goals / Questions / Talking points / Decisions / Action items
+// Preserves the original raw text under "### Original notes" so nothing is destroyed.
 function cleanUpMeetingNotes(){
-  var notes=document.getElementById('mtgNotes');
+  const notes=document.getElementById('mtgNotes');
   if(!notes||!notes.value.trim())return;
-  var raw=notes.value;
-  var lines=raw.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
-  var cleaned=[];
-  var sections={actions:[],decisions:[],notes:[],followup:[]};
-  lines.forEach(function(line){
-    var lc=line.toLowerCase();
-    if(/^[-*]\s*\[[ x]\]/.test(line)||/action|todo|follow.?up|next.?step/i.test(lc)){
-      sections.actions.push(line.replace(/^[-*]\s*/,'- '));
-    } else if(/decision|agreed|resolved/i.test(lc)){
-      sections.decisions.push('- '+line.replace(/^[-*]\s*/,''));
+  const raw=notes.value;
+  // If we've already cleaned this and the user is calling again, work from the "Original notes" section if present
+  let sourceRaw=raw;
+  const origMatch=raw.match(/### Original notes\s*\n([\s\S]*)$/);
+  if(origMatch)sourceRaw=origMatch[1];
+  const lines=sourceRaw.split('\n').map(l=>l.trim()).filter(l=>l.length>0&&!/^#+\s/.test(l));
+  const buckets={goals:[],questions:[],talking:[],decisions:[],actions:[]};
+  const QUESTION_STARTS=/^(what|why|how|when|where|who|is|are|will|can|could|should|would|do|does|did)\b/i;
+  const GOAL_RE=/\b(i want|i need|hope to|trying to|figure out|goal[:\s]|need to know|aim to|looking for)\b/i;
+  const ACTION_RE=/\b(i'?ll|i will|we'?ll|let'?s|action item|todo|to[\- ]?do|follow ?up|next step|by (mon|tue|wed|thu|fri|sat|sun|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next week|tomorrow|eod|end of (week|day)))\b/i;
+  const DECISION_RE=/\b(decided|agreed|resolved|final answer|let'?s go with|the plan is|we'?re (going|gonna) (to|with))\b/i;
+  lines.forEach(line=>{
+    const lc=line.toLowerCase();
+    const stripped=line.replace(/^[-*•]\s*\[[ x]\]\s*/i,'').replace(/^[-*•]\s*/,'').trim();
+    if(!stripped)return;
+    if(line.endsWith('?')||QUESTION_STARTS.test(stripped)){
+      buckets.questions.push('- '+stripped);
+    } else if(GOAL_RE.test(lc)){
+      buckets.goals.push('- '+stripped);
+    } else if(ACTION_RE.test(lc)||/^[-*•]\s*\[[ x]\]/.test(line)){
+      buckets.actions.push('- [ ] '+stripped);
+    } else if(DECISION_RE.test(lc)){
+      buckets.decisions.push('- '+stripped);
     } else {
-      sections.notes.push('- '+line.replace(/^[-*]\s*/,''));
+      buckets.talking.push('- '+stripped);
     }
   });
-  cleaned.push('### Notes');
-  cleaned=cleaned.concat(sections.notes.length?sections.notes:['- (none)']);
-  if(sections.decisions.length){cleaned.push('');cleaned.push('### Decisions');cleaned=cleaned.concat(sections.decisions);}
-  if(sections.actions.length){cleaned.push('');cleaned.push('### Action Items');cleaned=cleaned.concat(sections.actions);}
-  notes.value=cleaned.join('\n');
+  let out=[];
+  if(buckets.goals.length){out.push('### My goals');out=out.concat(buckets.goals);out.push('');}
+  if(buckets.questions.length){out.push('### Questions');out=out.concat(buckets.questions);out.push('');}
+  if(buckets.talking.length){out.push('### Talking points');out=out.concat(buckets.talking);out.push('');}
+  if(buckets.decisions.length){out.push('### Decisions');out=out.concat(buckets.decisions);out.push('');}
+  if(buckets.actions.length){out.push('### Action items');out=out.concat(buckets.actions);out.push('');}
+  if(!out.length)out.push('### Notes','- (no content to organize)','');
+  out.push('---','### Original notes',sourceRaw.trim());
+  notes.value=out.join('\n');
   saveMeetingNotes();
-  var t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Notes cleaned up';t.classList.add('show');clearTimeout(_st);_st=setTimeout(function(){t.classList.remove('show');},1500);}
+  const t=document.getElementById('saveToast');
+  if(t){t.innerHTML='✓ Notes organized — original preserved at bottom';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),1800);}
+}
+
+// Second-pass refine: dedupe near-identical bullets, strip filler words, tighten phrasing.
+function refineMeetingNotes(){
+  const notes=document.getElementById('mtgNotes');
+  if(!notes||!notes.value.trim())return;
+  const FILLERS=/\b(um+|uh+|like(?=\s)|sort of|kind of|kinda|i (mean|think|guess) we should|you know|basically|literally|honestly|just gonna|i was gonna)\b/gi;
+  const lines=notes.value.split('\n');
+  // Tokenize each bullet line for Jaccard dedup
+  const tokenize=s=>new Set((s||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').split(/\s+/).filter(w=>w.length>3));
+  const jaccard=(a,b)=>{const i=new Set([...a].filter(x=>b.has(x)));const u=new Set([...a,...b]);return u.size?i.size/u.size:0;};
+  const seenBullets=[];
+  const out=lines.map(line=>{
+    let cleaned=line;
+    // Only refine bullet content
+    const isBullet=/^[\s]*[-*•]/.test(line);
+    if(isBullet){
+      cleaned=cleaned.replace(FILLERS,'').replace(/\s{2,}/g,' ').replace(/\s+([.,;:!?])/g,'$1').replace(/[.,;]+\s*$/,'').trim();
+      // Capitalize first letter
+      cleaned=cleaned.replace(/^([\s]*[-*•]\s*(?:\[[ x]\]\s*)?)([a-z])/,(m,p,c)=>p+c.toUpperCase());
+      const body=cleaned.replace(/^[\s]*[-*•]\s*(?:\[[ x]\]\s*)?/,'');
+      if(body.length<2)return null; // drop tiny stubs
+      const tok=tokenize(body);
+      if(tok.size){
+        for(const prev of seenBullets){
+          if(jaccard(tok,prev)>0.7)return null;
+        }
+        seenBullets.push(tok);
+      }
+    }
+    return cleaned;
+  }).filter(l=>l!==null);
+  notes.value=out.join('\n');
+  saveMeetingNotes();
+  const t=document.getElementById('saveToast');
+  if(t){t.innerHTML='✨ Refined — dupes & filler removed';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),1800);}
 }
 
 function loadSavedMeeting(id){
@@ -1221,6 +1269,80 @@ function stopBreathe(){
   clearTimeout(_breatheTimeout);_breatheTimeout=null;
   document.getElementById('breatheOverlay').style.display='none';
   document.getElementById('coachSuggestions').style.display='';
+}
+
+// ===== RESCUE WIDGET (bike-hard sprint + breathing combo) =====
+let _rescueTimer=null,_rescueRemaining=0,_rescuePhase=null,_rescueLabel='';
+function openRescueModal(){
+  const m=document.getElementById('rescueModal');if(!m)return;
+  document.getElementById('rescueChoices').style.display='';
+  document.getElementById('rescueActive').style.display='none';
+  m.style.display='flex';
+}
+function closeRescueModal(){
+  const m=document.getElementById('rescueModal');if(!m)return;
+  stopRescue();
+  m.style.display='none';
+}
+function _rescueFmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+function _rescueTick(){
+  _rescueRemaining--;
+  document.getElementById('rescueTime').textContent=_rescueFmt(Math.max(0,_rescueRemaining));
+  if(_rescueRemaining<=0){
+    clearInterval(_rescueTimer);_rescueTimer=null;
+    if(_rescuePhase==='bike-combo'){
+      _rescuePhase='breathe-combo';
+      _rescueLabel='Breathing reset';
+      document.getElementById('rescueLabel').textContent='🌬 Breathing — 2 min';
+      document.getElementById('rescueHint').textContent='Slow inhale 4 · hold 4 · exhale 6.';
+      _rescueRemaining=120;
+      _rescueTimer=setInterval(_rescueTick,1000);
+      return;
+    }
+    // Done — log a win + celebrate
+    if(typeof autoAddWin==='function')autoAddWin('Rescue: '+_rescueLabel,todayStr());
+    else if(typeof D!=='undefined'){
+      D.reflections=D.reflections||{};const dt=todayStr();
+      D.reflections[dt]=D.reflections[dt]||{};
+      D.reflections[dt].manualWins=D.reflections[dt].manualWins||[];
+      D.reflections[dt].manualWins.push('Rescue: '+_rescueLabel);
+      if(typeof save==='function')save();
+    }
+    if(typeof celebrate==='function')celebrate();
+    document.getElementById('rescueLabel').textContent='✓ Done — nice work';
+    document.getElementById('rescueTime').textContent='0:00';
+    document.getElementById('rescueHint').textContent='Now take 30 sec, then start the smallest piece of the task.';
+  }
+}
+function startBikeSprint(mins){
+  _rescuePhase='bike-only';
+  _rescueLabel=mins+'-min bike sprint';
+  _rescueRemaining=mins*60;
+  document.getElementById('rescueChoices').style.display='none';
+  document.getElementById('rescueActive').style.display='';
+  document.getElementById('rescueLabel').textContent='🚴 Bike HARD — '+mins+' min';
+  document.getElementById('rescueHint').textContent='Pedal hard the whole time. You can stop when this hits 0.';
+  document.getElementById('rescueTime').textContent=_rescueFmt(_rescueRemaining);
+  clearInterval(_rescueTimer);
+  _rescueTimer=setInterval(_rescueTick,1000);
+}
+function startBikeBreatheCombo(){
+  _rescuePhase='bike-combo';
+  _rescueLabel='8-min bike + 2-min breathe combo';
+  _rescueRemaining=8*60;
+  document.getElementById('rescueChoices').style.display='none';
+  document.getElementById('rescueActive').style.display='';
+  document.getElementById('rescueLabel').textContent='🚴 Bike HARD — 8 min';
+  document.getElementById('rescueHint').textContent='Pedal hard. Breathing reset starts when this hits 0.';
+  document.getElementById('rescueTime').textContent=_rescueFmt(_rescueRemaining);
+  clearInterval(_rescueTimer);
+  _rescueTimer=setInterval(_rescueTick,1000);
+}
+function stopRescue(){
+  clearInterval(_rescueTimer);_rescueTimer=null;
+  _rescuePhase=null;_rescueRemaining=0;
+  document.getElementById('rescueChoices').style.display='';
+  document.getElementById('rescueActive').style.display='none';
 }
 
 // ===== DISTRACTIONS / PARKING LOT =====
@@ -1895,6 +2017,130 @@ function closeDailyMotivation(){
   const modal=document.getElementById('motivModal');
   if(modal)modal.classList.remove('show');
   localStorage.setItem('motivDismissed_'+todayStr(),'1');
+}
+
+// ===== WEEKLY REFLECTION =====
+// Returns ISO week key like "2026-W21"
+function _isoWeekKey(date){
+  const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const dayNum=d.getUTCDay()||7;
+  d.setUTCDate(d.getUTCDate()+4-dayNum);
+  const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  const weekNo=Math.ceil((((d-yearStart)/86400000)+1)/7);
+  return d.getUTCFullYear()+'-W'+String(weekNo).padStart(2,'0');
+}
+
+function checkWeeklyReflect(){
+  const today=new Date();
+  const dow=today.getDay(); // 0=Sun, 1=Mon
+  if(dow!==0&&dow!==1)return;
+  const wk=_isoWeekKey(today);
+  // Done already this week?
+  if(D.weeklyReflections&&D.weeklyReflections[wk])return;
+  // Dismissed twice already this week?
+  const dismissKey='wrDismiss_'+wk;
+  const dismissCount=parseInt(localStorage.getItem(dismissKey)||'0',10);
+  if(dismissCount>=2)return;
+  // Don't stack on top of daily motivation or brain dump check-in
+  if(document.getElementById('motivModal')?.classList.contains('show')){
+    setTimeout(checkWeeklyReflect,4000);
+    return;
+  }
+  if(document.getElementById('bdCheckinModal')){
+    setTimeout(checkWeeklyReflect,4000);
+    return;
+  }
+  // Compute the week-ending range to put in the subtitle
+  const end=new Date(today);
+  // Sunday = end of week. If Monday, the week we're reflecting on ended yesterday.
+  if(dow===1)end.setDate(end.getDate()-1);
+  const start=new Date(end);start.setDate(end.getDate()-6);
+  const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const sub=document.getElementById('wrSubtitle');
+  if(sub)sub.textContent='Week of '+fmt(start)+' – '+fmt(end);
+  // Pre-fill if any draft exists
+  const draft=(D.weeklyReflections&&D.weeklyReflections['_draft_'+wk])||{};
+  document.getElementById('wrProud').value=draft.proud||'';
+  document.getElementById('wrGrateful').value=draft.grateful||'';
+  document.getElementById('wrCarry').value=draft.carry||'';
+  const en=document.getElementById('wrEnergy');
+  if(en){en.value=draft.energy||3;en.dispatchEvent(new Event('input'));}
+  document.getElementById('weeklyReflectModal').classList.add('show');
+}
+
+function closeWeeklyReflect(){
+  // Save as draft so input isn't lost on accidental dismiss
+  const wk=_isoWeekKey(new Date());
+  const proud=document.getElementById('wrProud').value.trim();
+  const grateful=document.getElementById('wrGrateful').value.trim();
+  const carry=document.getElementById('wrCarry').value.trim();
+  if(proud||grateful||carry){
+    if(!D.weeklyReflections)D.weeklyReflections={};
+    D.weeklyReflections['_draft_'+wk]={proud,grateful,carry,energy:parseInt(document.getElementById('wrEnergy').value,10)||3};
+    save();
+  }
+  const dismissKey='wrDismiss_'+wk;
+  localStorage.setItem(dismissKey,String(parseInt(localStorage.getItem(dismissKey)||'0',10)+1));
+  document.getElementById('weeklyReflectModal').classList.remove('show');
+}
+
+function saveWeeklyReflect(){
+  const proud=document.getElementById('wrProud').value.trim();
+  const grateful=document.getElementById('wrGrateful').value.trim();
+  const carry=document.getElementById('wrCarry').value.trim();
+  const energy=parseInt(document.getElementById('wrEnergy').value,10)||3;
+  if(!proud&&!grateful&&!carry){
+    const t=document.getElementById('saveToast');
+    if(t){t.innerHTML='Add at least one thing first 💛';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),1800);}
+    return;
+  }
+  if(!D.weeklyReflections)D.weeklyReflections={};
+  const wk=_isoWeekKey(new Date());
+  D.weeklyReflections[wk]={proud,grateful,carry,energy,savedAt:new Date().toISOString()};
+  delete D.weeklyReflections['_draft_'+wk];
+  save();
+  document.getElementById('weeklyReflectModal').classList.remove('show');
+  // Auto-add the proud line as a win
+  if(proud&&typeof autoAddWin==='function')autoAddWin('🌱 '+proud,todayStr());
+  // Celebration
+  if(typeof celebrate==='function')celebrate();
+  const t=document.getElementById('saveToast');
+  if(t){t.innerHTML='🌱 Reflection saved — see you next week';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),2200);}
+}
+
+function openWeeklyReflectHistory(){
+  const el=document.getElementById('wrHistoryList');
+  if(!el)return;
+  const entries=Object.entries(D.weeklyReflections||{})
+    .filter(([k])=>!k.startsWith('_draft_'))
+    .sort((a,b)=>b[0].localeCompare(a[0]));
+  if(!entries.length){
+    el.innerHTML='<p style="font-size:11px;color:var(--dim);text-align:center;padding:20px;">No reflections yet. Save your first one above.</p>';
+  } else {
+    el.innerHTML=entries.map(([wk,e])=>{
+      const energyLabels=['heavy','tough','okay','good','glowing'];
+      const eLabel=e.energy?energyLabels[e.energy-1]:'';
+      return `<div class="wr-history-item">
+        <div class="wr-history-week">${wk}${eLabel?' <span class="wr-history-energy">· felt '+eLabel+'</span>':''}</div>
+        ${e.proud?`<div class="wr-history-row"><span>🌟</span> ${_escAttrSafe(e.proud)}</div>`:''}
+        ${e.grateful?`<div class="wr-history-row"><span>💛</span> ${_escAttrSafe(e.grateful)}</div>`:''}
+        ${e.carry?`<div class="wr-history-row"><span>🌱</span> ${_escAttrSafe(e.carry)}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('weeklyReflectHistoryModal').classList.add('show');
+}
+function _escAttrSafe(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function closeWeeklyReflectHistory(){document.getElementById('weeklyReflectHistoryModal').classList.remove('show');}
+
+// Manual re-open from Wins tab or anywhere
+function openWeeklyReflectManual(){
+  const sub=document.getElementById('wrSubtitle');
+  if(sub){
+    const wk=_isoWeekKey(new Date());
+    sub.textContent=wk;
+  }
+  document.getElementById('weeklyReflectModal').classList.add('show');
 }
 
 // ===== DAILY BRAIN DUMP CHECK-IN =====

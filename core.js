@@ -144,6 +144,7 @@ function init(){
   if(typeof checkDailyMotivation==='function')checkDailyMotivation();
   if(typeof checkReminders==='function')checkReminders();
   if(typeof checkDailyBrainDumpCheckin==='function')setTimeout(checkDailyBrainDumpCheckin,2500);
+  if(typeof checkWeeklyReflect==='function')setTimeout(checkWeeklyReflect,3500);
   setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();if(typeof checkReminders==='function')checkReminders();},60000);
 }
 

@@ -422,8 +422,65 @@ function renderWeekBlocks(container, dates, startHr, endHr){
 
   dates.forEach((dt,colIdx)=>{
     const tl=getTimeline(dt);
-    const wkOverlaps=computeOverlaps(tl);
+
+    // ===== Stack reminders: identify groups of 3+ short reminder blocks sharing an hour bucket =====
+    // Skipped on a per-stack basis if user has expanded that stack via D._stackExpanded.
+    const stackable=[];
     tl.forEach((slot,i)=>{
+      if(!slot)return;
+      if(slot._isMeeting||isMeetingBlock(slot))return;
+      if(slot._locOnly)return;
+      const startM=parseMin(slot.t);
+      const endM=slot.end?parseMin(slot.end):startM+60;
+      const dur=endM-startM;
+      const isReminderCat=slot.cls==='reminder';
+      const isShort=dur>0&&dur<=20;
+      const isReminderFlag=slot._reminder===true;
+      // Also bundle short braindump/personal blocks under 20 min — they're typically reminders too
+      if(isReminderFlag||isReminderCat||(isShort&&(slot.text||'').length<60)){
+        stackable.push({idx:i,startM,hourBucket:Math.floor(startM/60)});
+      }
+    });
+    const stackGroups={};
+    stackable.forEach(s=>{
+      const key=s.hourBucket;
+      if(!stackGroups[key])stackGroups[key]=[];
+      stackGroups[key].push(s.idx);
+    });
+    const stackedIdxs=new Set();
+    const stackPills=[];
+    if(!D._stackExpanded)D._stackExpanded={};
+    Object.entries(stackGroups).forEach(([bucket,idxs])=>{
+      if(idxs.length<3)return;
+      const stackKey=dt+'|'+bucket;
+      if(D._stackExpanded[stackKey])return; // user expanded this stack, render normally
+      idxs.forEach(i=>stackedIdxs.add(i));
+      stackPills.push({bucket:parseInt(bucket,10),idxs,stackKey,dt});
+    });
+
+    const wkOverlaps=computeOverlaps(tl);
+
+    // Render stack pills first
+    stackPills.forEach(stack=>{
+      const startM=stack.bucket*60;
+      const topPx=((startM/60)-startHr)*60+40;
+      const heightPx=55; // ~one hour row visual
+      const cLeft=colLeft(colIdx);
+      const cWidth=colWidth(colIdx);
+      const leftExpr=`calc(52px + ${cLeft} * (100% - 54px))`;
+      const widthExpr=`calc(${cWidth} * (100% - 54px) - 2px)`;
+      const pill=document.createElement('div');
+      pill.className='wk-stack wk-block reminder';
+      pill.style.cssText=`position:absolute;top:${topPx}px;left:${leftExpr};width:${widthExpr};height:${heightPx}px;`;
+      pill.dataset.stackKey=stack.stackKey;
+      pill.innerHTML=`<div class="wk-stack-inner"><span class="wk-stack-count">⏰ ${stack.idxs.length}</span><span class="wk-stack-label">reminders</span><span class="wk-stack-chev">▾</span></div>`;
+      pill.title=`${stack.idxs.length} reminders at ${minToTime(startM)} — click to expand`;
+      pill.onclick=(e)=>{e.stopPropagation();openWkStackPopover(e,stack.dt,stack.idxs,stack.stackKey);};
+      grid.appendChild(pill);
+    });
+
+    tl.forEach((slot,i)=>{
+      if(stackedIdxs.has(i))return; // bundled into a stack pill
       const startM=parseMin(slot.t);
       const nextM=i<tl.length-1?parseMin(tl[i+1].t):startM+60;
       const endM=slot.end?parseMin(slot.end):Math.min(startM+60,nextM);
@@ -584,6 +641,85 @@ document.addEventListener('mouseup',(e)=>{
   document.body.style.cursor='';
   document.body.style.userSelect='';
 });
+
+// ===== STACK POPOVER (bundled short reminders) =====
+function openWkStackPopover(e,dt,idxs,stackKey){
+  const old=document.getElementById('wkStackPopover');if(old)old.remove();
+  const pop=document.createElement('div');
+  pop.id='wkStackPopover';
+  pop.className='wk-stack-popover';
+  pop.style.cssText=`position:fixed;left:${Math.min(e.clientX,window.innerWidth-300)}px;top:${Math.min(e.clientY,window.innerHeight-360)}px;z-index:1002;`;
+  const tl=getTimeline(dt)||[];
+  const dayLabel=dateObj(dt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  let rows='';
+  idxs.slice().sort((a,b)=>parseMin(tl[a].t)-parseMin(tl[b].t)).forEach(i=>{
+    const slot=tl[i];if(!slot)return;
+    const cat=D.cats[slot.cls];
+    const emoji=cat?cat.emoji:'⏰';
+    const cleanText=(slot.text||'').replace(/^⏰\s*/,'');
+    const doneClass=slot.done?'wk-stack-row-done':'';
+    if(!slot._id){slot._id='s'+Date.now()+'_'+i;}
+    const sid=slot._id;
+    rows+=`<div class="wk-stack-row ${doneClass}" data-idx="${i}">
+      <input type="checkbox" ${slot.done?'checked':''} onclick="event.stopPropagation();togSlotDone('${dt}','${sid}');setTimeout(()=>refreshWkStackPopover('${dt}','${stackKey}'),50);">
+      <span class="wk-stack-row-time">${slot.t}</span>
+      <span class="wk-stack-row-emoji">${emoji}</span>
+      <span class="wk-stack-row-text" title="${cleanText.replace(/"/g,'&quot;')}">${cleanText}</span>
+      <button class="wk-stack-row-btn" title="Edit" onclick="event.stopPropagation();document.getElementById('wkStackPopover').remove();editWkBlock('${dt}',${i});"><span class="mi" style="font-size:13px;">edit</span></button>
+      <button class="wk-stack-row-btn" title="Delete" onclick="event.stopPropagation();deleteStackedSlot('${dt}','${sid}','${stackKey}');"><span class="mi" style="font-size:13px;">close</span></button>
+    </div>`;
+  });
+  pop.innerHTML=`
+    <div class="wk-stack-pop-header">
+      <span class="mi" style="font-size:14px;color:var(--amber);">alarm</span>
+      <span class="wk-stack-pop-title">${idxs.length} reminders · ${dayLabel}</span>
+      <button class="wk-stack-pop-close" onclick="document.getElementById('wkStackPopover').remove();">✕</button>
+    </div>
+    <div class="wk-stack-pop-list">${rows}</div>
+    <div class="wk-stack-pop-actions">
+      <button class="t-btn" onclick="expandStack('${stackKey}')"><span class="mi" style="font-size:13px;">unfold_more</span> Expand all in calendar</button>
+    </div>`;
+  document.body.appendChild(pop);
+  const dismiss=ev=>{if(!pop.contains(ev.target)){pop.remove();document.removeEventListener('mousedown',dismiss);}};
+  setTimeout(()=>document.addEventListener('mousedown',dismiss),20);
+}
+function refreshWkStackPopover(dt,stackKey){
+  const pop=document.getElementById('wkStackPopover');if(!pop)return;
+  // Re-derive idxs (they may have shifted if items were deleted)
+  const [stackDt,bucket]=stackKey.split('|');
+  const tl=getTimeline(stackDt)||[];
+  const idxs=[];
+  tl.forEach((s,i)=>{
+    if(!s)return;
+    if(s._isMeeting||(typeof isMeetingBlock==='function'&&isMeetingBlock(s)))return;
+    if(s._locOnly)return;
+    const startM=parseMin(s.t);
+    const endM=s.end?parseMin(s.end):startM+60;
+    const dur=endM-startM;
+    if(Math.floor(startM/60)!==parseInt(bucket,10))return;
+    if(s._reminder||s.cls==='reminder'||(dur>0&&dur<=20&&(s.text||'').length<60)){
+      idxs.push(i);
+    }
+  });
+  if(!idxs.length){pop.remove();renderCalendar();return;}
+  // Rebuild popover content using fake event
+  const rect=pop.getBoundingClientRect();
+  openWkStackPopover({clientX:rect.left,clientY:rect.top,stopPropagation:()=>{}},stackDt,idxs,stackKey);
+  renderCalendar();
+}
+function deleteStackedSlot(dt,sid,stackKey){
+  const tl=getTimeline(dt);if(!tl)return;
+  const i=_slotIdx(tl,sid);if(i<0)return;
+  tl.splice(i,1);
+  setTimeline(dt,tl);
+  refreshWkStackPopover(dt,stackKey);
+}
+function expandStack(stackKey){
+  if(!D._stackExpanded)D._stackExpanded={};
+  D._stackExpanded[stackKey]=true;
+  const pop=document.getElementById('wkStackPopover');if(pop)pop.remove();
+  save();renderCalendar();
+}
 
 function openWkBlockMenu(e,dt,idx){
   // Remove any existing context menu
