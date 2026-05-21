@@ -2728,4 +2728,90 @@ document.addEventListener('toggle',function(e){
   }
 },true);
 
+// ===== CLOCK-OUT CALCULATOR =====
+// Given a clock-in time + shift length, computes clock-out. Also shows a reference table.
+function _fmtTime(hh,mm){
+  const ampm=hh<12?'AM':'PM';
+  const h12=hh%12===0?12:hh%12;
+  return h12+':'+String(mm).padStart(2,'0')+' '+ampm;
+}
+function _coShiftMinutes(){
+  const sel=document.getElementById('coShift');
+  if(!sel)return 510;
+  if(sel.value==='custom'){
+    const c=parseInt(document.getElementById('coCustom').value,10);
+    return isNaN(c)?510:Math.max(15,Math.min(1440,c));
+  }
+  return parseInt(sel.value,10)||510;
+}
+function setClockInNow(){
+  const inp=document.getElementById('coClockIn');if(!inp)return;
+  const now=new Date();
+  inp.value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  renderClockOut();
+}
+function renderClockOut(){
+  const customWrap=document.getElementById('coCustom');
+  const sel=document.getElementById('coShift');
+  if(customWrap&&sel)customWrap.style.display=sel.value==='custom'?'inline-block':'none';
+  const shiftMin=_coShiftMinutes();
+  // Result panel
+  const resEl=document.getElementById('coResult');
+  const inp=document.getElementById('coClockIn');
+  if(resEl){
+    const v=inp&&inp.value;
+    if(!v){
+      resEl.innerHTML='<div class="co-result-empty">Pick a clock-in time above</div>';
+    } else {
+      const [hh,mm]=v.split(':').map(Number);
+      const totalIn=hh*60+mm;
+      const totalOut=totalIn+shiftMin;
+      const outH=Math.floor(totalOut/60);
+      const outM=totalOut%60;
+      const outDayLabel=outH>=24?' tomorrow':'';
+      const oH=outH%24;
+      const hrs=(shiftMin/60).toFixed(shiftMin%60===0?0:1);
+      resEl.innerHTML=`
+        <div class="co-result-card">
+          <div class="co-result-row">
+            <span class="co-result-label">Clock in</span>
+            <span class="co-result-time co-in">${_fmtTime(hh,mm)}</span>
+          </div>
+          <div class="co-result-arrow">↓ ${hrs} hrs</div>
+          <div class="co-result-row">
+            <span class="co-result-label">Clock out</span>
+            <span class="co-result-time co-out">${_fmtTime(oH,outM)}${outDayLabel}</span>
+          </div>
+        </div>`;
+    }
+  }
+  // Reference table
+  const tEl=document.getElementById('coTable');
+  if(tEl){
+    const startHour=6,endHour=10;
+    const curIn=inp&&inp.value;
+    let curMin=null;
+    if(curIn){const [hh,mm]=curIn.split(':').map(Number);curMin=hh*60+mm;}
+    let rows='<div class="co-table-header"><span>Clock In</span><span>Clock Out</span></div>';
+    for(let h=startHour;h<=endHour;h++){
+      for(let m=0;m<60;m+=15){
+        if(h===endHour&&m>0)break;
+        const totalMin=h*60+m;
+        const outMin=totalMin+shiftMin;
+        const oH=Math.floor(outMin/60)%24;
+        const oM=outMin%60;
+        const hl=curMin!=null&&Math.abs(totalMin-curMin)<8;
+        rows+=`<div class="co-table-row${hl?' co-table-hl':''}">
+          <span class="co-table-in">${_fmtTime(h,m)}${hl?' <span class="co-table-badge">you</span>':''}</span>
+          <span class="co-table-arrow">→</span>
+          <span class="co-table-out">${_fmtTime(oH,oM)}</span>
+        </div>`;
+      }
+    }
+    tEl.innerHTML=rows;
+  }
+}
+// Initial render after init() runs
+setTimeout(()=>{if(document.getElementById('coShift'))renderClockOut();},300);
+
 init();
