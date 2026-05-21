@@ -1836,13 +1836,86 @@ function renderInbox(){
   const el=document.getElementById('inboxItems');
   if(!inboxTasks.length){el.innerHTML='<p style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">Empty</p>';return;}
   const catOpts=Object.entries(D.cats).filter(([k])=>k!=='braindump').map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
-  el.innerHTML=inboxTasks.map(t=>`<div class="task-item" style="margin-bottom:2px;">
-    <div style="flex:1;"><div class="t-label">${t.text}</div></div>
+  el.innerHTML=inboxTasks.map(t=>{
+    const hasRemind=t.remindAt&&new Date(t.remindAt)>new Date();
+    const remindLabel=hasRemind?new Date(t.remindAt).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+    return `<div class="task-item" style="margin-bottom:2px;">
+    <div style="flex:1;"><div class="t-label">${t.text}${hasRemind?`<span style="font-size:9px;color:var(--amber);margin-left:6px;">⏰ ${remindLabel}</span>`:''}</div></div>
+    <button class="task-act-btn" onclick="remindBrainDumpItem(event,${t.id})" title="Remind me about this" style="color:var(--amber);"><span class="mi" style="font-size:14px;">notifications</span></button>
     <select onchange="if(this.value){const tk=D.tasks.find(x=>x.id===${t.id});if(tk){tk.cat=this.value;save();renderInbox();renderSidebarTasks();renderLegend();}}" style="font-size:10px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);max-width:120px;">
       <option value="">Move to...</option>${catOpts}
     </select>
     <button class="task-act-btn" onclick="trashTask(${t.id});renderInbox();">x</button>
-  </div>`).join('');
+  </div>`;}).join('');
+}
+
+// Brain dump item → reminder picker (mirrors openRemindPicker but writes a calendar block too)
+function remindBrainDumpItem(e,id){
+  e.stopPropagation();
+  const old=document.getElementById('bdRemindMenu');if(old)old.remove();
+  const menu=document.createElement('div');
+  menu.id='bdRemindMenu';
+  menu.style.cssText=`position:fixed;left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-260)}px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:180px;`;
+  const hr=new Date().getHours();
+  let btns=`<div style="padding:4px 10px;font-size:10px;font-weight:600;color:var(--dim);border-bottom:1px solid var(--border);margin-bottom:2px;">Remind me about this...</div>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('bdRemindMenu').remove();brainDumpToReminder(${id},30);"><span style="font-size:12px;margin-right:4px;">⏰</span> In 30 min</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('bdRemindMenu').remove();brainDumpToReminder(${id},60);"><span style="font-size:12px;margin-right:4px;">⏰</span> In 1 hour</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('bdRemindMenu').remove();brainDumpToReminder(${id},120);"><span style="font-size:12px;margin-right:4px;">⏰</span> In 2 hours</button>`;
+  if(hr<18)btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('bdRemindMenu').remove();brainDumpToReminderAt(${id},18,0);"><span style="font-size:12px;margin-right:4px;">🌆</span> Tonight 6 PM</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('bdRemindMenu').remove();brainDumpToReminderAt(${id},9,0,true);"><span style="font-size:12px;margin-right:4px;">🌅</span> Tomorrow 9 AM</button>`;
+  btns+=`<button class="wk-ctx-btn" onclick="document.getElementById('bdRemindMenu').remove();brainDumpToReminderCustom(${id});"><span class="mi" style="font-size:14px;">event</span> Pick date/time...</button>`;
+  menu.innerHTML=btns;
+  document.body.appendChild(menu);
+  const dismiss=ev=>{if(!menu.contains(ev.target)){menu.remove();document.removeEventListener('mousedown',dismiss);}};
+  setTimeout(()=>document.addEventListener('mousedown',dismiss),10);
+}
+
+function brainDumpToReminder(id,minsFromNow){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const target=new Date(Date.now()+minsFromNow*60000);
+  _scheduleBrainDumpReminder(t,target);
+}
+function brainDumpToReminderAt(id,hr,min,tomorrow){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const target=new Date();
+  if(tomorrow)target.setDate(target.getDate()+1);
+  target.setHours(hr,min,0,0);
+  if(!tomorrow&&target<=new Date())target.setDate(target.getDate()+1);
+  _scheduleBrainDumpReminder(t,target);
+}
+function brainDumpToReminderCustom(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  bccPrompt('Remind date & time (YYYY-MM-DD HH:MM):',todayStr()+' 15:00',(dt)=>{
+    if(!dt)return;
+    const parsed=new Date(dt.replace(' ','T'));
+    if(isNaN(parsed.getTime())){alert('Invalid date/time');return;}
+    _scheduleBrainDumpReminder(t,parsed);
+  });
+}
+function _scheduleBrainDumpReminder(t,target){
+  t.remindAt=target.toISOString();
+  // Drop a matching calendar block on the target date
+  const dateKey=dateStr(target);
+  const startMin=target.getHours()*60+target.getMinutes();
+  const tl=getTimeline(dateKey)||[];
+  let idx=tl.length;
+  for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>startMin){idx=j;break;}}
+  tl.splice(idx,0,{
+    t:minToTime(startMin),
+    text:'⏰ '+t.text,
+    cls:'reminder',
+    sm:'From brain dump',
+    loc:'',
+    end:minToTime(Math.min(24*60-1,startMin+15)),
+    _id:'rem_bd_'+t.id+'_'+Date.now(),
+    _reminder:true,
+    _bdSourceId:t.id
+  });
+  setTimeline(dateKey,tl);
+  save();renderInbox();renderCalendar();renderMiniCal();
+  const label=target.toLocaleString([],{weekday:'short',hour:'numeric',minute:'2-digit'});
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='⏰ Reminder set · '+label;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
 }
 
 // ===== MOBILE TASKS VIEW =====

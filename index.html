@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260520c">
-<script src="sync-config.js?v=20260520c" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260520d">
+<script src="sync-config.js?v=20260520d" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -233,7 +233,7 @@ if('serviceWorker' in navigator){
         <button class="right-panel-close-btn" onclick="toggleRightPanel()" title="Close panel">✕</button>
         <!-- Quick-Add Event -->
         <div class="s-card" data-card="calright-quickadd" style="border-color:rgba(96,165,250,.25);">
-          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--blue);">add_circle</span> Add Event<button class="s-collapse" onclick="toggleCard('calright-quickadd',this)">▾</button></div>
+          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><button class="qa-add-icon-btn" onclick="openAddBlockPopover(event)" title="Click to open the full Add Block form"><span class="mi" style="font-size:16px;color:var(--blue);">add_circle</span></button> Add Event<button class="s-collapse" onclick="toggleCard('calright-quickadd',this)">▾</button></div>
           <div class="s-body" id="cardBody-calright-quickadd">
             <div class="qa-bar" id="qaBar">
               <input type="text" id="qaInput" class="qa-input" placeholder='e.g. "call Sarah 1pm" or "MCAT fri 7pm 2hrs"' autocomplete="off">
@@ -692,12 +692,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260520c"></script>
-<script src="core.js?v=20260520c"></script>
-<script src="calendar.js?v=20260520c"></script>
-<script src="tasks.js?v=20260520c"></script>
-<script src="features.js?v=20260520c"></script>
-<script src="sync.js?v=20260520c"></script>
+<script src="data.js?v=20260520d"></script>
+<script src="core.js?v=20260520d"></script>
+<script src="calendar.js?v=20260520d"></script>
+<script src="tasks.js?v=20260520d"></script>
+<script src="features.js?v=20260520d"></script>
+<script src="sync.js?v=20260520d"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

@@ -1437,3 +1437,25 @@ button,input,select,textarea{font-family:inherit;}
   .mt-link,.mt-qa input{min-height:34px;font-size:12px;}
   .mt-actions .t-btn,.mt-qa .t-btn{min-height:34px;}
 }
+
+/* ===== ADD EVENT ICON BUTTON ===== */
+.qa-add-icon-btn{background:none;border:none;padding:0;margin:0;cursor:pointer;display:inline-flex;align-items:center;line-height:1;border-radius:50%;transition:background .15s,transform .15s;}
+.qa-add-icon-btn:hover{background:rgba(96,165,250,.15);transform:scale(1.1);}
+.qa-add-icon-btn:active{transform:scale(.95);}
+
+/* ===== BRAIN DUMP CHECK-IN MODAL ===== */
+.bdci-list{max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.bdci-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;border-left:3px solid var(--purple);transition:opacity .3s;}
+.bdci-text{flex:1;font-size:12px;color:var(--text);line-height:1.4;word-break:break-word;}
+.bdci-actions{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+.bdci-cat{font-size:10px;padding:4px 6px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);max-width:120px;}
+.bdci-btn{background:none;border:1px solid var(--border);color:var(--dim);width:26px;height:26px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-family:inherit;}
+.bdci-btn:hover{border-color:var(--blue);color:var(--blue);}
+.bdci-remind:hover{border-color:var(--amber);color:var(--amber);}
+.bdci-trash:hover{border-color:var(--red);color:var(--red);}
+@media(max-width:900px){
+  .bdci-row{flex-direction:column;align-items:stretch;gap:6px;}
+  .bdci-actions{justify-content:space-between;}
+  .bdci-cat{flex:1;max-width:none;min-height:34px;}
+  .bdci-btn{min-width:38px;min-height:34px;}
+}

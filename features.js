@@ -1897,6 +1897,99 @@ function closeDailyMotivation(){
   localStorage.setItem('motivDismissed_'+todayStr(),'1');
 }
 
+// ===== DAILY BRAIN DUMP CHECK-IN =====
+// Once a day, if the Inbox has unsorted items, show a 30-second sweep modal.
+function checkDailyBrainDumpCheckin(){
+  const today=todayStr();
+  if(localStorage.getItem('bdCheckinDone_'+today))return;
+  const inboxItems=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
+  if(!inboxItems.length){localStorage.setItem('bdCheckinDone_'+today,'1');return;}
+  // If the daily motivation is up, wait
+  if(document.getElementById('motivModal')?.classList.contains('show')){
+    setTimeout(checkDailyBrainDumpCheckin,3000);
+    return;
+  }
+  renderBrainDumpCheckin(inboxItems.slice(0,5));
+}
+
+function renderBrainDumpCheckin(items){
+  const old=document.getElementById('bdCheckinModal');if(old)old.remove();
+  const modal=document.createElement('div');
+  modal.id='bdCheckinModal';
+  modal.className='modal-bg show';
+  modal.onclick=function(e){if(e.target===this)dismissBrainDumpCheckin();};
+  const catOpts=Object.entries(D.cats).filter(([k])=>k!=='braindump').map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
+  const rows=items.map(t=>`
+    <div class="bdci-row" data-id="${t.id}">
+      <div class="bdci-text">${_bdEsc(t.text)}</div>
+      <div class="bdci-actions">
+        <select class="bdci-cat" onchange="bdCheckinSort(${t.id},this.value)">
+          <option value="">Move to...</option>${catOpts}
+        </select>
+        <button class="bdci-btn bdci-remind" onclick="bdCheckinRemind(event,${t.id})" title="Remind me later"><span class="mi" style="font-size:14px;">notifications</span></button>
+        <button class="bdci-btn bdci-trash" onclick="bdCheckinTrash(${t.id})" title="Delete">✕</button>
+      </div>
+    </div>`).join('');
+  modal.innerHTML=`
+    <div class="modal" style="max-width:520px;">
+      <h3 style="display:flex;align-items:center;gap:8px;"><span class="mi" style="color:var(--purple);">psychology</span> Brain Dump Sweep <span class="badge" style="background:rgba(167,139,250,.15);color:var(--purple);">${items.length}</span></h3>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:12px;">30-second sort. Move to a category, set a reminder, or toss.</p>
+      <div class="bdci-list">${rows}</div>
+      <div class="modal-btns" style="margin-top:14px;">
+        <button class="t-btn" onclick="snoozeBrainDumpCheckin()">Remind me tonight</button>
+        <button class="t-btn primary" onclick="dismissBrainDumpCheckin()">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function _bdEsc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function bdCheckinSort(id,catKey){
+  if(!catKey)return;
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  t.cat=catKey;
+  save();
+  const row=document.querySelector(`.bdci-row[data-id="${id}"]`);
+  if(row){row.style.transition='opacity .3s';row.style.opacity='0';setTimeout(()=>row.remove(),300);}
+  if(typeof renderInbox==='function')renderInbox();
+  if(typeof renderSidebarTasks==='function')renderSidebarTasks();
+  if(typeof renderLegend==='function')renderLegend();
+  if(typeof renderCalRightStash==='function')renderCalRightStash();
+}
+function bdCheckinTrash(id){
+  if(typeof trashTask==='function')trashTask(id);
+  const row=document.querySelector(`.bdci-row[data-id="${id}"]`);
+  if(row){row.style.transition='opacity .3s';row.style.opacity='0';setTimeout(()=>row.remove(),300);}
+  if(typeof renderInbox==='function')renderInbox();
+}
+function bdCheckinRemind(e,id){
+  if(typeof remindBrainDumpItem==='function')remindBrainDumpItem(e,id);
+}
+
+function dismissBrainDumpCheckin(){
+  const m=document.getElementById('bdCheckinModal');if(m)m.remove();
+  localStorage.setItem('bdCheckinDone_'+todayStr(),'1');
+}
+function snoozeBrainDumpCheckin(){
+  const m=document.getElementById('bdCheckinModal');if(m)m.remove();
+  const t=new Date();t.setHours(18,0,0,0);
+  if(t<=new Date())t.setDate(t.getDate()+1);
+  const dateKey=dateStr(t);
+  const startMin=t.getHours()*60+t.getMinutes();
+  const tl=getTimeline(dateKey)||[];
+  if(!tl.some(s=>s._bdSweep)){
+    let idx=tl.length;
+    for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>startMin){idx=j;break;}}
+    tl.splice(idx,0,{t:minToTime(startMin),text:'🧠 Brain dump sweep',cls:'reminder',sm:'Sort the Inbox',loc:'',end:minToTime(startMin+15),_id:'bd_sweep_'+Date.now(),_reminder:true,_bdSweep:true});
+    setTimeline(dateKey,tl);
+    renderCalendar();renderMiniCal();
+  }
+  localStorage.setItem('bdCheckinDone_'+todayStr(),'1');
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='⏰ Sweep reminder set for 6 PM';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+}
+
 // ===== WORRY NOTES =====
 let _worryTimer=null,_worrySecondsLeft=600,_worryActive=false,_worryPaused=false,_worryTotalSecs=600;
 function onWorryInput(textarea){
@@ -2301,7 +2394,28 @@ function searchGoTo(type,dt){
 }
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();toggleSearch();}
+  // Cmd+Z / Ctrl+Z → undo last save (skip when typing in inputs/textareas/contenteditable)
+  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){
+    const t=e.target;
+    const tag=t&&t.tagName;
+    const inField=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable);
+    if(!inField){
+      e.preventDefault();
+      if(typeof undo==='function')undo();
+    }
+  }
 });
+
+// Open the full block-add popover from the ⊕ icon — uses today's date and rounds to the next 15-min slot.
+function openAddBlockPopover(e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  if(typeof openDvPopover!=='function')return;
+  const now=new Date();
+  const mins=now.getHours()*60+Math.ceil(now.getMinutes()/15)*15;
+  const dt=todayStr();
+  // openDvPopover signature: (e, dt, hr, mins, editIdx)
+  openDvPopover(e||{clientX:window.innerWidth/2,clientY:120,stopPropagation:()=>{}},dt,Math.floor(mins/60),mins,null);
+}
 
 // ===== REMIND LATER TODAY =====
 // Drops an amber-colored "⏰ <thought>" block onto the calendar at the chosen time.
