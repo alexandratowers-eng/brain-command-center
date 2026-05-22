@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260521c">
-<script src="sync-config.js?v=20260521c" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260521d">
+<script src="sync-config.js?v=20260521d" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -80,6 +80,7 @@ if('serviceWorker' in navigator){
         <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
         <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
         <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
+        <button class="tab-btn" onclick="switchTab('worklog',this)"><span class="mi" style="color:var(--teal);">work_history</span> Work Log</button>
       </div>
     </div>
     <div class="topbar-right">
@@ -525,6 +526,91 @@ if('serviceWorker' in navigator){
         </div>
       </div>
     </div>
+
+    <!-- WORK LOG TAB -->
+    <div class="tab-panel" id="p-worklog">
+      <div class="wl-wrap">
+        <div class="wl-header">
+          <div>
+            <h2 class="wl-title"><span class="mi" style="color:var(--teal);font-size:22px;">work_history</span> Work Log</h2>
+            <p class="wl-subtitle">Capture small wins now so you have stories for your performance review later.</p>
+          </div>
+          <div class="wl-header-actions">
+            <button class="t-btn" onclick="openWlReviewPicker()" title="Pull starred + recent entries grouped by project, ready to copy for ChatGPT/Claude"><span class="mi" style="font-size:14px;">auto_awesome</span> Build review writeup</button>
+          </div>
+        </div>
+
+        <!-- COMPOSE -->
+        <div class="wl-compose">
+          <input type="text" id="wlInput" class="wl-input" placeholder="What did you do? e.g. 'Led the VDA dry-run; got buy-in from Dr. Smith'" onkeydown="if(event.key==='Enter')addWorkLogEntry()">
+          <div class="wl-meta-row">
+            <div class="wl-meta-field">
+              <label>Project</label>
+              <input type="text" id="wlProject" class="wl-project-input" placeholder="Simulator testing" list="wlProjectList" autocomplete="off">
+              <datalist id="wlProjectList"></datalist>
+            </div>
+            <div class="wl-meta-field">
+              <label>Impact</label>
+              <select id="wlImpact" class="wl-impact-select">
+                <option value="low">Small</option>
+                <option value="med" selected>Normal</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="wl-meta-field wl-star-field">
+              <label>Star</label>
+              <button id="wlStarBtn" class="wl-star-toggle" onclick="this.classList.toggle('wl-star-on')" title="Mark this as review-worthy">⭐</button>
+            </div>
+            <button class="t-btn primary wl-add-btn" onclick="addWorkLogEntry()"><span class="mi" style="font-size:13px;">add</span> Log it</button>
+          </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="wl-filters">
+          <button class="wl-filter-btn active" data-wl-filter="all" onclick="setWlFilter('all',this)">All</button>
+          <button class="wl-filter-btn" data-wl-filter="starred" onclick="setWlFilter('starred',this)">⭐ Starred</button>
+          <button class="wl-filter-btn" data-wl-filter="high" onclick="setWlFilter('high',this)">High impact</button>
+          <button class="wl-filter-btn" data-wl-filter="month" onclick="setWlFilter('month',this)">Last 30 days</button>
+          <button class="wl-filter-btn" data-wl-filter="quarter" onclick="setWlFilter('quarter',this)">Last 90 days</button>
+          <select id="wlProjectFilter" class="wl-project-filter" onchange="setWlProjectFilter(this.value)">
+            <option value="">All projects</option>
+          </select>
+          <span class="wl-filter-spacer"></span>
+          <button class="wl-view-btn active" data-wl-view="list" onclick="setWlView('list',this)" title="Flat list"><span class="mi" style="font-size:14px;">view_list</span></button>
+          <button class="wl-view-btn" data-wl-view="grouped" onclick="setWlView('grouped',this)" title="Group by project"><span class="mi" style="font-size:14px;">folder</span></button>
+        </div>
+
+        <div id="wlList" class="wl-list"></div>
+        <div id="wlEmpty" class="wl-empty" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORK LOG REVIEW PICKER -->
+  <div class="modal-bg" id="wlReviewModal" onclick="if(event.target===this)closeWlReviewPicker()">
+    <div class="modal" style="max-width:640px;">
+      <h3 style="display:flex;align-items:center;gap:8px;"><span class="mi" style="color:var(--teal);">auto_awesome</span> Build Review Writeup</h3>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:12px;">Pick what to include, then copy a ready-to-paste prompt for ChatGPT/Claude.</p>
+      <div class="wl-review-controls">
+        <label class="wl-review-opt"><input type="checkbox" id="wlRevStarred" checked> Starred entries only</label>
+        <label class="wl-review-opt"><input type="checkbox" id="wlRevHighImpact"> Plus high-impact entries</label>
+        <label class="wl-review-opt"><input type="checkbox" id="wlRevGroupProj" checked> Group by project</label>
+        <div class="wl-review-range">
+          <label>Date range</label>
+          <select id="wlRevRange">
+            <option value="90">Last 90 days</option>
+            <option value="180" selected>Last 6 months</option>
+            <option value="365">Last year</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+      </div>
+      <div id="wlReviewPreview" class="wl-review-preview"></div>
+      <div class="modal-btns">
+        <button class="t-btn" onclick="closeWlReviewPicker()">Cancel</button>
+        <button class="t-btn primary" onclick="copyWlReviewPrompt()"><span class="mi" style="font-size:13px;">content_copy</span> Copy for ChatGPT</button>
+      </div>
+    </div>
   </div>
 
   <!-- FOOTER STATS -->
@@ -792,6 +878,7 @@ if('serviceWorker' in navigator){
   <button onclick="mobNav('wins')"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
   <button onclick="mobNav('mcat')"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
   <button onclick="mobNav('rec')"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
+  <button onclick="mobNav('worklog')"><span class="mi" style="color:var(--teal);">work_history</span> Work Log</button>
   <button onclick="toggleMobileSidebar();closeMobileMore()"><span class="mi" style="color:var(--green);">psychology</span> ADHD Coach</button>
   <button onclick="showNotifSetup();closeMobileMore()"><span class="mi" style="color:var(--amber);">notifications</span> Phone Notifications</button>
   <button onclick="toggleTheme();closeMobileMore()"><span class="mi" style="color:var(--amber);">light_mode</span> Toggle Theme</button>
@@ -799,12 +886,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260521c"></script>
-<script src="core.js?v=20260521c"></script>
-<script src="calendar.js?v=20260521c"></script>
-<script src="tasks.js?v=20260521c"></script>
-<script src="features.js?v=20260521c"></script>
-<script src="sync.js?v=20260521c"></script>
+<script src="data.js?v=20260521d"></script>
+<script src="core.js?v=20260521d"></script>
+<script src="calendar.js?v=20260521d"></script>
+<script src="tasks.js?v=20260521d"></script>
+<script src="features.js?v=20260521d"></script>
+<script src="sync.js?v=20260521d"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

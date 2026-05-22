@@ -472,6 +472,7 @@ function switchTab(id,el){
   if(id==='cal')renderCalendar();
   if(id==='wins')renderWinsTab();
   if(id==='rec'&&typeof renderMtgCalendarView==='function')renderMtgCalendarView();
+  if(id==='worklog'&&typeof renderWorkLog==='function')renderWorkLog();
 }
 
 // ===== CAL VIEW =====

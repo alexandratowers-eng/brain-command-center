@@ -1063,11 +1063,12 @@ function renderCalRightWinsDone(){
     const items=[];
     doneTasks.forEach(t=>{
       const cat=D.cats[t.cat];
-      items.push({text:t.text,emoji:cat?cat.emoji:'',cat:t.cat,color:cat?cat.color:'var(--dim)',type:'task'});
+      items.push({text:t.text,emoji:cat?cat.emoji:'',cat:t.cat,color:cat?cat.color:'var(--dim)',type:'task',sourceId:t.id});
     });
     doneSlots.forEach(s=>{
       const cat=D.cats&&D.cats[s.cls];
-      items.push({text:s.text,emoji:cat?cat.emoji:'📅',cat:s.cls||'event',color:cat?cat.color:'var(--blue)',type:'block'});
+      if(!s._id)s._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
+      items.push({text:s.text,emoji:cat?cat.emoji:'📅',cat:s.cls||'event',color:cat?cat.color:'var(--blue)',type:'block',sourceId:s._id,dt:dt});
     });
     manualWins.forEach(w=>{
       items.push({text:w,emoji:'✨',cat:'_win',color:'var(--green)',type:'win'});
@@ -1105,9 +1106,11 @@ function renderCalRightWinsDone(){
     html+=`<div style="margin-bottom:4px;">`;
     html+=`<div style="font-size:8px;color:var(--dim);font-weight:600;margin-bottom:2px;">${g.emoji} ${g.items.length}</div>`;
     g.items.forEach(item=>{
+      const logBtn=item.type==='task'?`<button class="wl-quick-log" onclick="event.stopPropagation();logTaskAsWork(${item.sourceId})" title="Add to Work Log"><span class="mi" style="font-size:11px;">work_history</span></button>`:item.type==='block'?`<button class="wl-quick-log" onclick="event.stopPropagation();logBlockAsWork('${item.dt}','${item.sourceId}')" title="Add to Work Log"><span class="mi" style="font-size:11px;">work_history</span></button>`:'';
       html+=`<div style="display:flex;align-items:center;gap:4px;padding:2px 0;opacity:.85;">
         <span style="color:var(--green);font-size:10px;">✓</span>
         <span style="font-size:10px;text-decoration:line-through;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.text}</span>
+        ${logBtn}
       </div>`;
     });
     html+=`</div>`;

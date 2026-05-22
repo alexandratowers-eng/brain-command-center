@@ -3060,4 +3060,322 @@ function renderClockOut(){
 // Initial render after init() runs
 setTimeout(()=>{if(document.getElementById('coShift'))renderClockOut();},300);
 
+// ===== WORK LOG =====
+// D.workLog = [{id, text, project, impact, starred, ts, sourceTaskId?, sourceBlockId?}]
+let _wlFilter='all';
+let _wlProjectFilter='';
+let _wlView='list';
+
+function _wlEnsureStore(){
+  if(!D.workLog)D.workLog=[];
+  if(!D.workLogProjects)D.workLogProjects=[];
+}
+
+function addWorkLogEntry(opts){
+  _wlEnsureStore();
+  let text,project,impact,starred,sourceTaskId,sourceBlockId,ts;
+  if(opts&&typeof opts==='object'){
+    text=(opts.text||'').trim();
+    project=(opts.project||'').trim();
+    impact=opts.impact||'med';
+    starred=!!opts.starred;
+    sourceTaskId=opts.sourceTaskId||null;
+    sourceBlockId=opts.sourceBlockId||null;
+    ts=opts.ts||new Date().toISOString();
+  } else {
+    text=document.getElementById('wlInput').value.trim();
+    project=document.getElementById('wlProject').value.trim();
+    impact=document.getElementById('wlImpact').value;
+    starred=document.getElementById('wlStarBtn').classList.contains('wl-star-on');
+    ts=new Date().toISOString();
+  }
+  if(!text){
+    const inp=document.getElementById('wlInput');if(inp)inp.focus();
+    return;
+  }
+  const entry={
+    id:Date.now()+Math.floor(Math.random()*1000),
+    text,
+    project:project||'',
+    impact:impact||'med',
+    starred:!!starred,
+    ts,
+  };
+  if(sourceTaskId)entry.sourceTaskId=sourceTaskId;
+  if(sourceBlockId)entry.sourceBlockId=sourceBlockId;
+  D.workLog.unshift(entry);
+  // Track project name for autocomplete
+  if(project&&D.workLogProjects.indexOf(project)===-1){
+    D.workLogProjects.unshift(project);
+    if(D.workLogProjects.length>40)D.workLogProjects.length=40;
+  }
+  save();
+  // Reset compose
+  if(!opts){
+    document.getElementById('wlInput').value='';
+    document.getElementById('wlStarBtn').classList.remove('wl-star-on');
+    document.getElementById('wlImpact').value='med';
+    // Keep project — usually you'll log multiple in a row for the same one
+  }
+  renderWorkLog();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='✓ Logged'+(starred?' ⭐':'');toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
+
+function setWlFilter(f,btn){
+  _wlFilter=f;
+  document.querySelectorAll('.wl-filter-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  renderWorkLog();
+}
+function setWlProjectFilter(p){_wlProjectFilter=p;renderWorkLog();}
+function setWlView(v,btn){
+  _wlView=v;
+  document.querySelectorAll('.wl-view-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  renderWorkLog();
+}
+
+function _wlFilteredEntries(){
+  _wlEnsureStore();
+  const now=Date.now();
+  let entries=D.workLog.slice();
+  if(_wlFilter==='starred')entries=entries.filter(e=>e.starred);
+  else if(_wlFilter==='high')entries=entries.filter(e=>e.impact==='high');
+  else if(_wlFilter==='month')entries=entries.filter(e=>now-new Date(e.ts).getTime()<=30*86400000);
+  else if(_wlFilter==='quarter')entries=entries.filter(e=>now-new Date(e.ts).getTime()<=90*86400000);
+  if(_wlProjectFilter)entries=entries.filter(e=>e.project===_wlProjectFilter);
+  return entries;
+}
+
+function renderWorkLog(){
+  _wlEnsureStore();
+  // Populate the project datalist + project filter dropdown
+  const dl=document.getElementById('wlProjectList');
+  if(dl)dl.innerHTML=D.workLogProjects.map(p=>'<option value="'+_wlEscAttr(p)+'">').join('');
+  const filterSel=document.getElementById('wlProjectFilter');
+  if(filterSel){
+    const cur=_wlProjectFilter;
+    filterSel.innerHTML='<option value="">All projects</option>'+D.workLogProjects.map(p=>`<option value="${_wlEscAttr(p)}"${p===cur?' selected':''}>${_wlEscAttr(p)}</option>`).join('');
+  }
+
+  const list=document.getElementById('wlList');
+  const empty=document.getElementById('wlEmpty');
+  if(!list||!empty)return;
+
+  const entries=_wlFilteredEntries();
+  if(!entries.length){
+    list.innerHTML='';
+    empty.style.display='';
+    empty.innerHTML=D.workLog.length
+      ?'<p style="font-size:12px;color:var(--dim);text-align:center;padding:30px;">No entries match these filters. Try clearing them.</p>'
+      :`<div style="text-align:center;padding:36px 20px;color:var(--dim);">
+        <span class="mi" style="font-size:36px;opacity:.5;">work_history</span>
+        <p style="font-size:13px;margin-top:12px;font-weight:600;color:var(--text);">Start your work log</p>
+        <p style="font-size:11px;margin-top:6px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.6;">Log small wins as they happen — "got buy-in from Dr. Smith on VDA scenarios", "fixed the sim crash from last week". Tag a project to group them. Hit ⭐ on review-worthy entries. When perf review season rolls around, click "Build review writeup" to get a polished prompt for ChatGPT.</p>
+      </div>`;
+    return;
+  }
+  empty.style.display='none';
+
+  if(_wlView==='grouped'){
+    const groups={};
+    entries.forEach(e=>{
+      const p=e.project||'(no project)';
+      if(!groups[p])groups[p]=[];
+      groups[p].push(e);
+    });
+    list.innerHTML=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([proj,items])=>{
+      const starredCount=items.filter(i=>i.starred).length;
+      return `<div class="wl-group">
+        <div class="wl-group-header">
+          <span class="mi" style="font-size:14px;color:var(--teal);">folder</span>
+          <span class="wl-group-name">${_wlEscAttr(proj)}</span>
+          <span class="wl-group-count">${items.length}</span>
+          ${starredCount?`<span class="wl-group-starred">⭐ ${starredCount}</span>`:''}
+        </div>
+        <div class="wl-group-items">${items.map(_wlEntryHtml).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    list.innerHTML=entries.map(_wlEntryHtml).join('');
+  }
+}
+
+function _wlEntryHtml(e){
+  const ts=new Date(e.ts);
+  const now=Date.now();
+  const ageMs=now-ts.getTime();
+  const ageDays=Math.floor(ageMs/86400000);
+  const dateLabel=ageDays===0?'Today':ageDays===1?'Yesterday':ageDays<7?ts.toLocaleDateString([],{weekday:'short'}):ts.toLocaleDateString([],{month:'short',day:'numeric'});
+  const timeLabel=ts.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  const impactLabel=e.impact==='high'?'<span class="wl-impact-pill wl-impact-high">high</span>':e.impact==='low'?'<span class="wl-impact-pill wl-impact-low">small</span>':'';
+  return `<div class="wl-entry ${e.starred?'wl-entry-starred':''}" data-id="${e.id}">
+    <button class="wl-entry-star" onclick="toggleWlStar(${e.id})" title="${e.starred?'Unstar':'Star — review-worthy'}">${e.starred?'⭐':'☆'}</button>
+    <div class="wl-entry-body">
+      <div class="wl-entry-text">${_wlEscAttr(e.text)}</div>
+      <div class="wl-entry-meta">
+        ${e.project?`<span class="wl-entry-project">${_wlEscAttr(e.project)}</span>`:''}
+        ${impactLabel}
+        <span class="wl-entry-date">${dateLabel} · ${timeLabel}</span>
+      </div>
+    </div>
+    <div class="wl-entry-actions">
+      <button class="wl-entry-btn" onclick="editWlEntry(${e.id})" title="Edit"><span class="mi" style="font-size:13px;">edit</span></button>
+      <button class="wl-entry-btn wl-entry-del" onclick="deleteWlEntry(${e.id})" title="Delete"><span class="mi" style="font-size:13px;">close</span></button>
+    </div>
+  </div>`;
+}
+
+function _wlEscAttr(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function toggleWlStar(id){
+  _wlEnsureStore();
+  const e=D.workLog.find(x=>x.id===id);if(!e)return;
+  e.starred=!e.starred;
+  save();renderWorkLog();
+}
+function deleteWlEntry(id){
+  if(!confirm('Delete this work log entry?'))return;
+  _wlEnsureStore();
+  D.workLog=D.workLog.filter(e=>e.id!==id);
+  save();renderWorkLog();
+}
+function editWlEntry(id){
+  _wlEnsureStore();
+  const e=D.workLog.find(x=>x.id===id);if(!e)return;
+  bccPrompt('Edit entry:',e.text,(txt)=>{
+    if(txt==null)return;
+    if(!txt.trim()){deleteWlEntry(id);return;}
+    e.text=txt.trim();
+    save();renderWorkLog();
+  });
+}
+
+// One-click "log this" from any task or block
+function logTaskAsWork(taskId){
+  const t=D.tasks.find(x=>x.id===taskId);if(!t)return;
+  const cat=D.cats[t.cat];
+  addWorkLogEntry({
+    text:t.text,
+    project:(cat&&cat.label!=='Brain Dump')?cat.label:'',
+    impact:'med',
+    starred:false,
+    sourceTaskId:taskId
+  });
+}
+function logBlockAsWork(dt,slotId){
+  const tl=getTimeline(dt);if(!tl)return;
+  const idx=tl.findIndex(s=>s._id===slotId);
+  if(idx<0)return;
+  const slot=tl[idx];
+  const cat=D.cats[slot.cls];
+  addWorkLogEntry({
+    text:slot.text.replace(/^[⏰📅📍]\s*/,''),
+    project:(cat&&cat.label!=='Brain Dump'&&cat.label!=='Reminder')?cat.label:'',
+    impact:'med',
+    starred:false,
+    sourceBlockId:slotId,
+    ts:new Date(dt+'T'+(slot.t||'9:00 AM')).toISOString()
+  });
+}
+
+// Review writeup picker
+function openWlReviewPicker(){
+  _wlEnsureStore();
+  if(!D.workLog.length){
+    alert('No work log entries yet. Log a few first!');
+    return;
+  }
+  document.getElementById('wlReviewModal').classList.add('show');
+  updateWlReviewPreview();
+  ['wlRevStarred','wlRevHighImpact','wlRevGroupProj','wlRevRange'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el._bound){el.addEventListener('change',updateWlReviewPreview);el._bound=true;}
+  });
+}
+function closeWlReviewPicker(){document.getElementById('wlReviewModal').classList.remove('show');}
+
+function _wlReviewBuildEntries(){
+  _wlEnsureStore();
+  const useStarred=document.getElementById('wlRevStarred').checked;
+  const useHigh=document.getElementById('wlRevHighImpact').checked;
+  const range=document.getElementById('wlRevRange').value;
+  const cutoff=range==='all'?0:(Date.now()-parseInt(range,10)*86400000);
+  return D.workLog.filter(e=>{
+    if(cutoff&&new Date(e.ts).getTime()<cutoff)return false;
+    if(useStarred&&!useHigh)return e.starred;
+    if(!useStarred&&useHigh)return e.impact==='high';
+    if(useStarred&&useHigh)return e.starred||e.impact==='high';
+    return true; // neither box ticked → include all in range
+  }).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+}
+
+function updateWlReviewPreview(){
+  const entries=_wlReviewBuildEntries();
+  const previewEl=document.getElementById('wlReviewPreview');
+  if(!previewEl)return;
+  if(!entries.length){
+    previewEl.innerHTML='<div class="wl-review-empty">No entries match these filters.</div>';
+    return;
+  }
+  const group=document.getElementById('wlRevGroupProj').checked;
+  let html=`<div class="wl-review-count">${entries.length} entr${entries.length===1?'y':'ies'} selected</div>`;
+  if(group){
+    const groups={};
+    entries.forEach(e=>{const p=e.project||'(no project)';if(!groups[p])groups[p]=[];groups[p].push(e);});
+    html+=Object.entries(groups).map(([proj,items])=>`
+      <div class="wl-review-group">
+        <div class="wl-review-group-name">${_wlEscAttr(proj)} <span class="wl-review-group-n">${items.length}</span></div>
+        ${items.slice(0,5).map(e=>`<div class="wl-review-item">${e.starred?'⭐ ':''}${_wlEscAttr(e.text)}</div>`).join('')}
+        ${items.length>5?`<div class="wl-review-more">+ ${items.length-5} more</div>`:''}
+      </div>`).join('');
+  } else {
+    html+=entries.slice(0,15).map(e=>`<div class="wl-review-item">${e.starred?'⭐ ':''}${e.project?'<b>['+_wlEscAttr(e.project)+']</b> ':''}${_wlEscAttr(e.text)}</div>`).join('');
+    if(entries.length>15)html+=`<div class="wl-review-more">+ ${entries.length-15} more</div>`;
+  }
+  previewEl.innerHTML=html;
+}
+
+function copyWlReviewPrompt(){
+  const entries=_wlReviewBuildEntries();
+  if(!entries.length){alert('No entries match your filters.');return;}
+  const group=document.getElementById('wlRevGroupProj').checked;
+  const today=new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  let body='';
+  if(group){
+    const groups={};
+    entries.forEach(e=>{const p=e.project||'(uncategorized)';if(!groups[p])groups[p]=[];groups[p].push(e);});
+    Object.entries(groups).forEach(([proj,items])=>{
+      body+='\n## '+proj+'\n';
+      items.forEach(e=>{
+        const dt=new Date(e.ts).toLocaleDateString([],{month:'short',day:'numeric'});
+        body+=(e.starred?'⭐ ':'- ')+'['+dt+'] '+e.text+(e.impact==='high'?' (high impact)':'')+'\n';
+      });
+    });
+  } else {
+    entries.forEach(e=>{
+      const dt=new Date(e.ts).toLocaleDateString([],{month:'short',day:'numeric'});
+      body+=(e.starred?'⭐ ':'- ')+'['+dt+'] '+(e.project?'['+e.project+'] ':'')+e.text+(e.impact==='high'?' (high impact)':'')+'\n';
+    });
+  }
+  const prompt=`I'm preparing for a performance review as of ${today}. Below is my raw work log — small things I've logged as they happened. Please help me:
+
+1. Group these into 3–5 major themes / projects, prioritizing the ones with the most depth or starred (⭐) entries.
+2. For each theme, write a STAR-format accomplishment (Situation, Task, Action, Result) that I could use in a self-review or talking points.
+3. Surface 2–3 standout wins that I should emphasize most.
+4. Flag any patterns I might be undervaluing (e.g. leadership, cross-functional collaboration, mentoring, risk reduction).
+5. Suggest 1–2 areas of growth I might want to mention based on what's NOT in the log.
+
+Keep the tone confident but not boastful. Use my actual phrasing where possible — don't invent details.
+
+---
+
+WORK LOG:
+${body}`;
+  navigator.clipboard.writeText(prompt).then(()=>{
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML='✓ Copied — paste into ChatGPT or Claude';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2200);}
+    closeWlReviewPicker();
+  });
+}
+
 init();
