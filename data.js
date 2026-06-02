@@ -303,6 +303,26 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._june18PlanV1=true;
   }
+  // Calm-start: push med-school resume/PS work to Thu Jun 4 (night), MCAT to Wed Jun 10
+  if(!d._juneCalmStartV1){
+    if(d.days){
+      Object.keys(d.days).forEach(dt=>{
+        if(!Array.isArray(d.days[dt]))return;
+        if(dt>='2026-06-01'&&dt<'2026-06-04'){
+          d.days[dt]=d.days[dt].filter(s=>!s._j18);
+        }
+        if(dt>='2026-06-01'&&dt<'2026-06-10'){
+          d.days[dt]=d.days[dt].filter(s=>!s._mcatJune);
+        }
+      });
+    }
+    if(!d.tasks)d.tasks=[];
+    if(!d.tasks.some(t=>t.text&&t.text.indexOf('L-shape desk')!==-1)){
+      d.tasks.push({id:(d.nextId||100),text:'Fix L-shape desk setup — shoulder pain from temp side desk',cat:'health',pri:'high',done:false,date:''});
+      d.nextId=(d.nextId||100)+1;
+    }
+    d._juneCalmStartV1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];

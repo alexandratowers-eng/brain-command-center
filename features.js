@@ -1004,6 +1004,93 @@ function restoreFromPasteArea(){
   }catch(err){alert('Could not parse data: '+err.message);}
 }
 
+function importIcs(){
+  const inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='.ics,text/calendar';
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file){if(document.body.contains(inp))document.body.removeChild(inp);return;}
+    const reader=new FileReader();
+    reader.onerror=()=>alert('Could not read .ics file');
+    reader.onload=ev=>{
+      try{
+        const events=parseIcs(ev.target.result);
+        if(!events.length){alert('No events found in this .ics file.');return;}
+        const horizonStart=todayStr();
+        const horizon=new Date();horizon.setDate(horizon.getDate()+60);
+        const horizonEnd=dateStr(horizon);
+        const inRange=events.filter(ev=>ev.date>=horizonStart&&ev.date<=horizonEnd);
+        if(!inRange.length){alert('Found '+events.length+' events but none in the next 60 days.');return;}
+        if(!confirm('Import '+inRange.length+' Outlook events into the next 60 days?'))return;
+        if(!D.days)D.days={};
+        if(!D._icsImported)D._icsImported={};
+        let added=0,skipped=0;
+        inRange.forEach(ev=>{
+          if(D._icsImported[ev.uid]){skipped++;return;}
+          if(!D.days[ev.date])D.days[ev.date]=[];
+          const tl=D.days[ev.date];
+          if(tl.some(s=>s.text===ev.title&&s.t===ev.start)){skipped++;return;}
+          tl.push({t:ev.start,end:ev.end,text:ev.title,cls:'errands',sm:'From Outlook',loc:ev.loc||'',_ics:true,_icsUid:ev.uid});
+          tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+          D._icsImported[ev.uid]=ev.date;
+          added++;
+        });
+        save();renderAll();
+        const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Imported '+added+' events ('+skipped+' skipped)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+      }catch(err){alert('ICS parse error: '+err.message);}
+      finally{if(document.body.contains(inp))document.body.removeChild(inp);}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+function parseIcs(text){
+  const lines=text.replace(/\r\n[ \t]/g,'').split(/\r?\n/);
+  const events=[];let cur=null;
+  for(const line of lines){
+    if(line==='BEGIN:VEVENT')cur={};
+    else if(line==='END:VEVENT'){if(cur&&cur.dtstart){
+      const s=icsToLocal(cur.dtstart),e=cur.dtend?icsToLocal(cur.dtend):null;
+      if(s){
+        events.push({
+          uid:cur.uid||(cur.dtstart+'_'+(cur.summary||'')),
+          title:cur.summary||'(no title)',
+          loc:cur.location||'',
+          date:s.date,start:s.time,end:e?e.time:''
+        });
+      }
+    }cur=null;}
+    else if(cur){
+      const ci=line.indexOf(':');if(ci<0)continue;
+      const key=line.substring(0,ci).split(';')[0].toUpperCase();
+      const val=line.substring(ci+1);
+      if(key==='UID')cur.uid=val;
+      else if(key==='SUMMARY')cur.summary=val.replace(/\\,/g,',').replace(/\\n/gi,' ').replace(/\\;/g,';');
+      else if(key==='LOCATION')cur.location=val.replace(/\\,/g,',').replace(/\\n/gi,' ');
+      else if(key==='DTSTART')cur.dtstart=val;
+      else if(key==='DTEND')cur.dtend=val;
+    }
+  }
+  return events;
+}
+
+function icsToLocal(v){
+  if(!v)return null;
+  const m=v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/);
+  if(!m)return null;
+  const yr=+m[1],mo=+m[2],day=+m[3];
+  if(!m[4])return{date:m[1]+'-'+m[2]+'-'+m[3],time:'12:00 AM'};
+  const hr=+m[4],mi=+m[5];
+  let d;
+  if(m[7]==='Z')d=new Date(Date.UTC(yr,mo-1,day,hr,mi));
+  else d=new Date(yr,mo-1,day,hr,mi);
+  return{date:dateStr(d),time:minToTime(d.getHours()*60+d.getMinutes())};
+}
+
 function importData(){
   const inp=document.createElement('input');
   inp.type='file';
