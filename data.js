@@ -364,6 +364,7 @@ function renderAll(){
   if(typeof renderWeeklyGoal==='function')renderWeeklyGoal();
   if(typeof renderRemindLaterPending==='function')renderRemindLaterPending();
   if(typeof autoParkingReview==='function')autoParkingReview();
+  if(typeof renderDailyAnchor==='function')renderDailyAnchor();
   document.getElementById('brainDump').value=D.brainDump||'';
   updateStats();updateTimerDisp();initMeetingNotes();
   if(D.logoIcon)document.getElementById('logoIcon').textContent=D.logoIcon;

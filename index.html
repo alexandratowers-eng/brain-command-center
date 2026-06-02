@@ -97,6 +97,13 @@ if('serviceWorker' in navigator){
   <div class="sidebar" id="sidebarEl">
     <div class="sidebar-resize" id="sidebarResize"></div>
     <button class="sidebar-close-btn" onclick="if(window.innerWidth<=900){toggleMobileSidebar();}else{toggleSidebar();}" title="Close sidebar">✕</button>
+    <!-- Daily Anchor — shows on low-meeting days -->
+    <div class="s-card" data-card="daily-anchor" id="dailyAnchorCard" style="display:none;border-color:rgba(251,191,36,.3);">
+      <div class="s-title"><span class="mi" style="font-size:14px;color:var(--amber);">anchor</span> Daily Anchor<button class="s-collapse" onclick="toggleCard('daily-anchor',this)">▾</button></div>
+      <div class="s-body" id="cardBody-daily-anchor">
+        <div id="dailyAnchorBody"></div>
+      </div>
+    </div>
     <!-- This Week Strip -->
     <div class="s-card" data-card="week-strip">
       <div class="s-title"><span class="mi" style="font-size:14px;color:var(--blue);">date_range</span> This Week<button class="s-collapse" onclick="toggleCard('week-strip',this)">▾</button></div>

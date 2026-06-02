@@ -3466,3 +3466,105 @@ ${body}`;
 }
 
 init();
+
+// ===== DAILY ANCHOR =====
+// Shows on days with ≤1 scheduled meeting — guides building 3 intentional time blocks
+function renderDailyAnchor(){
+  const card=document.getElementById('dailyAnchorCard');
+  const body=document.getElementById('dailyAnchorBody');
+  if(!card||!body)return;
+
+  const dt=D.selectedDate||todayStr();
+  const isToday=dt===todayStr();
+  if(!isToday){card.style.display='none';return;}
+
+  const tl=D.days[dt]||[];
+  const meetingCount=tl.filter(s=>isMeetingBlock(s)).length;
+  if(meetingCount>1){card.style.display='none';return;}
+
+  card.style.display='';
+  const anchors=(D.dailyAnchors&&D.dailyAnchors[dt])||[];
+
+  const prompts=[
+    'What\'s the ONE thing that would make today feel done?',
+    'What\'s been on your mind that needs a dedicated 30 min?',
+    'Which task keeps getting pushed — do 20 min of it today.',
+  ];
+
+  const done=anchors.length>=3;
+  let html='';
+
+  if(done){
+    html+=`<div style="font-size:10px;color:var(--dim);margin-bottom:6px;">Your 3 anchors for today:</div>`;
+    anchors.forEach((a,i)=>{
+      html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+        <span style="font-size:11px;color:var(--amber);flex-shrink:0;">${i+1}.</span>
+        <span style="font-size:11px;color:var(--text);flex:1;">${a.text}</span>
+        <button onclick="deleteAnchor('${dt}',${i})" style="background:none;border:none;cursor:pointer;font-size:9px;color:var(--dim);padding:0 2px;" title="Remove">✕</button>
+      </div>`;
+    });
+    html+=`<button onclick="clearAnchors('${dt}')" style="font-size:9px;color:var(--dim);background:none;border:none;cursor:pointer;margin-top:4px;">↺ Reset</button>`;
+  } else {
+    const idx=anchors.length;
+    const prompt=prompts[idx]||'Add one more focus block.';
+    html+=`<div style="font-size:10px;color:var(--dim);margin-bottom:5px;">
+      ${meetingCount===0?'No meetings today — build your own structure.':'Light meeting day — anchor the rest.'}
+    </div>`;
+    if(anchors.length){
+      anchors.forEach((a,i)=>{
+        html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
+          <span style="font-size:10px;color:var(--green);">✓</span>
+          <span style="font-size:10px;color:var(--dim);text-decoration:line-through;flex:1;">${a.text}</span>
+        </div>`;
+      });
+    }
+    html+=`<div style="font-size:10px;color:var(--amber);margin:5px 0 3px;font-style:italic;">${prompt}</div>`;
+    html+=`<div style="display:flex;gap:4px;align-items:center;">
+      <input id="anchorInput" type="text" placeholder="e.g. Resume — header section, 6–6:30pm"
+        style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:10px;color:var(--text);outline:none;"
+        onkeydown="if(event.key==='Enter')addAnchor('${dt}')"
+      />
+      <button onclick="addAnchor('${dt}')" style="background:var(--amber);color:#000;border:none;border-radius:5px;padding:4px 8px;font-size:10px;cursor:pointer;font-weight:700;">${idx+1}/3</button>
+    </div>`;
+    html+=`<div style="font-size:9px;color:var(--dim);margin-top:4px;">Name it + optionally say when (adds to calendar too)</div>`;
+  }
+
+  body.innerHTML=html;
+  if(!done){const inp=document.getElementById('anchorInput');if(inp)setTimeout(()=>inp.focus(),50);}
+}
+
+function addAnchor(dt){
+  const inp=document.getElementById('anchorInput');
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  if(!D.dailyAnchors)D.dailyAnchors={};
+  if(!D.dailyAnchors[dt])D.dailyAnchors[dt]=[];
+  if(D.dailyAnchors[dt].length>=3)return;
+  D.dailyAnchors[dt].push({text,added:Date.now()});
+
+  // Auto-add to calendar if a time is mentioned
+  const parsed=parseQuickAdd(text);
+  if(parsed&&parsed.time!==null){
+    const calDt=parsed.date||dt;
+    if(!D.days[calDt])D.days[calDt]=[];
+    const tl=D.days[calDt];
+    if(!tl.some(s=>s.text===parsed.title&&s.t===minToTime(parsed.time))){
+      tl.push({t:minToTime(parsed.time),end:minToTime(parsed.time+parsed.duration),text:parsed.title,cls:'deadline',sm:'Daily Anchor',loc:''});
+      tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+    }
+  }
+  save();renderDailyAnchor();renderCalendar();
+}
+
+function deleteAnchor(dt,i){
+  if(!D.dailyAnchors||!D.dailyAnchors[dt])return;
+  D.dailyAnchors[dt].splice(i,1);
+  save();renderDailyAnchor();
+}
+
+function clearAnchors(dt){
+  if(!D.dailyAnchors)return;
+  delete D.dailyAnchors[dt];
+  save();renderDailyAnchor();
+}
