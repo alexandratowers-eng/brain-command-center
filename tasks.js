@@ -659,14 +659,13 @@ function renderBuckets(){
   buckets.forEach(([k,cat])=>{
     const tasks=activeTasks.filter(t=>t.cat===k).sort((a,b)=>{const p={high:0,med:1,low:2};return p[a.pri]-p[b.pri];});
     const done=D.tasks.filter(t=>t.done&&t.cat===k&&t.date&&t.date<=today);
-    h+=`<div data-bucketkey="${k}" draggable="true"
-          ondragstart="_bucketDragKey='${k}';event.dataTransfer.effectAllowed='move';"
-          ondragover="event.preventDefault();this.style.outline='2px solid var(--blue)';"
+    h+=`<div data-bucketkey="${k}"
+          ondragover="event.preventDefault();this.style.outline='2px solid var(--blue)';event.dataTransfer.dropEffect='move';"
           ondragleave="this.style.outline='';"
-          ondrop="event.preventDefault();this.style.outline='';if(_bucketDragKey&&_bucketDragKey!=='${k}'){const o=_getBucketOrder();const fi=o.indexOf(_bucketDragKey);const ti=o.indexOf('${k}');if(fi>-1&&ti>-1){o.splice(fi,1);o.splice(ti,0,_bucketDragKey);}D.catOrder=o;save();renderBuckets();}_bucketDragKey=null;if(!event.dataTransfer.getData('text/plain').match(/^[0-9]+$/))return;taskDropOnCat(event,'${k}');"
-          style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;cursor:grab;">
+          ondrop="event.preventDefault();this.style.outline='';const dt=event.dataTransfer.getData('text/plain');if(_bucketDragKey&&_bucketDragKey!=='${k}'){const o=_getBucketOrder();const fi=o.indexOf(_bucketDragKey);const ti=o.indexOf('${k}');if(fi>-1&&ti>-1){o.splice(fi,1);o.splice(ti,0,_bucketDragKey);}D.catOrder=o;save();_bucketDragKey=null;renderBuckets();return;}_bucketDragKey=null;if(dt&&dt.match(/^[0-9]+$/)){_dragTaskId=parseInt(dt);taskDropOnCat(event,'${k}');}"
+          style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-        <span style="font-size:13px;color:var(--dim);cursor:grab;" title="Drag to reorder">⠿</span>
+        <span draggable="true" ondragstart="_bucketDragKey='${k}';event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain','bucket:${k}');" style="font-size:13px;color:var(--dim);cursor:grab;" title="Drag to reorder categories">⠿</span>
         <span style="font-size:16px;">${cat.emoji}</span>
         <span style="font-size:12px;font-weight:600;color:${cat.color};">${cat.label}</span>
         <span style="font-size:10px;color:var(--dim);margin-left:auto;">${tasks.length}${done.length?' · '+done.length+'✓':''}</span>
@@ -1619,7 +1618,7 @@ function openTaskCtx(e,id){
 }
 
 let editId=null;
-function openEdit(id){const t=D.tasks.find(x=>x.id===id);if(!t)return;editId=id;document.getElementById('edText').value=t.text;document.getElementById('edCat').value=t.cat;document.getElementById('edPri').value=t.pri;document.getElementById('edDate').value=t.date||'';
+function openEdit(id){const t=D.tasks.find(x=>x.id===id);if(!t)return;editId=id;buildCatSelects();document.getElementById('edText').value=t.text;const ec=document.getElementById('edCat');ec.value=t.cat&&D.cats[t.cat]?t.cat:Object.keys(D.cats)[0];document.getElementById('edPri').value=t.pri||'med';document.getElementById('edDate').value=t.date||'';
   const ec=document.getElementById('edEffort');
   if(ec){ec.innerHTML=Object.entries(EFFORT_TAGS).map(([k,v])=>`<button type="button" class="effort-chip${t.effort===k?' active':''}" data-effort="${k}" onclick="document.querySelectorAll('#edEffort .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');" style="${t.effort===k?'color:'+v.color+';border-color:'+v.color:''}">${v.emoji} ${v.label}</button>`).join('')+`<button type="button" class="effort-chip${!t.effort?' active':''}" data-effort="" onclick="document.querySelectorAll('#edEffort .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');">None</button>`;}
   document.getElementById('editModal').classList.add('show');}

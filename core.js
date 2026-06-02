@@ -124,6 +124,8 @@ function init(){
   const savedHide=localStorage.getItem('sidebarHidden');
   if(savedHide==='true'){document.getElementById('sidebarEl').classList.add('hidden');document.querySelector('.app').classList.add('sidebar-hidden');}
   buildCatSelects();
+  updateDynamicBlockCSS();
+  renderCalendar();
   renderMiniCal();
   renderLegend();
   renderEnergy();
@@ -132,8 +134,6 @@ function init(){
   renderTomorrowMode();
   checkOverdueTasks();
   renderSidebarTasks();
-  updateDynamicBlockCSS();
-  renderCalendar();
   renderMcat();
   document.getElementById('brainDump').value=D.brainDump||'';
   updateStats();
