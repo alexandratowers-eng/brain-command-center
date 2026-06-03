@@ -1362,21 +1362,38 @@ function stopBreathe(){
 let _rescueTimer=null,_rescueRemaining=0,_rescuePhase=null,_rescueLabel='';
 function openRescueModal(){
   const m=document.getElementById('rescueModal');if(!m)return;
-  document.getElementById('rescueChoices').style.display='';
-  document.getElementById('rescueActive').style.display='none';
+  if(_rescueTimer){
+    document.getElementById('rescueChoices').style.display='none';
+    document.getElementById('rescueActive').style.display='';
+  } else {
+    document.getElementById('rescueChoices').style.display='';
+    document.getElementById('rescueActive').style.display='none';
+  }
   m.style.display='flex';
 }
 function closeRescueModal(){
   const m=document.getElementById('rescueModal');if(!m)return;
-  stopRescue();
   m.style.display='none';
+  // Timer keeps running in background; topbar button shows remaining time.
+}
+function _updateRescueBtnLabel(){
+  const btn=document.getElementById('rescueBtn');if(!btn)return;
+  if(_rescueTimer&&_rescueRemaining>0){
+    btn.innerHTML='<span class="mi" style="font-size:14px;">bolt</span><span style="font-size:10px;font-weight:700;">'+_rescueFmt(_rescueRemaining)+'</span>';
+    btn.title='Rescue running — click to view';
+  } else {
+    btn.innerHTML='<span class="mi" style="font-size:14px;">bolt</span><span>Rescue</span>';
+    btn.title='Stuck? Bike-hard sprint + breathing reset';
+  }
 }
 function _rescueFmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
 function _rescueTick(){
   _rescueRemaining--;
-  document.getElementById('rescueTime').textContent=_rescueFmt(Math.max(0,_rescueRemaining));
+  const rt=document.getElementById('rescueTime');if(rt)rt.textContent=_rescueFmt(Math.max(0,_rescueRemaining));
+  _updateRescueBtnLabel();
   if(_rescueRemaining<=0){
     clearInterval(_rescueTimer);_rescueTimer=null;
+    _updateRescueBtnLabel();
     if(_rescuePhase==='bike-combo'){
       _rescuePhase='breathe-combo';
       _rescueLabel='Breathing reset';
@@ -1412,6 +1429,7 @@ function startBikeSprint(mins){
   document.getElementById('rescueTime').textContent=_rescueFmt(_rescueRemaining);
   clearInterval(_rescueTimer);
   _rescueTimer=setInterval(_rescueTick,1000);
+  _updateRescueBtnLabel();
 }
 function startBikeBreatheCombo(){
   _rescuePhase='bike-combo';
@@ -1430,6 +1448,7 @@ function stopRescue(){
   _rescuePhase=null;_rescueRemaining=0;
   document.getElementById('rescueChoices').style.display='';
   document.getElementById('rescueActive').style.display='none';
+  _updateRescueBtnLabel();
 }
 
 // ===== DISTRACTIONS / PARKING LOT =====

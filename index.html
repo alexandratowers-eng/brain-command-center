@@ -134,7 +134,7 @@ if('serviceWorker' in navigator){
             <span class="mi" style="font-size:13px;">timer</span> Timer
             <span style="font-size:8px;color:var(--dim);" id="timerMiniDisp"></span>
           </button>
-          <button class="t-btn" onclick="openRescueModal()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--amber);color:var(--amber);" title="Stuck? Bike-hard sprint + breathing reset">
+          <button id="rescueBtn" class="t-btn" onclick="openRescueModal()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--amber);color:var(--amber);" title="Stuck? Bike-hard sprint + breathing reset">
             <span class="mi" style="font-size:13px;">bolt</span> Stuck?
           </button>
         </div>
@@ -373,7 +373,7 @@ if('serviceWorker' in navigator){
       </div>
       <div style="display:flex;gap:6px;margin:8px 0 4px;">
         <button class="tasks-subtab active" id="taskViewList" onclick="switchTaskView('list',this)">📋 List</button>
-        <button class="tasks-subtab" id="taskViewBuckets" onclick="switchTaskView('buckets',this)">🪣 Buckets</button>
+        <button class="tasks-subtab" id="taskViewBuckets" onclick="switchTaskView('buckets',this)" title="Lingering tasks sorted by effort (easy / hard / tedious)">🪣 Lingering</button>
         <button class="tasks-subtab" id="taskViewLists" onclick="switchTaskView('lists',this)">✅ Lists</button>
       </div>
       <div id="tasksActivePane">
@@ -728,9 +728,14 @@ if('serviceWorker' in navigator){
     <h3 id="modalTitle">Edit Task</h3>
     <label>Task</label><input type="text" id="edText">
     <label>Category</label><select id="edCat"></select>
-    <label>Priority</label><select id="edPri"><option value="high">Urgent</option><option value="med">Normal</option><option value="low">Low</option></select>
+    <label>Importance</label><select id="edPri"><option value="high">⭐ Important</option><option value="med">Normal</option><option value="low">Low</option></select>
     <label>Date</label><input type="date" id="edDate">
-    <label>Effort</label>
+    <label>Remind me</label>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0 8px;">
+      <input type="datetime-local" id="edRemindAt" style="flex:1;min-width:140px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 6px;color:var(--text);font-size:11px;font-family:inherit;">
+      <button type="button" class="t-btn" onclick="document.getElementById('edRemindAt').value='';" style="font-size:10px;">Clear</button>
+    </div>
+    <label>Effort (how lingering tasks are sorted in 🪣 Buckets)</label>
     <div id="edEffort" class="effort-chips"></div>
     <div class="modal-btns">
       <button class="t-btn"onclick="closeModal()">Cancel</button>
@@ -926,6 +931,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(window.innerWidth<=900){D.calView='day';save();}
   if(typeof SyncEngine!=='undefined')SyncEngine.init();
   setTimeout(()=>{if(typeof _restoreTimerState==='function')_restoreTimerState();},1200);
+  // Prompt for notification permission once so reminders actually fire.
+  if('Notification' in window && Notification.permission==='default' && !localStorage.getItem('bcc_notifAsked')){
+    setTimeout(()=>{
+      try{Notification.requestPermission().then(()=>{localStorage.setItem('bcc_notifAsked','1');if(typeof updateNotifBtn==='function')updateNotifBtn();});}catch(e){}
+    },2500);
+  }
 });
 </script>
 </body>

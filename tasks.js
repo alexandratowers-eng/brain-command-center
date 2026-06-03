@@ -1619,11 +1619,19 @@ function openTaskCtx(e,id){
 
 let editId=null;
 function openEdit(id){const t=D.tasks.find(x=>x.id===id);if(!t)return;editId=id;buildCatSelects();document.getElementById('edText').value=t.text;const edCatEl=document.getElementById('edCat');edCatEl.value=t.cat&&D.cats[t.cat]?t.cat:Object.keys(D.cats)[0];document.getElementById('edPri').value=t.pri||'med';document.getElementById('edDate').value=t.date||'';
+  const edRem=document.getElementById('edRemindAt');
+  if(edRem){
+    if(t.remindAt){const d=new Date(t.remindAt);const pad=n=>String(n).padStart(2,'0');edRem.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+    else edRem.value='';
+  }
   const edEffortEl=document.getElementById('edEffort');
   if(edEffortEl){edEffortEl.innerHTML=Object.entries(EFFORT_TAGS).map(([k,v])=>`<button type="button" class="effort-chip${t.effort===k?' active':''}" data-effort="${k}" onclick="document.querySelectorAll('#edEffort .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');" style="${t.effort===k?'color:'+v.color+';border-color:'+v.color:''}">${v.emoji} ${v.label}</button>`).join('')+`<button type="button" class="effort-chip${!t.effort?' active':''}" data-effort="" onclick="document.querySelectorAll('#edEffort .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');">None</button>`;}
   document.getElementById('editModal').classList.add('show');}
 function closeModal(){document.getElementById('editModal').classList.remove('show');editId=null;}
-function saveModal(){const t=D.tasks.find(x=>x.id===editId);if(!t)return;t.text=document.getElementById('edText').value;t.cat=document.getElementById('edCat').value;t.pri=document.getElementById('edPri').value;const newDate=document.getElementById('edDate').value;const oldDate=t.date;t.date=newDate;const activeChip=document.querySelector('#edEffort .effort-chip.active');t.effort=activeChip?activeChip.dataset.effort:'';save();closeModal();renderSidebarTasks();renderAllTasks();renderLegend();
+function saveModal(){const t=D.tasks.find(x=>x.id===editId);if(!t)return;t.text=document.getElementById('edText').value;t.cat=document.getElementById('edCat').value;t.pri=document.getElementById('edPri').value;const newDate=document.getElementById('edDate').value;const oldDate=t.date;t.date=newDate;const activeChip=document.querySelector('#edEffort .effort-chip.active');t.effort=activeChip?activeChip.dataset.effort:'';
+  const remVal=document.getElementById('edRemindAt')?.value;
+  if(remVal){t.remindAt=new Date(remVal).toISOString();}else{delete t.remindAt;}
+  save();closeModal();renderSidebarTasks();renderAllTasks();renderLegend();
   // If date was changed and has a date, offer to add to calendar
   if(newDate&&newDate!==oldDate){taskToCalBlock(t.id);}
 }
