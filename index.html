@@ -104,13 +104,8 @@ if('serviceWorker' in navigator){
         <div id="dailyAnchorBody"></div>
       </div>
     </div>
-    <!-- This Week Strip -->
-    <div class="s-card" data-card="week-strip">
-      <div class="s-title"><span class="mi" style="font-size:14px;color:var(--blue);">date_range</span> This Week<button class="s-collapse" onclick="toggleCard('week-strip',this)">▾</button></div>
-      <div class="s-body" id="cardBody-week-strip">
-        <div id="sidebarWeekStrip"></div>
-      </div>
-    </div>
+    <!-- This Week Strip (hidden compat) -->
+    <div id="sidebarWeekStrip" style="display:none;"></div>
     <!-- Tomorrow Preview (hidden compat) -->
     <div id="sidebarTmrwPreview" style="display:none;"></div>
 
@@ -216,13 +211,8 @@ if('serviceWorker' in navigator){
     <div id="sidebarWinsList" style="display:none;"></div>
     <div id="sidebarWinsBadge" style="display:none;">0</div>
 
-    <!-- Weekly Progress / Call Tracker -->
-    <div class="s-card" data-card="weeklygoal">
-      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">trending_up</span> Weekly Progress<button class="s-collapse" onclick="toggleCard('weeklygoal',this)">▾</button></div>
-      <div class="s-body" id="cardBody-weeklygoal">
-        <div id="weeklyGoalWidget"></div>
-      </div>
-    </div>
+    <!-- Weekly Progress / Call Tracker (hidden compat) -->
+    <div id="weeklyGoalWidget" style="display:none;"></div>
 
     <!-- Weekly Later Review -->
     <div class="s-card" id="weeklyReviewCard" style="display:none;" data-card="weekly-review">

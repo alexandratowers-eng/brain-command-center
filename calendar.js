@@ -544,8 +544,12 @@ function renderWeekBlocks(container, dates, startHr, endHr){
         block._clickEvent=e;
         const gridEl=grid;
         const gridRect=gridEl.getBoundingClientRect();
+        const blockRect=block.getBoundingClientRect();
+        const origTopPx=blockRect.top-gridRect.top;
+        const origLeftPx=blockRect.left-gridRect.left;
         _wkBlockDrag={dt,idx:i,block,startX:e.clientX,startY:e.clientY,gridRect,cellW,
-          startM:parseMin(slot.t),dates,startHr,colIdx,moved:false,colFr:[1,1,1,1,1,.5,.5],totalFr:6};
+          startM:parseMin(slot.t),dates,startHr,colIdx,moved:false,colFr:[1,1,1,1,1,.5,.5],totalFr:6,
+          origTopPx,origLeftPx};
         block.style.zIndex='20';block.style.opacity='.85';block.style.cursor='grabbing';
         document.body.style.cursor='grabbing';document.body.style.userSelect='none';
       };
@@ -592,12 +596,17 @@ document.addEventListener('mousemove',e=>{
   let acc=0;
   for(let c=0;c<7;c++){acc+=d.colFr[c]/d.totalFr*gridW;if(absX<acc){newCol=c;break;}}
   newCol=Math.max(0,Math.min(6,newCol));
-  const topPx=((newMin/60)-d.startHr)*60+40;
-  let colLeftFrac=0;
-  for(let j=0;j<newCol;j++)colLeftFrac+=d.colFr[j]/d.totalFr;
-  const leftPx=50+colLeftFrac*gridW+2;
-  d.block.style.top=topPx+'px';
-  d.block.style.left=leftPx+'px';
+  // Apply deltas to the block's ORIGINAL pixel position so it doesn't visually
+  // jump on first move (the rendered position uses calc() which won't equal a
+  // recomputed pixel value exactly).
+  const topDelta=((newMin-d.startM)/60)*60;
+  let colDelta=0;
+  for(let j=Math.min(d.colIdx,newCol);j<Math.max(d.colIdx,newCol);j++){
+    colDelta+=d.colFr[j]/d.totalFr*gridW;
+  }
+  if(newCol<d.colIdx)colDelta=-colDelta;
+  d.block.style.top=(d.origTopPx+topDelta)+'px';
+  d.block.style.left=(d.origLeftPx+colDelta)+'px';
   d.pendingMin=newMin;
   d.pendingCol=newCol;
 });
@@ -2167,7 +2176,9 @@ function initBlockDrag(){
     const ROW_H=56;
     const startHr=7;
     const maxMin=24*60-duration;
-    _blockDrag={dt,idx,startY:e.clientY,startMin,duration,maxMin,gridRect,ROW_H,startHr,block,grid,moved:false};
+    const blockRect=block.getBoundingClientRect();
+    const origTopPx=blockRect.top-gridRect.top;
+    _blockDrag={dt,idx,startY:e.clientY,startMin,duration,maxMin,gridRect,ROW_H,startHr,block,grid,moved:false,origTopPx};
     block.style.zIndex='20';
     block.style.cursor='grabbing';
     document.body.style.cursor='grabbing';
@@ -2183,7 +2194,8 @@ function initBlockDrag(){
     d.block.style.opacity='.85';
     const minDelta=Math.round((dy/d.ROW_H)*60/15)*15;
     const newMin=Math.max(d.startHr*60,Math.min(d.maxMin,d.startMin+minDelta));
-    const topPx=(newMin/60-d.startHr)*d.ROW_H;
+    // Apply delta to the block's original pixel top to avoid first-move jump.
+    const topPx=d.origTopPx+((newMin-d.startMin)/60)*d.ROW_H;
     d.block.style.top=topPx+'px';
     d.pendingMin=newMin;
     const scrollEl=d.grid.closest('.main');
@@ -2250,7 +2262,9 @@ function initBlockDrag(){
     _touchDragTimer=setTimeout(()=>{
       _touchTapBlock=null;
       e.preventDefault();
-      _blockDrag={dt,idx,startY:touch.clientY,startMin,duration,maxMin,gridRect,ROW_H,startHr,block,grid,moved:false,isTouch:true};
+      const blockRect=block.getBoundingClientRect();
+      const origTopPx=blockRect.top-gridRect.top;
+      _blockDrag={dt,idx,startY:touch.clientY,startMin,duration,maxMin,gridRect,ROW_H,startHr,block,grid,moved:false,isTouch:true,origTopPx};
       block.style.zIndex='20';
       block.style.opacity='.85';
       block.style.boxShadow='0 4px 16px rgba(0,0,0,.3)';
@@ -2276,7 +2290,7 @@ function initBlockDrag(){
     d.moved=true;
     const minDelta=Math.round((dy/d.ROW_H)*60/15)*15;
     const newMin=Math.max(d.startHr*60,Math.min(d.maxMin,d.startMin+minDelta));
-    const topPx=(newMin/60-d.startHr)*d.ROW_H;
+    const topPx=(d.origTopPx||0)+((newMin-d.startMin)/60)*d.ROW_H;
     d.block.style.top=topPx+'px';
     d.pendingMin=newMin;
   },{passive:false});
