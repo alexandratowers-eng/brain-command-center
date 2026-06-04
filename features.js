@@ -277,8 +277,90 @@ function editWeeklyGoal(){
   });
 }
 
+// ===== MCAT VOCAB =====
+// CARS-style word bank. Each: word, part of speech, definition, memory hook,
+// and optional "watch" (a false-friend / common misuse to avoid).
+const VOCAB_BANK=[
+  {w:'equivocal',pos:'adj',def:'ambiguous; open to more than one interpretation',hook:'equi- (equal) + voc- (voice) = two equal voices arguing, can’t pick a winner',watch:'NOT equivalent (equal in value) — same root, different meaning'},
+  {w:'unequivocal',pos:'adj',def:'absolutely clear; leaving no doubt',hook:'NOT equal-voiced → one voice only → totally clear'},
+  {w:'equivocate',pos:'verb',def:'to use vague language deliberately to deceive or avoid commitment',hook:'a politician dodging a yes/no answer is equivocating'},
+  {w:'disinterested',pos:'adj',def:'impartial; free of personal stake',hook:'a good judge is disinterested',watch:'NOT uninterested (bored) — CARS loves this trap'},
+  {w:'eminent',pos:'adj',def:'famous and distinguished',hook:'an eminent scholar stands out (e-, out)',watch:'vs imminent (about to happen) vs immanent (inherent, dwelling within)'},
+  {w:'sanguine',pos:'adj',def:'cheerfully optimistic',hook:'sounds like blood (Latin sanguis) but means upbeat',watch:'do NOT read as dark/grim'},
+  {w:'enervate',pos:'verb',def:'to drain of energy or vitality',hook:'sounds like "energize" but means the OPPOSITE — e- (out) + nerve',watch:'NOT to energize'},
+  {w:'fulsome',pos:'adj',def:'excessive to the point of being cloying or insincere',hook:'"fulsome praise" = too much, sickening',watch:'NOT a compliment meaning abundant/generous'},
+  {w:'nonplussed',pos:'adj',def:'so surprised or confused one doesn’t know how to react',hook:'non + plus = "no more" can be said or done → stunned',watch:'NOT unbothered (common misuse)'},
+  {w:'peruse',pos:'verb',def:'to read thoroughly and carefully',hook:'per- (thoroughly) + use → go through every word',watch:'NOT to skim'},
+  {w:'bemused',pos:'adj',def:'puzzled, confused',hook:'be- + muse → lost in muddled thought',watch:'NOT amused'},
+  {w:'noisome',pos:'adj',def:'offensive or disgusting, especially in smell',hook:'shares a root with "annoy," not "noise"',watch:'NOT noisy'},
+  {w:'egregious',pos:'adj',def:'outstandingly bad; glaring',hook:'e- (out of) + greg- (flock) → stands out from the herd, badly'},
+  {w:'gregarious',pos:'adj',def:'sociable; fond of company',hook:'greg- (flock) → likes being in the flock'},
+  {w:'perfidy',pos:'noun',def:'deliberate betrayal of trust',hook:'per- (away) + fid- (faith) → faith broken'},
+  {w:'diffident',pos:'adj',def:'shy; lacking self-confidence',hook:'dis- (away) + fid- (trust) → lacking self-trust'},
+  {w:'alleviate',pos:'verb',def:'to make less severe; relieve',hook:'al- + lev- (light) → lift the weight away'},
+  {w:'levity',pos:'noun',def:'lightness of mood; humor in a serious situation',hook:'lev- (light) → a light spirit'},
+  {w:'superfluous',pos:'adj',def:'unnecessary; more than needed',hook:'super- (over) + flu- (flow) → overflowing, excess'},
+  {w:'affluent',pos:'adj',def:'wealthy',hook:'af- (toward) + flu- (flow) → money flowing toward you'},
+  {w:'confluence',pos:'noun',def:'a flowing or coming together',hook:'con- (together) + flu- (flow)'},
+  {w:'immutable',pos:'adj',def:'unchanging over time',hook:'im- (not) + mut- (change)'},
+  {w:'soliloquy',pos:'noun',def:'a speech made alone, to oneself',hook:'sol- (alone) + loqu- (speak)'},
+  {w:'verisimilitude',pos:'noun',def:'the appearance of being true or real',hook:'ver- (truth) + simil- (similar) → truth-like'},
+  {w:'aver',pos:'verb',def:'to state or assert to be the case',hook:'a- + ver- (truth) → declare as true'},
+  {w:'proscribe',pos:'verb',def:'to forbid; prohibit',hook:'pro- + scrib- (write) → written out as banned',watch:'OPPOSITE of prescribe (recommend)'},
+  {w:'circumscribe',pos:'verb',def:'to restrict; draw a line around',hook:'circum- (around) + scrib- (write) → draw a boundary'},
+  {w:'abdicate',pos:'verb',def:'to renounce a throne, power, or responsibility',hook:'ab- (away) + dict- (speak) → speak away your power'},
+  {w:'malediction',pos:'noun',def:'a curse',hook:'mal- (bad) + dict- (speak) → bad words spoken'},
+  {w:'tenuous',pos:'adj',def:'very weak or slight; flimsy',hook:'a tenuous link is stretched thin (ten- = stretch)'},
+  {w:'antipathy',pos:'noun',def:'a deep-seated dislike',hook:'anti- (against) + path- (feeling)'},
+  {w:'tenacious',pos:'adj',def:'holding firmly; persistent',hook:'ten- (hold) → keeps its grip'},
+  {w:'veracity',pos:'noun',def:'truthfulness; accuracy',hook:'ver- (truth) + -ity (quality of)'},
+  {w:'capitulate',pos:'verb',def:'to surrender; give in',hook:'think "lose your head/cap" and yield'},
+  {w:'vacillate',pos:'verb',def:'to waver between options; be indecisive',hook:'swing back and forth like a wobble'},
+  {w:'discreet',pos:'adj',def:'careful and tactful; prudent about privacy',hook:'keep a secret discreetly',watch:'vs discrete (separate, distinct)'},
+  {w:'ingenuous',pos:'adj',def:'innocent, frank, unable to deceive',hook:'in-genu- → inborn honesty, naive',watch:'NOT ingenious (clever)'},
+  {w:'flout',pos:'verb',def:'to openly disregard a rule',hook:'flout the law = defy it',watch:'vs flaunt (show off)'},
+  {w:'censure',pos:'verb/noun',def:'to formally criticize; strong disapproval',hook:'a formal reprimand',watch:'vs censor (to suppress content)'},
+  {w:'paradigm',pos:'noun',def:'a typical model or framework of thought',hook:'a "paradigm shift" replaces one whole model with another'}
+];
+
+// Number of new words shown per day
+const VOCAB_PER_DAY=3;
+
+// Deterministic daily rotation: same words all day, fresh set next day.
+function vocabForToday(){
+  const epoch=Math.floor(Date.now()/86400000); // days since 1970, local-ish
+  const n=VOCAB_BANK.length;
+  const out=[];
+  for(let i=0;i<VOCAB_PER_DAY&&i<n;i++){
+    out.push(VOCAB_BANK[(epoch*VOCAB_PER_DAY+i)%n]);
+  }
+  return out;
+}
+
+function renderVocab(){
+  const el=document.getElementById('vocabDaily');
+  if(!el)return;
+  const words=vocabForToday();
+  const cards=words.map(v=>`
+    <div style="background:var(--card,var(--bg));border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:15px;font-weight:700;color:var(--text);">${v.w}</span>
+        <span style="font-size:10px;color:var(--dim);font-style:italic;">${v.pos}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text);margin-top:3px;">${v.def}</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:5px;">\u{1F9E0} ${v.hook}</div>
+      ${v.watch?`<div style="font-size:11px;color:var(--amber,#d97706);margin-top:4px;">⚠️ ${v.watch}</div>`:''}
+    </div>`).join('');
+  el.innerHTML=`
+    <div style="margin-bottom:14px;">
+      <h3 style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">\u{1F4D6} Words of the Day <span style="font-size:10px;color:var(--dim);font-weight:400;">— ${VOCAB_PER_DAY} new daily, rotating</span></h3>
+      ${cards}
+    </div>`;
+}
+
 // ===== MCAT =====
 function renderMcat(){
+  renderVocab();
   const el=document.getElementById('mcatSteps');
   const steps=D.mcatSteps||[];
   const total=steps.length;
