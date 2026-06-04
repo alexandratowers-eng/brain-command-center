@@ -1091,6 +1091,149 @@ function icsToLocal(v){
   return{date:dateStr(d),time:minToTime(d.getHours()*60+d.getMinutes())};
 }
 
+// ===== OUTLOOK PDF IMPORT =====
+// Loads pdf.js on demand, extracts text by Y-row, finds date headers + time/title
+// pairs, then pushes events into D.days the same way importIcs does.
+function importOutlookPdf(){
+  const inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='.pdf,application/pdf';
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file){if(document.body.contains(inp))document.body.removeChild(inp);return;}
+    const t=document.getElementById('saveToast');
+    if(t){t.innerHTML='Reading PDF…';t.classList.add('show');}
+    loadPdfJs().then(pdfjsLib=>{
+      const reader=new FileReader();
+      reader.onerror=()=>alert('Could not read the PDF file.');
+      reader.onload=async ev=>{
+        try{
+          const pdf=await pdfjsLib.getDocument({data:new Uint8Array(ev.target.result)}).promise;
+          const rows=[];
+          for(let p=1;p<=pdf.numPages;p++){
+            const page=await pdf.getPage(p);
+            const tc=await page.getTextContent();
+            // Group items into rows by Y coordinate (tolerance 3px)
+            const byY={};
+            tc.items.forEach(it=>{
+              if(!it.str||!it.str.trim())return;
+              const y=Math.round(it.transform[5]);
+              let bucket=null;
+              for(const k of Object.keys(byY)){if(Math.abs(+k-y)<=3){bucket=k;break;}}
+              const key=bucket!==null?bucket:String(y);
+              if(!byY[key])byY[key]=[];
+              byY[key].push({x:it.transform[4],s:it.str});
+            });
+            Object.keys(byY).map(k=>+k).sort((a,b)=>b-a).forEach(y=>{
+              const line=byY[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(' ').replace(/\s+/g,' ').trim();
+              if(line)rows.push(line);
+            });
+          }
+          const events=parseOutlookPdfRows(rows);
+          if(!events.length){alert('Could not find any events in this PDF. Try Outlook’s "Daily Style" or "Weekly Agenda" print layout.');return;}
+          if(!confirm('Found '+events.length+' events in the PDF. Add them to your calendar?'))return;
+          if(!D.days)D.days={};
+          if(!D._pdfImported)D._pdfImported={};
+          let added=0,skipped=0;
+          events.forEach(ev=>{
+            const sig=ev.date+'|'+ev.start+'|'+ev.title;
+            if(D._pdfImported[sig]){skipped++;return;}
+            if(!D.days[ev.date])D.days[ev.date]=[];
+            const tl=D.days[ev.date];
+            if(tl.some(s=>s.text===ev.title&&s.t===ev.start)){skipped++;return;}
+            tl.push({t:ev.start,end:ev.end||'',text:ev.title,cls:'errands',sm:'From Outlook PDF',loc:ev.loc||'',_pdf:true});
+            tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+            D._pdfImported[sig]=ev.date;
+            added++;
+          });
+          save();renderAll();
+          if(t){t.innerHTML='✓ Imported '+added+' events ('+skipped+' skipped)';setTimeout(()=>t.classList.remove('show'),3000);}
+        }catch(err){alert('PDF parse error: '+err.message);}
+        finally{if(document.body.contains(inp))document.body.removeChild(inp);}
+      };
+      reader.readAsArrayBuffer(file);
+    }).catch(err=>{
+      alert('Could not load PDF reader: '+err.message);
+      if(document.body.contains(inp))document.body.removeChild(inp);
+    });
+  };
+  inp.click();
+}
+
+function loadPdfJs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{
+      if(!window.pdfjsLib)return reject(new Error('pdfjsLib not on window'));
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    s.onerror=()=>reject(new Error('Failed to load pdf.js from CDN — check your internet connection'));
+    document.head.appendChild(s);
+  });
+}
+
+function parseOutlookPdfRows(rows){
+  const months={january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
+  const dayRx=/(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+([a-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?/i;
+  const numericDateRx=/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/;
+  const timeRx=/(\d{1,2}:\d{2})\s*([AaPp]\.?[Mm]\.?)?\s*(?:[-–—to]+\s*(\d{1,2}:\d{2})\s*([AaPp]\.?[Mm]\.?)?)?\s+(.+)/;
+  const tzNow=new Date();
+  const defaultYear=tzNow.getFullYear();
+  const out=[];
+  let curDate=null;
+  for(const raw of rows){
+    const line=raw.trim();
+    if(!line)continue;
+    const dm=line.match(dayRx);
+    if(dm){
+      const mo=months[dm[1].toLowerCase()];
+      if(mo){
+        const day=+dm[2];
+        const yr=dm[3]?+dm[3]:defaultYear;
+        curDate=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        continue;
+      }
+    }
+    const nm=line.match(numericDateRx);
+    if(nm&&line.length<40){
+      let mo=+nm[1],day=+nm[2],yr=+nm[3];if(yr<100)yr+=2000;
+      if(mo>=1&&mo<=12&&day>=1&&day<=31){
+        curDate=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        continue;
+      }
+    }
+    if(!curDate)continue;
+    const tm=line.match(timeRx);
+    if(tm){
+      const start=normalizeTime(tm[1],tm[2]||tm[4]||'AM');
+      const end=tm[3]?normalizeTime(tm[3],tm[4]||tm[2]||'AM'):'';
+      let title=(tm[5]||'').trim();
+      let loc='';
+      const split=title.split(/\s{2,}|\t+/);
+      if(split.length>1){title=split[0].trim();loc=split.slice(1).join(' ').trim();}
+      if(!title||title.length<2)continue;
+      out.push({date:curDate,start,end,title,loc});
+    }
+  }
+  return out;
+}
+
+function normalizeTime(t,ap){
+  const m=t.match(/^(\d{1,2}):(\d{2})$/);if(!m)return t;
+  let h=+m[1];const mi=m[2];
+  const suf=(ap||'').toLowerCase().replace(/\./g,'').trim();
+  if(suf==='pm'&&h<12)h+=12;
+  if(suf==='am'&&h===12)h=0;
+  const disp=h===0?12:(h>12?h-12:h);
+  const ampm=h>=12?'PM':'AM';
+  return disp+':'+mi+' '+ampm;
+}
+
 function importData(){
   const inp=document.createElement('input');
   inp.type='file';
