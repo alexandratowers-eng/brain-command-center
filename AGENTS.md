@@ -5,6 +5,17 @@ Read this first. It exists so you can make a quick change without reading the wh
 ## What this is
 A static, single-page dashboard hosted on **GitHub Pages**. No build step, no framework, no npm. Plain HTML + CSS + vanilla JS. All state lives in the browser's `localStorage` under the key `SK` (see `data.js`).
 
+## CRITICAL: avoid the "tool call could not be parsed" failure
+`features.js`, `calendar.js`, `tasks.js`, and `styles.css` are each 120KB+. Reading
+one whole, or emitting a full-file rewrite, produces a tool payload large enough to
+fail parsing — the edit silently dies and the commit message can end up claiming work
+that never landed. So:
+- **Never read these four files in full.** Use grep to find the line, then read only a
+  small window (20–40 lines) around it.
+- **Make small, targeted edits in place.** Never rewrite a whole large file.
+- After committing, **grep the repo to confirm the new code is actually present** before
+  reporting success — don't trust the commit message alone.
+
 ## Workflow for any change
 ```
 git clone https://github.com/alexandratowers-eng/brain-command-center.git /tmp/brain-command-center

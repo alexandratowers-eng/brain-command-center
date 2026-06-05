@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260605a">
-<script src="sync-config.js?v=20260605a" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260605b">
+<script src="sync-config.js?v=20260605b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -133,6 +133,38 @@ if('serviceWorker' in navigator){
           <button id="rescueBtn" class="t-btn" onclick="openRescueModal()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--amber);color:var(--amber);" title="Stuck? Bike-hard sprint + breathing reset">
             <span class="mi" style="font-size:13px;">bolt</span> Stuck?
           </button>
+          <button id="whatNowBtn" class="t-btn" onclick="openWhatNow()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--blue);color:var(--blue);" title="Can't decide? Errand vs focus, based on your time + energy">
+            <span class="mi" style="font-size:13px;">help</span> What now?
+          </button>
+        </div>
+        <!-- What now? modal -->
+        <div id="whatNowModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;width:340px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.4);">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span class="mi" style="font-size:18px;color:var(--blue);">help</span><div style="font-size:14px;font-weight:700;color:var(--text);">What now?</div></div>
+            <div id="whatNowStep1">
+              <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">No deciding. Answer two things and I'll pick.</div>
+              <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">How much unbroken time do you have?</div>
+              <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+                <button class="t-btn" onclick="whatNowPick('time','short')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">⏱️ A short gap (under ~30 min)</button>
+                <button class="t-btn" onclick="whatNowPick('time','long')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">🪟 A real block (30+ min)</button>
+              </div>
+              <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">Where's your brain right now?</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <button class="t-btn" onclick="whatNowPick('energy','low')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">🪫 Foggy / low — can't focus hard</button>
+                <button class="t-btn" onclick="whatNowPick('energy','high')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">🔋 Clear enough to focus</button>
+              </div>
+              <button class="t-btn" onclick="closeWhatNow()" style="font-size:11px;margin-top:14px;color:var(--dim);width:100%;">Cancel</button>
+            </div>
+            <div id="whatNowStep2" style="display:none;">
+              <div id="whatNowVerdict" style="font-size:13px;font-weight:700;color:var(--text);margin:6px 0 4px;"></div>
+              <div id="whatNowWhy" style="font-size:10px;color:var(--dim);margin-bottom:10px;"></div>
+              <div id="whatNowPicks" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+              <div style="display:flex;gap:6px;">
+                <button class="t-btn" onclick="resetWhatNow()" style="font-size:11px;flex:1;color:var(--dim);">↺ Re-ask</button>
+                <button class="t-btn" onclick="closeWhatNow()" style="font-size:11px;flex:1;">Close</button>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- Rescue modal -->
         <div id="rescueModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;">
@@ -890,12 +922,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260605a"></script>
-<script src="core.js?v=20260605a"></script>
-<script src="calendar.js?v=20260605a"></script>
-<script src="tasks.js?v=20260605a"></script>
-<script src="features.js?v=20260605a"></script>
-<script src="sync.js?v=20260605a"></script>
+<script src="data.js?v=20260605b"></script>
+<script src="core.js?v=20260605b"></script>
+<script src="calendar.js?v=20260605b"></script>
+<script src="tasks.js?v=20260605b"></script>
+<script src="features.js?v=20260605b"></script>
+<script src="sync.js?v=20260605b"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

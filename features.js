@@ -1600,6 +1600,59 @@ function closeRescueModal(){
   m.style.display='none';
   // Timer keeps running in background; topbar button shows remaining time.
 }
+
+// ===== "WHAT NOW?" — errand-vs-focus decision helper =====
+let _whatNow={time:null,energy:null};
+function openWhatNow(){resetWhatNow();const m=document.getElementById('whatNowModal');if(m)m.style.display='flex';}
+function closeWhatNow(){const m=document.getElementById('whatNowModal');if(m)m.style.display='none';}
+function resetWhatNow(){
+  _whatNow={time:null,energy:null};
+  const s1=document.getElementById('whatNowStep1'),s2=document.getElementById('whatNowStep2');
+  if(s1)s1.style.display='';if(s2)s2.style.display='none';
+}
+function whatNowPick(k,v){
+  _whatNow[k]=v;
+  if(_whatNow.time&&_whatNow.energy)whatNowDecide();
+}
+function whatNowDecide(){
+  const{time,energy}=_whatNow;
+  // errand mode = anything short/low-stakes; focus mode = one deep task
+  const errandMode=(time==='short'||energy==='low');
+  const today=todayStr();
+  const pending=(D.tasks||[]).filter(t=>!t.done&&(!t.date||t.date<=today)&&!(typeof isSnoozed==='function'&&isSnoozed(t)));
+  const bigRx=/resume|personal statement|draft|write|essay|application|ps:|letter|experiences|study|mcat|read/i;
+  const isErrand=t=>t.effort==='quick'||t.effort==='call'||(t.text.length<=40&&!bigRx.test(t.text));
+  let pool=pending.filter(t=>errandMode?isErrand(t):!isErrand(t));
+  if(!pool.length)pool=pending.slice(); // nothing matched — just offer what's there
+  // prioritize: high pri first, then errand mode prefers shortest, focus prefers biggest
+  pool.sort((a,b)=>{
+    const pa=a.pri==='high'?0:1,pb=b.pri==='high'?0:1;if(pa!==pb)return pa-pb;
+    return errandMode?a.text.length-b.text.length:b.text.length-a.text.length;
+  });
+  const dur=errandMode?(time==='short'?10:15):(energy==='high'?45:25);
+  const verdict=errandMode
+    ?'🧹 Knock out an errand.'
+    :'🎯 One focus block. Nothing else.';
+  const why=errandMode
+    ?(time==='short'?'Short gap — bank a quick win instead of half-starting something deep.':'Low battery — momentum beats depth right now. Pick one small thing and finish it.')
+    :(time==='long'?'Real time + a clear head. This is when the big stuff actually moves.':'You\'ve got focus — protect it for the thing that matters, not busywork.');
+  document.getElementById('whatNowVerdict').textContent=verdict;
+  document.getElementById('whatNowWhy').textContent=why;
+  const pickEl=document.getElementById('whatNowPicks');
+  if(!pool.length){
+    pickEl.innerHTML='<div style="font-size:11px;color:var(--dim);">No open tasks to suggest. Enjoy the gap.</div>';
+  } else {
+    pickEl.innerHTML=pool.slice(0,3).map(t=>{
+      const cat=D.cats[t.cat];const emoji=cat?.emoji||'📌';
+      const safe=t.text.replace(/'/g,"\\'");
+      const short=t.text.length>34?t.text.slice(0,34)+'…':t.text;
+      return `<button class="t-btn" style="font-size:12px;justify-content:space-between;text-align:left;padding:9px 12px;" onclick="coachAddBlock('${t.cat}',${dur},'${safe}');closeWhatNow();">
+        <span>${emoji} ${short}</span><span style="font-size:9px;color:var(--dim);flex-shrink:0;">${dur}m</span></button>`;
+    }).join('');
+  }
+  document.getElementById('whatNowStep1').style.display='none';
+  document.getElementById('whatNowStep2').style.display='';
+}
 function _updateRescueBtnLabel(){
   const btn=document.getElementById('rescueBtn');if(!btn)return;
   if(_rescueTimer&&_rescueRemaining>0){
