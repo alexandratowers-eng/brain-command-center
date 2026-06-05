@@ -326,35 +326,170 @@ const VOCAB_BANK=[
 // Number of new words shown per day
 const VOCAB_PER_DAY=3;
 
+function _vocabState(){
+  if(!D.vocab)D.vocab={known:[],review:[],hist:{},streak:0,lastDay:''};
+  if(!D.vocab.known)D.vocab.known=[];
+  if(!D.vocab.review)D.vocab.review=[];
+  if(!D.vocab.hist)D.vocab.hist={};
+  return D.vocab;
+}
+
+function _vocabTodayKey(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
 // Deterministic daily rotation: same words all day, fresh set next day.
+// Filters out mastered words; pulls 1 review word in (spaced repetition).
 function vocabForToday(){
-  const epoch=Math.floor(Date.now()/86400000); // days since 1970, local-ish
-  const n=VOCAB_BANK.length;
+  const v=_vocabState();
+  const epoch=Math.floor(Date.now()/86400000);
+  const remaining=VOCAB_BANK.filter(w=>v.known.indexOf(w.w)===-1);
+  if(!remaining.length)return VOCAB_BANK.slice(0,VOCAB_PER_DAY);
   const out=[];
-  for(let i=0;i<VOCAB_PER_DAY&&i<n;i++){
-    out.push(VOCAB_BANK[(epoch*VOCAB_PER_DAY+i)%n]);
+  const revPool=v.review.map(rw=>VOCAB_BANK.find(b=>b.w===rw)).filter(Boolean);
+  if(revPool.length)out.push(revPool[epoch%revPool.length]);
+  const n=remaining.length;
+  let i=0;
+  while(out.length<VOCAB_PER_DAY&&i<n*2){
+    const cand=remaining[(epoch*VOCAB_PER_DAY+i)%n];
+    if(!out.find(o=>o.w===cand.w))out.push(cand);
+    i++;
   }
   return out;
+}
+
+function _vocabUpdateStreak(){
+  const v=_vocabState();
+  const today=_vocabTodayKey();
+  if(v.lastDay===today)return;
+  const todayActed=v.hist[today]&&Object.keys(v.hist[today]).length;
+  if(!todayActed)return;
+  const y=new Date();y.setDate(y.getDate()-1);
+  const yKey=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  v.streak=(v.lastDay===yKey)?(v.streak||0)+1:1;
+  v.lastDay=today;
+}
+
+function markVocabKnown(word){
+  const v=_vocabState();
+  if(v.known.indexOf(word)===-1)v.known.push(word);
+  v.review=v.review.filter(w=>w!==word);
+  const today=_vocabTodayKey();
+  if(!v.hist[today])v.hist[today]={};
+  v.hist[today][word]='known';
+  _vocabUpdateStreak();
+  save();renderVocab();
+}
+
+function markVocabReview(word){
+  const v=_vocabState();
+  if(v.review.indexOf(word)===-1)v.review.push(word);
+  const today=_vocabTodayKey();
+  if(!v.hist[today])v.hist[today]={};
+  v.hist[today][word]='review';
+  _vocabUpdateStreak();
+  save();renderVocab();
+}
+
+function vocabResetWord(word){
+  const v=_vocabState();
+  v.known=v.known.filter(w=>w!==word);
+  v.review=v.review.filter(w=>w!==word);
+  const today=_vocabTodayKey();
+  if(v.hist[today])delete v.hist[today][word];
+  save();renderVocab();
+}
+
+function _vocabTodayStatus(word){
+  const t=_vocabState().hist[_vocabTodayKey()]||{};
+  return t[word]||null;
 }
 
 function renderVocab(){
   const el=document.getElementById('vocabDaily');
   if(!el)return;
+  const v=_vocabState();
   const words=vocabForToday();
-  const cards=words.map(v=>`
-    <div style="background:var(--card,var(--bg));border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
-      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:15px;font-weight:700;color:var(--text);">${v.w}</span>
-        <span style="font-size:10px;color:var(--dim);font-style:italic;">${v.pos}</span>
+  const today=_vocabTodayKey();
+  const todayActed=Object.keys(v.hist[today]||{}).length;
+  const totalBank=VOCAB_BANK.length;
+  const mastered=v.known.length;
+  const pct=totalBank?Math.round((mastered/totalBank)*100):0;
+  const streak=v.streak||0;
+
+  const tracker=`
+    <div style="background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(96,165,250,.08));border:1px solid rgba(129,140,248,.25);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:56px;">
+          <div style="font-size:22px;line-height:1;">🔥</div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);line-height:1.1;">${streak}</div>
+          <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;">day${streak===1?'':'s'}</div>
+        </div>
+        <div style="flex:1;min-width:140px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:3px;">
+            <span>Mastered</span>
+            <span><strong style="color:var(--text);">${mastered}</strong> / ${totalBank}</span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#818cf8,#34d399);transition:width .4s;"></div>
+          </div>
+          <div style="font-size:9px;color:var(--dim);margin-top:6px;">Today: <strong style="color:var(--text);">${todayActed}</strong> / ${words.length} reviewed · Review pile: <strong style="color:var(--text);">${v.review.length}</strong></div>
+        </div>
       </div>
-      <div style="font-size:12px;color:var(--text);margin-top:3px;">${v.def}</div>
-      <div style="font-size:11px;color:var(--dim);margin-top:5px;">\u{1F9E0} ${v.hook}</div>
-      ${v.watch?`<div style="font-size:11px;color:var(--amber,#d97706);margin-top:4px;">⚠️ ${v.watch}</div>`:''}
-    </div>`).join('');
+    </div>`;
+
+  const cards=words.map(vw=>{
+    const status=_vocabTodayStatus(vw.w);
+    const inReview=v.review.indexOf(vw.w)!==-1;
+    const accent=status==='known'?'rgba(52,211,153,.45)':status==='review'?'rgba(251,191,36,.45)':'var(--border)';
+    return `
+    <div style="background:var(--card,var(--bg));border:1px solid ${accent};border-radius:10px;padding:12px 14px;margin-bottom:8px;transition:border .2s;">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:15px;font-weight:700;color:var(--text);">${vw.w}</span>
+        <span style="font-size:10px;color:var(--dim);font-style:italic;">${vw.pos}</span>
+        ${inReview&&status!=='review'?'<span style="font-size:9px;color:#d97706;background:rgba(251,191,36,.12);padding:2px 6px;border-radius:8px;">↻ from review pile</span>':''}
+      </div>
+      <div style="font-size:12px;color:var(--text);margin-top:3px;">${vw.def}</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:5px;">🧠 ${vw.hook}</div>
+      ${vw.watch?`<div style="font-size:11px;color:var(--amber,#d97706);margin-top:4px;">⚠️ ${vw.watch}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button class="t-btn" onclick="markVocabKnown('${vw.w}')" style="font-size:10px;${status==='known'?'border-color:var(--green);color:var(--green);background:rgba(52,211,153,.08);':''}">${status==='known'?'✅ Got it':'✓ Got it'}</button>
+        <button class="t-btn" onclick="markVocabReview('${vw.w}')" style="font-size:10px;${status==='review'?'border-color:#d97706;color:#d97706;background:rgba(251,191,36,.08);':''}">${status==='review'?'🔁 In review':'↻ Review later'}</button>
+        ${status?`<button class="t-btn" onclick="vocabResetWord('${vw.w}')" style="font-size:10px;color:var(--dim);">undo</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const todaySet=new Set(words.map(w=>w.w));
+  const extraReview=v.review.filter(w=>!todaySet.has(w));
+  let reviewSection='';
+  if(extraReview.length){
+    const items=extraReview.map(wn=>{
+      const wb=VOCAB_BANK.find(b=>b.w===wn);
+      if(!wb)return '';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:4px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">${wb.w} <span style="font-size:9px;color:var(--dim);font-style:italic;">${wb.pos}</span></div>
+          <div style="font-size:10px;color:var(--dim);">${wb.def}</div>
+        </div>
+        <button class="t-btn" onclick="markVocabKnown('${wb.w}')" style="font-size:9px;">✓ Got it</button>
+        <button class="t-btn" onclick="vocabResetWord('${wb.w}')" style="font-size:9px;color:var(--dim);">×</button>
+      </div>`;
+    }).join('');
+    reviewSection=`
+      <details style="margin-top:10px;margin-bottom:8px;">
+        <summary style="font-size:11px;color:#d97706;cursor:pointer;padding:4px 0;">🔁 Review pile (${extraReview.length}) — words to revisit</summary>
+        <div style="margin-top:6px;">${items}</div>
+      </details>`;
+  }
+
   el.innerHTML=`
     <div style="margin-bottom:14px;">
-      <h3 style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">\u{1F4D6} Words of the Day <span style="font-size:10px;color:var(--dim);font-weight:400;">— ${VOCAB_PER_DAY} new daily, rotating</span></h3>
+      <h3 style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">📖 Vocab Tracker <span style="font-size:10px;color:var(--dim);font-weight:400;">— 3 daily, rotating</span></h3>
+      ${tracker}
       ${cards}
+      ${reviewSection}
     </div>`;
 }
 
