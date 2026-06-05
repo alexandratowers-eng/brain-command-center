@@ -88,7 +88,7 @@ function coachSnooze(id){
   _coachSnoozed[id]=Date.now()+2*60*60*1000;
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Snoozed 2 hrs';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
 }
-function isSnoozed(t){return _coachSnoozed[t.id]&&Date.now()<_coachSnoozed[t.id];}
+function isSnoozed(t){return (_coachSnoozed[t.id]&&Date.now()<_coachSnoozed[t.id])||(t.remindAt&&new Date(t.remindAt)>new Date());}
 function laterToToday(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.date=todayStr();
@@ -525,7 +525,6 @@ function dropOnBucket(e,bucketKey){
 }
 
 // ===== REMIND LATER =====
-function isSnoozed(t){return t.remindAt&&new Date(t.remindAt)>new Date();}
 let _snoozedCollapsed=true;
 function toggleSnoozedView(){_snoozedCollapsed=!_snoozedCollapsed;renderAllTasks();}
 
