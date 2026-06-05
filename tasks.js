@@ -170,14 +170,11 @@ function renderAllTasks(){
       const visibleTasks=_todayShowAll?todayActive:todayActive.slice(0,SHOW_LIMIT);
       visibleTasks.forEach(t=>{
         const cat=D.cats[t.cat];
-        const isOverdue=t.date&&t.date<today;
-        const dl=isOverdue?new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
         h+=`<div class="simple-task-row" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.3';" ondragend="this.style.opacity='1';" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});" style="cursor:grab;">
           <div class="p-dot ${t.pri}"></div>
           <input type="checkbox" onchange="togTask(${t.id},this)">
           <div class="simple-task-content">
             <span class="simple-task-text">${cat?cat.emoji:''} ${t.text}</span>
-            ${isOverdue?`<span class="simple-task-overdue">overdue · ${dl}</span>`:''}
           </div>
           <div class="simple-task-actions">
             <button class="defer-btn" onclick="openRemindPicker(event,${t.id})" title="Remind later">⏰</button>
@@ -486,9 +483,8 @@ function renderBucketView(){
     } else {
       bucket.tasks.forEach(t=>{
         const cat=D.cats[t.cat];
-        const isOverdue=t.date&&t.date<today;
-        const dateLabel=!t.date?'later':t.date===today?'today':t.date<=today?'overdue':new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-        html+=`<div class="simple-task-row" draggable="true" ondragstart="bucketDragStart(event,${t.id})" style="cursor:grab;${isOverdue?'border-left:3px solid var(--red);':''}" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
+        const dateLabel=!t.date?'later':t.date<=today?'today':new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        html+=`<div class="simple-task-row" draggable="true" ondragstart="bucketDragStart(event,${t.id})" style="cursor:grab;" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
           <div class="p-dot ${t.pri}"></div>
           <input type="checkbox" onchange="togTask(${t.id},this);renderBucketView();">
           <div class="simple-task-content" style="flex:1;">
@@ -1060,16 +1056,22 @@ function renderCalRightWinsDone(){
     const doneSlots=(getTimeline(dt)||[]).filter(s=>s.done);
     const manualWins=(D.reflections&&D.reflections[dt]&&D.reflections[dt].manualWins)||[];
     const items=[];
+    const seen=new Set(); // avoid showing the same win twice (e.g. a completed task auto-logs a manual win)
+    const norm=s=>(s||'').trim().toLowerCase();
     doneTasks.forEach(t=>{
       const cat=D.cats[t.cat];
+      seen.add(norm(t.text));
       items.push({text:t.text,emoji:cat?cat.emoji:'',cat:t.cat,color:cat?cat.color:'var(--dim)',type:'task',sourceId:t.id});
     });
     doneSlots.forEach(s=>{
       const cat=D.cats&&D.cats[s.cls];
       if(!s._id)s._id='s'+Date.now()+'_'+Math.floor(Math.random()*9999);
+      seen.add(norm(s.text));
       items.push({text:s.text,emoji:cat?cat.emoji:'📅',cat:s.cls||'event',color:cat?cat.color:'var(--blue)',type:'block',sourceId:s._id,dt:dt});
     });
     manualWins.forEach(w=>{
+      if(seen.has(norm(w)))return; // already shown as a completed task/event
+      seen.add(norm(w));
       items.push({text:w,emoji:'✨',cat:'_win',color:'var(--green)',type:'win'});
     });
     return items;
@@ -1948,7 +1950,6 @@ function renderMobileTasks(){
 
   function taskRow(t,section){
     const cat=D.cats[t.cat];
-    const isOverdue=t.date&&t.date<today;
     const catOpts=Object.entries(D.cats||{}).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     let actions='';
     if(section==='today'){
@@ -1961,13 +1962,12 @@ function renderMobileTasks(){
     } else {
       actions=`<button onclick="laterToToday(${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);cursor:pointer;">today</button>`;
     }
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;${isOverdue?'border-left:3px solid var(--red);':''}">
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">
       <input type="checkbox" onchange="togTask(${t.id},this)" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.text}</div>
         <div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <select onchange="(function(el){var tk=D.tasks.find(function(x){return x.id===${t.id};});if(tk){tk.cat=el.value;save();renderMobileTasks();}})(this)" style="font-size:10px;padding:2px 4px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--dim);max-width:110px;">${catOpts}</select>
-          ${isOverdue?'<span style="font-size:10px;color:var(--red);">overdue</span>':''}
         </div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;margin-top:2px;">${actions}</div>

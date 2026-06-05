@@ -1370,7 +1370,6 @@ function updateStats(){
   const today=todayStr();
   const tt=D.tasks.filter(t=>t.date===today);
   document.getElementById('sDone').textContent=tt.filter(t=>t.done).length;
-  document.getElementById('sLeft').textContent=tt.filter(t=>!t.done).length;
 }
 
 // ===== TIMER MODAL =====
@@ -2151,28 +2150,24 @@ function surfaceLaterItems(){
   document.body.appendChild(modal);
 }
 
-// ===== OVERDUE TASK FORWARDING =====
+// ===== FLEXIBLE TASK ROLL-FORWARD =====
+// Flexible tasks aren't "late." A task that didn't fit yesterday just quietly
+// becomes a today task. The only exception is a task with a hard due date (t.due):
+// it keeps its own date so the deadline-aware scheduling can still see it.
 function checkOverdueTasks(){
   const today=todayStr();
-  const overdue=D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&!(typeof isSnoozed==='function'&&isSnoozed(t)));
+  let rolled=false;
+  D.tasks.forEach(t=>{
+    if(t.done)return;
+    if(!t.date||t.date>=today)return;
+    if(typeof isSnoozed==='function'&&isSnoozed(t))return;
+    if(t.due&&t.due>=today)return; // deadline still in the future — leave it for the scheduler
+    t.date=today;
+    rolled=true;
+  });
+  if(rolled)save();
   const card=document.getElementById('overdueCard');
-  if(!card)return;
-  if(!overdue.length){card.style.display='none';return;}
-  card.style.display='';
-  document.getElementById('overdueCount').textContent=overdue.length;
-  const el=document.getElementById('overdueList');
-  el.innerHTML=overdue.map(t=>{
-    const cat=D.cats[t.cat];
-    const daysAgo=Math.round((new Date(today+'T12:00:00')-new Date(t.date+'T12:00:00'))/(86400000));
-    const ago=daysAgo===1?'yesterday':daysAgo+' days ago';
-    return `<div class="overdue-item">
-      <span class="overdue-dot ${t.pri}"></span>
-      <div class="overdue-text">${cat?.emoji||''} ${t.text}</div>
-      <span class="overdue-ago">${ago}</span>
-      <button class="overdue-btn" onclick="moveOverdueToToday(${t.id})" title="Move to today">today</button>
-      <button class="overdue-btn reschedule" onclick="rescheduleOverdueTask(${t.id})" title="Pick a new date" style="border-color:var(--blue);color:var(--blue);">📅</button>
-    </div>`;
-  }).join('');
+  if(card)card.style.display='none';
 }
 function moveOverdueToToday(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;

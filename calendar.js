@@ -545,8 +545,11 @@ function renderWeekBlocks(container, dates, startHr, endHr){
         const gridEl=grid;
         const gridRect=gridEl.getBoundingClientRect();
         const blockRect=block.getBoundingClientRect();
-        const origTopPx=blockRect.top-gridRect.top;
-        const origLeftPx=blockRect.left-gridRect.left;
+        // block.style.top is relative to the grid's scrollable CONTENT, so the
+        // anchor must add scroll offset — otherwise a scrolled grid makes the
+        // block jump on first move and you can't drag it earlier in the day.
+        const origTopPx=blockRect.top-gridRect.top+gridEl.scrollTop;
+        const origLeftPx=blockRect.left-gridRect.left+gridEl.scrollLeft;
         _wkBlockDrag={dt,idx:i,block,startX:e.clientX,startY:e.clientY,gridRect,cellW,
           startM:parseMin(slot.t),dates,startHr,colIdx,moved:false,colFr:[1,1,1,1,1,.5,.5],totalFr:6,
           origTopPx,origLeftPx};
