@@ -486,10 +486,153 @@ function renderVocab(){
 
   el.innerHTML=`
     <div style="margin-bottom:14px;">
-      <h3 style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">📖 Vocab Tracker <span style="font-size:10px;color:var(--dim);font-weight:400;">— 3 daily, rotating</span></h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <h3 style="font-size:14px;margin:0;display:flex;align-items:center;gap:6px;">📖 Vocab Tracker <span style="font-size:10px;color:var(--dim);font-weight:400;">— 3 daily, rotating</span></h3>
+        <button class="t-btn primary" onclick="startVocabQuiz()" style="font-size:10px;"><span class="mi" style="font-size:13px;vertical-align:middle;">quiz</span> Quiz me</button>
+      </div>
       ${tracker}
       ${cards}
       ${reviewSection}
+    </div>`;
+}
+
+// ===== VOCAB QUIZ MODE (active recall) =====
+// Transient state — not persisted. Tests recall, then you self-grade.
+let _vquiz=null;
+
+function _vquizShuffle(a){
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function _vquizDeck(){
+  const v=_vocabState();
+  const today=vocabForToday().map(w=>w.w);
+  const rev=v.review.slice();
+  const names=Array.from(new Set([...today,...rev]));
+  let deck=names.map(n=>VOCAB_BANK.find(b=>b.w===n)).filter(Boolean);
+  // If nothing to quiz (rare), fall back to a random handful from the bank.
+  if(deck.length<3){
+    const extra=_vquizShuffle(VOCAB_BANK.filter(b=>!names.includes(b.w)).slice()).slice(0,5-deck.length);
+    deck=deck.concat(extra);
+  }
+  return _vquizShuffle(deck);
+}
+
+function startVocabQuiz(){
+  const deck=_vquizDeck();
+  if(!deck.length){bccAlert&&bccAlert('No words to quiz yet — come back after today’s words load.');return;}
+  _vquiz={deck,idx:0,revealed:false,dir:'wordToDef',right:0,wrong:0};
+  let box=document.getElementById('vquizOverlay');
+  if(!box){
+    box=document.createElement('div');
+    box.id='vquizOverlay';
+    box.className='modal-bg';
+    box.style.display='flex';
+    box.onclick=function(e){if(e.target===box)closeVocabQuiz();};
+    document.body.appendChild(box);
+  }
+  box.style.display='flex';
+  renderVocabQuiz();
+}
+
+function setVquizDir(dir){if(_vquiz){_vquiz.dir=dir;_vquiz.revealed=false;renderVocabQuiz();}}
+function vquizReveal(){if(_vquiz){_vquiz.revealed=true;renderVocabQuiz();}}
+
+function vquizGrade(known){
+  if(!_vquiz)return;
+  const card=_vquiz.deck[_vquiz.idx];
+  if(known){_vquiz.right++;markVocabKnown(card.w);}
+  else{_vquiz.wrong++;markVocabReview(card.w);}
+  // markVocab* calls renderVocab() which rebuilds the page behind the overlay — fine.
+  _vquiz.idx++;
+  _vquiz.revealed=false;
+  if(_vquiz.idx>=_vquiz.deck.length){renderVocabQuizDone();return;}
+  renderVocabQuiz();
+}
+
+function closeVocabQuiz(){
+  const box=document.getElementById('vquizOverlay');
+  if(box)box.style.display='none';
+  _vquiz=null;
+  renderVocab();
+}
+
+function renderVocabQuiz(){
+  const box=document.getElementById('vquizOverlay');
+  if(!box||!_vquiz)return;
+  const card=_vquiz.deck[_vquiz.idx];
+  const n=_vquiz.deck.length;
+  const pos=_vquiz.idx+1;
+  const dir=_vquiz.dir;
+  const dirToggle=`
+    <div style="display:flex;gap:4px;justify-content:center;margin-bottom:12px;">
+      <button class="t-btn" onclick="setVquizDir('wordToDef')" style="font-size:9px;${dir==='wordToDef'?'border-color:var(--blue);color:var(--blue);':''}">Word → meaning</button>
+      <button class="t-btn" onclick="setVquizDir('defToWord')" style="font-size:9px;${dir==='defToWord'?'border-color:var(--purple);color:var(--purple);':''}">Meaning → word (harder)</button>
+    </div>`;
+
+  let prompt,answer;
+  if(dir==='wordToDef'){
+    prompt=`<div style="font-size:26px;font-weight:700;color:var(--text);">${card.w}</div>
+            <div style="font-size:11px;color:var(--dim);font-style:italic;margin-top:2px;">${card.pos}</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:10px;">Recall the meaning out loud, then reveal.</div>`;
+    answer=`<div style="font-size:13px;color:var(--text);margin-top:4px;">${card.def}</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:8px;">🧠 ${card.hook}</div>
+            ${card.watch?`<div style="font-size:11px;color:#d97706;margin-top:6px;">⚠️ ${card.watch}</div>`:''}`;
+  }else{
+    prompt=`<div style="font-size:16px;font-weight:600;color:var(--text);line-height:1.4;">"${card.def}"</div>
+            <div style="font-size:11px;color:var(--dim);font-style:italic;margin-top:6px;">(${card.pos})</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:10px;">What's the word? Say it, then reveal.</div>`;
+    answer=`<div style="font-size:24px;font-weight:700;color:var(--text);">${card.w}</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:8px;">🧠 ${card.hook}</div>
+            ${card.watch?`<div style="font-size:11px;color:#d97706;margin-top:6px;">⚠️ ${card.watch}</div>`:''}`;
+  }
+
+  const controls=_vquiz.revealed
+    ? `<div style="font-size:10px;color:var(--dim);text-align:center;margin:10px 0 6px;">Be honest — did you recall it?</div>
+       <div style="display:flex;gap:8px;">
+         <button class="t-btn" onclick="vquizGrade(false)" style="flex:1;font-size:12px;border-color:#d97706;color:#d97706;">✗ Missed it</button>
+         <button class="t-btn" onclick="vquizGrade(true)" style="flex:1;font-size:12px;border-color:var(--green);color:var(--green);">✓ I knew it</button>
+       </div>`
+    : `<button class="t-btn primary" onclick="vquizReveal()" style="width:100%;font-size:13px;margin-top:6px;">Reveal answer</button>`;
+
+  box.innerHTML=`
+    <div class="modal" style="max-width:380px;text-align:center;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:11px;color:var(--dim);">Question ${pos} / ${n}</span>
+        <button class="t-btn" onclick="closeVocabQuiz()" style="font-size:10px;color:var(--dim);">✕ End</button>
+      </div>
+      <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:${Math.round((pos-1)/n*100)}%;height:100%;background:linear-gradient(90deg,#818cf8,#34d399);transition:width .3s;"></div>
+      </div>
+      ${dirToggle}
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:20px 16px;min-height:120px;display:flex;flex-direction:column;justify-content:center;">
+        ${prompt}
+        ${_vquiz.revealed?`<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">${answer}</div>`:''}
+      </div>
+      <div style="margin-top:12px;">${controls}</div>
+      <div style="font-size:9px;color:var(--dim);margin-top:8px;">✓ knew it → mastered · ✗ missed → review pile</div>
+    </div>`;
+}
+
+function renderVocabQuizDone(){
+  const box=document.getElementById('vquizOverlay');
+  if(!box||!_vquiz)return;
+  const {right,wrong,deck}=_vquiz;
+  const total=right+wrong;
+  const pct=total?Math.round(right/total*100):0;
+  const msg=pct>=80?'Crushing it. 🔥':pct>=50?'Solid — the misses go in your review pile.':'Good reps. The misses are exactly what to revisit.';
+  box.innerHTML=`
+    <div class="modal" style="max-width:340px;text-align:center;">
+      <div style="font-size:36px;">${pct>=80?'🏆':pct>=50?'💪':'🌱'}</div>
+      <h3 style="font-size:16px;margin:6px 0;">Quiz complete</h3>
+      <div style="font-size:13px;color:var(--text);margin-bottom:4px;"><strong>${right}</strong> knew · <strong>${wrong}</strong> to review</div>
+      <div style="font-size:24px;font-weight:700;color:${pct>=80?'var(--green)':'#818cf8'};margin:6px 0;">${pct}%</div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:14px;">${msg}</div>
+      <div style="display:flex;gap:8px;">
+        <button class="t-btn" onclick="startVocabQuiz()" style="flex:1;font-size:12px;">↻ Again</button>
+        <button class="t-btn primary" onclick="closeVocabQuiz()" style="flex:1;font-size:12px;">Done</button>
+      </div>
     </div>`;
 }
 
