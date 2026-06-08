@@ -323,6 +323,22 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._juneCalmStartV1=true;
   }
+  // Mon Jun 8 anxious-morning reset plan: swim now, then one project chunk + the 1.5h project, resume + MCAT planning tonight. Other 2 big chunks → Tue Jun 9.
+  if(!d._planJun8V1){
+    if(!d.days)d.days={};
+    const add=(dt,b)=>{if(!d.days[dt])d.days[dt]=[];if(!d.days[dt].some(s=>s._id===b._id))d.days[dt].push(b);};
+    add('2026-06-08',{t:'2:00 PM',end:'3:00 PM',text:'🏊 Swim — reset + burn off the anxiety',cls:'exercise',sm:'First task = just get in the water',loc:'',_jun8:true,_id:'jun8_swim'});
+    add('2026-06-08',{t:'3:00 PM',end:'3:30 PM',text:'🚶 Relocate to coffee shop',cls:'reminder',sm:'The whole task is leaving the house. Don\'t think past it.',loc:'Coffee shop',_jun8:true,_id:'jun8_relocate'});
+    add('2026-06-08',{t:'3:30 PM',end:'5:30 PM',text:'💻 Big Project — Chunk 1 of 3',cls:'chop',sm:'Just chunk 1. Pick the most concrete starting piece, not the scariest.',loc:'',_jun8:true,_id:'jun8_proj1'});
+    add('2026-06-08',{t:'5:30 PM',end:'5:45 PM',text:'☕ Break — walk, water, snack',cls:'personal',sm:'',loc:'',_jun8:true,_id:'jun8_break'});
+    add('2026-06-08',{t:'5:45 PM',end:'7:15 PM',text:'💻 Second project (the 1.5h one)',cls:'chop',sm:'Knock it fully out while you\'ve got daylight focus',loc:'',_jun8:true,_id:'jun8_proj2'});
+    add('2026-06-08',{t:'7:15 PM',end:'8:00 PM',text:'🍽 Dinner / decompress',cls:'personal',sm:'',loc:'',_jun8:true,_id:'jun8_dinner'});
+    add('2026-06-08',{t:'8:00 PM',end:'9:00 PM',text:'📄 Resume work',cls:'medapp',sm:'Lower stakes, personal energy',loc:'',_jun8:true,_id:'jun8_resume'});
+    add('2026-06-08',{t:'9:00 PM',end:'9:45 PM',text:'📚 MCAT planning — map next steps only',cls:'mcat',sm:'Just plan the next steps. Don\'t try to solve the whole MCAT tonight.',loc:'',_jun8:true,_id:'jun8_mcat'});
+    add('2026-06-09',{t:'10:00 AM',end:'12:00 PM',text:'💻 Big Project — Chunk 2 of 3',cls:'chop',sm:'Deep focus — Athenaeum is great for this',loc:'Athenaeum',_jun8:true,_id:'jun9_proj2'});
+    add('2026-06-09',{t:'1:00 PM',end:'3:00 PM',text:'💻 Big Project — Chunk 3 of 3',cls:'chop',sm:'Deep focus — Athenaeum is great for this',loc:'Athenaeum',_jun8:true,_id:'jun9_proj3'});
+    d._planJun8V1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
