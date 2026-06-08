@@ -4138,3 +4138,130 @@ function clearAnchors(dt){
   delete D.dailyAnchors[dt];
   save();renderDailyAnchor();
 }
+
+// ===== PHOTO IMPORT (handwritten calendar -> ChatGPT -> events) =====
+// The app has no AI backend, so this mirrors the other "AI" features: it builds
+// a prompt for ChatGPT/Claude, you attach the photo there, then paste the
+// returned lines back and we parse them into D.days.
+var _photoImgData=null;
+
+function openPhotoImport(){
+  _photoImgData=null;
+  const m=document.getElementById('photoImportModal');
+  if(!m)return;
+  const prev=document.getElementById('piPreview');
+  if(prev){prev.style.display='none';prev.src='';}
+  const paste=document.getElementById('piPasteBox');
+  if(paste)paste.value='';
+  const copyImgBtn=document.getElementById('piCopyImgBtn');
+  if(copyImgBtn)copyImgBtn.style.display='none';
+  m.classList.add('show');
+}
+
+function closePhotoImport(){
+  const m=document.getElementById('photoImportModal');
+  if(m)m.classList.remove('show');
+  _photoImgData=null;
+}
+
+function photoImportPreview(e){
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _photoImgData=ev.target.result;
+    const prev=document.getElementById('piPreview');
+    if(prev){prev.src=_photoImgData;prev.style.display='block';}
+    const copyImgBtn=document.getElementById('piCopyImgBtn');
+    if(copyImgBtn&&navigator.clipboard&&window.ClipboardItem)copyImgBtn.style.display='inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function _photoPromptText(){
+  const now=new Date();
+  const wd=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  return 'I\'m attaching a photo of my handwritten calendar/planner. Today is '+wd+'.\n'+
+  'Read every event you can see in the photo. For each one, output ONE line in EXACTLY this format:\n'+
+  'YYYY-MM-DD | start time | end time | title\n'+
+  'Rules:\n'+
+  '- Use 12-hour times like "3:00 PM". If there is no end time, leave it blank but keep both pipes.\n'+
+  '- Turn any weekday or relative date ("Tue", "next Fri") into a real date on or after today.\n'+
+  '- Output ONLY the event lines. No headings, no commentary, no code block.\n'+
+  'Example:\n'+
+  '2026-06-10 | 3:00 PM | 4:00 PM | Dentist\n'+
+  '2026-06-11 | 9:00 AM |  | Lab meeting';
+}
+
+function copyPhotoPrompt(){
+  const txt=_photoPromptText();
+  const done=()=>{const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Prompt copied — paste into ChatGPT + attach your photo';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>{_photoFallbackCopy(txt);done();});}
+  else{_photoFallbackCopy(txt);done();}
+}
+
+function copyPhotoImage(){
+  if(!_photoImgData||!navigator.clipboard||!window.ClipboardItem)return;
+  fetch(_photoImgData).then(r=>r.blob()).then(blob=>{
+    return navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
+  }).then(()=>{
+    const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Image copied — paste it into ChatGPT';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+  }).catch(()=>alert('Could not copy the image. Just attach the photo file in ChatGPT instead.'));
+}
+
+function _photoFallbackCopy(txt){
+  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);
+}
+
+function _parsePhotoLines(text){
+  const out=[];
+  if(!text)return out;
+  const lines=text.split(/\r?\n/);
+  const dateRx=/^\d{4}-\d{2}-\d{2}$/;
+  for(let raw of lines){
+    let line=raw.trim();
+    if(!line)continue;
+    line=line.replace(/`/g,'').replace(/^\s*(?:[-*•]\s+|\d+[.\)]\s+)/,'').trim();
+    if(line.indexOf('|')<0)continue;
+    const parts=line.split('|').map(p=>p.trim());
+    if(parts.length<2)continue;
+    const date=parts[0];
+    if(!dateRx.test(date))continue;
+    const dp=date.split('-').map(Number);
+    if(dp[1]<1||dp[1]>12||dp[2]<1||dp[2]>31)continue;
+    const startRaw=parts[1]||'';
+    const endRaw=parts.length>=3?parts[2]:'';
+    const finalTitle=parts.length>=4?parts.slice(3).join(' | ').trim():(parts[2]||'').trim();
+    if(!finalTitle)continue;
+    const start=startRaw?minToTime(parseMin(startRaw)):'9:00 AM';
+    const end=endRaw?minToTime(parseMin(endRaw)):'';
+    out.push({date,start,end,title:finalTitle});
+  }
+  return out;
+}
+
+function addPhotoEvents(){
+  const box=document.getElementById('piPasteBox');
+  if(!box)return;
+  const events=_parsePhotoLines(box.value);
+  if(!events.length){alert('No events found. Make sure you pasted the lines ChatGPT gave back, in the form: 2026-06-10 | 3:00 PM | 4:00 PM | Dentist');return;}
+  if(!confirm('Add '+events.length+' event'+(events.length>1?'s':'')+' to your calendar?'))return;
+  if(!D.days)D.days={};
+  if(!D._photoImported)D._photoImported={};
+  let added=0,skipped=0;
+  events.forEach(ev=>{
+    const sig=ev.date+'|'+ev.start+'|'+ev.title;
+    if(D._photoImported[sig]){skipped++;return;}
+    if(!D.days[ev.date])D.days[ev.date]=[];
+    const tl=D.days[ev.date];
+    if(tl.some(s=>s.text===ev.title&&s.t===ev.start)){skipped++;return;}
+    tl.push({t:ev.start,end:ev.end||'',text:ev.title,cls:'errands',sm:'From photo',loc:'',_photo:true});
+    tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
+    D._photoImported[sig]=ev.date;
+    added++;
+  });
+  save();renderAll();
+  closePhotoImport();
+  const t=document.getElementById('saveToast');if(t){t.innerHTML='✓ Added '+added+' event'+(added!==1?'s':'')+(skipped?' ('+skipped+' already there)':'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+}

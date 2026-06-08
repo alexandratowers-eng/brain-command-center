@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260605e">
-<script src="sync-config.js?v=20260605e" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260608a">
+<script src="sync-config.js?v=20260608a" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -70,6 +70,7 @@ if('serviceWorker' in navigator){
             <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
             <button onclick="importIcs();toggleDataMenu();">📅 Import Outlook .ics</button>
             <button onclick="importOutlookPdf();toggleDataMenu();">📄 Import Outlook PDF</button>
+            <button onclick="openPhotoImport();toggleDataMenu();">📸 Import from Photo</button>
           </div>
         </div>
       </div>
@@ -892,6 +893,48 @@ if('serviceWorker' in navigator){
   </div>
 </div>
 
+<!-- PHOTO IMPORT MODAL -->
+<div class="modal-bg" id="photoImportModal" onclick="if(event.target===this)closePhotoImport()">
+  <div class="modal" style="max-width:540px;">
+    <h3 style="display:flex;align-items:center;gap:8px;"><span class="mi" style="color:var(--blue);">photo_camera</span> Import from Photo</h3>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.6;">Snap your handwritten calendar, let ChatGPT read it, paste the result back. Three quick steps.</p>
+
+    <!-- Step 1 -->
+    <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">1 · Add your photo</div>
+      <label class="t-btn" style="font-size:11px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <span class="mi" style="font-size:15px;">add_a_photo</span> Take / choose photo
+        <input type="file" accept="image/*" capture="environment" onchange="photoImportPreview(event)" hidden>
+      </label>
+      <button id="piCopyImgBtn" class="t-btn" style="font-size:11px;display:none;align-items:center;gap:6px;margin-left:6px;" onclick="copyPhotoImage()"><span class="mi" style="font-size:15px;">content_copy</span> Copy image</button>
+      <img id="piPreview" style="display:none;max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;border:1px solid var(--border);" alt="calendar photo preview">
+    </div>
+
+    <!-- Step 2 -->
+    <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;">2 · Send it to ChatGPT</div>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:8px;line-height:1.6;">Copy the prompt, open ChatGPT, paste it, and attach your photo. (Today's date is baked into the prompt so weekdays resolve correctly.)</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="t-btn primary" style="font-size:11px;" onclick="copyPhotoPrompt()"><span class="mi" style="font-size:13px;">content_copy</span> Copy prompt</button>
+        <a class="t-btn" style="font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;" href="https://chatgpt.com/" target="_blank" rel="noopener"><span class="mi" style="font-size:13px;">open_in_new</span> Open ChatGPT</a>
+        <a class="t-btn" style="font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;" href="https://claude.ai/" target="_blank" rel="noopener"><span class="mi" style="font-size:13px;">open_in_new</span> Open Claude</a>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div style="border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;">3 · Paste the result back</div>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:8px;line-height:1.6;">Copy what ChatGPT returns and paste it here. Lines look like <code style="font-size:10px;">2026-06-10 | 3:00 PM | 4:00 PM | Dentist</code></p>
+      <textarea id="piPasteBox" class="dump-area" style="min-height:110px;font-size:11px;" placeholder="2026-06-10 | 3:00 PM | 4:00 PM | Dentist&#10;2026-06-11 | 9:00 AM |  | Lab meeting"></textarea>
+    </div>
+
+    <div class="modal-btns">
+      <button class="t-btn" onclick="closePhotoImport()">Cancel</button>
+      <button class="t-btn primary" onclick="addPhotoEvents()"><span class="mi" style="font-size:13px;">event_available</span> Add to calendar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
   <button class="mob-nav-btn active" onclick="mobNav('cal',this)" data-tab="cal">
@@ -922,12 +965,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260605e"></script>
-<script src="core.js?v=20260605e"></script>
-<script src="calendar.js?v=20260605e"></script>
-<script src="tasks.js?v=20260605e"></script>
-<script src="features.js?v=20260605e"></script>
-<script src="sync.js?v=20260605e"></script>
+<script src="data.js?v=20260608a"></script>
+<script src="core.js?v=20260608a"></script>
+<script src="calendar.js?v=20260608a"></script>
+<script src="tasks.js?v=20260608a"></script>
+<script src="features.js?v=20260608a"></script>
+<script src="sync.js?v=20260608a"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){
