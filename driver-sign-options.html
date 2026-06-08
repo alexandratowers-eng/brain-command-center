@@ -3,37 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Wording Options</title>
+  <title>Sign Options — Fresh</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #e8f0fe;
       font-family: 'Nunito', sans-serif;
-      padding: 40px 30px;
+      padding: 50px 30px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 24px;
-    }
-    h2 {
-      color: #1e3a5f;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 4px;
+      gap: 40px;
     }
     .label {
-      font-size: 12px;
-      color: #64748b;
-      font-weight: 600;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 10px;
+      font-size: 12px; color: #64748b; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px;
     }
     .card {
-      width: 520px;
+      width: 540px;
       background: white;
       border-radius: 24px;
       overflow: hidden;
@@ -42,131 +30,118 @@
     .card-header {
       background: #2563eb;
       padding: 16px 26px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex; align-items: center; gap: 12px;
     }
     .card-header svg { width: 32px; height: 32px; opacity: 0.9; flex-shrink: 0; }
     .study-name {
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.85);
+      font-size: 12px; font-weight: 800; letter-spacing: 3px;
+      text-transform: uppercase; color: rgba(255,255,255,0.85);
     }
-    .card-body {
-      padding: 40px 44px 36px;
-      text-align: center;
-    }
-    h1 {
-      font-weight: 900;
-      color: #1e3a5f;
-      line-height: 1.05;
-      text-transform: uppercase;
-    }
+    .card-body { padding: 44px 44px 40px; text-align: center; }
     .em { color: #3b82f6; }
-    .sub {
-      font-size: 18px;
-      color: #334155;
-      font-weight: 600;
-      line-height: 1.5;
-      margin-top: 18px;
-    }
     .card-footer {
-      background: #eff6ff;
-      border-top: 2px solid #dbeafe;
-      padding: 14px 26px;
-      text-align: center;
+      background: #eff6ff; border-top: 2px solid #dbeafe;
+      padding: 14px 26px; text-align: center;
     }
     .thank-you {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: #3b82f6;
+      font-size: 11px; font-weight: 800; letter-spacing: 4px;
+      text-transform: uppercase; color: #3b82f6;
     }
 
-    /* Size variants */
-    .sz-a h1 { font-size: 54px; }
-    .sz-b h1 { font-size: 48px; }
-    .sz-c h1 { font-size: 42px; }
-    .sz-d h1 { font-size: 50px; }
+    /* ---- Option 1: Big question + big directive ---- */
+    .o1 .q {
+      font-size: 30px; font-weight: 800; color: #64748b;
+      line-height: 1.2; margin-bottom: 18px;
+    }
+    .o1 .big {
+      font-size: 52px; font-weight: 900; color: #1e3a5f;
+      line-height: 1.0; text-transform: uppercase;
+    }
+
+    /* ---- Option 2: Directive first, huge ---- */
+    .o2 .big {
+      font-size: 56px; font-weight: 900; color: #1e3a5f;
+      line-height: 0.98; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .o2 .note {
+      font-size: 24px; font-weight: 700; color: #475569; line-height: 1.35;
+    }
+
+    /* ---- Option 3: Banner directive ---- */
+    .o3 .lead {
+      font-size: 26px; font-weight: 700; color: #475569;
+      line-height: 1.3; margin-bottom: 22px;
+    }
+    .o3 .banner {
+      background: #3b82f6; color: white;
+      font-size: 40px; font-weight: 900; text-transform: uppercase;
+      padding: 22px 16px; border-radius: 16px; line-height: 1.05;
+    }
+
+    /* ---- Option 4: Checkmark style ---- */
+    .o4 .big {
+      font-size: 50px; font-weight: 900; color: #1e3a5f;
+      line-height: 1.02; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .o4 .sub {
+      font-size: 26px; font-weight: 800; color: #3b82f6; line-height: 1.3;
+    }
   </style>
 </head>
 <body>
 
-  <div class="label">Option A</div>
-  <div class="card sz-a">
+  <!-- OPTION 1 -->
+  <div class="label">Option 1 — Question, then directive</div>
+  <div class="card o1">
     <div class="card-header">
-      <svg viewBox="0 0 52 52" fill="none">
-        <circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/>
-        <circle cx="26" cy="26" r="6" fill="white"/>
-        <line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-      <span class="study-name">DRIVER Study Device</span>
+      <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/><circle cx="26" cy="26" r="6" fill="white"/><line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="study-name">Research Study Device</span>
     </div>
     <div class="card-body">
-      <h1>In a research<br><span class="em">study?</span></h1>
-      <p class="sub">This device is for you.<br>All others, please use the newer device.</p>
+      <div class="q">Here for a research study?</div>
+      <div class="big">Please use<br><span class="em">this device</span></div>
     </div>
     <div class="card-footer"><span class="thank-you">Thank you</span></div>
   </div>
 
-  <div class="label">Option B</div>
-  <div class="card sz-b">
+  <!-- OPTION 2 -->
+  <div class="label">Option 2 — Directive first, big</div>
+  <div class="card o2">
     <div class="card-header">
-      <svg viewBox="0 0 52 52" fill="none">
-        <circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/>
-        <circle cx="26" cy="26" r="6" fill="white"/>
-        <line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-      <span class="study-name">DRIVER Study Device</span>
+      <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/><circle cx="26" cy="26" r="6" fill="white"/><line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="study-name">Research Study Device</span>
     </div>
     <div class="card-body">
-      <h1>Are you a<br>study<br><span class="em">participant?</span></h1>
-      <p class="sub">Use this device — not the newer one.</p>
+      <div class="big">Study<br><span class="em">participants</span><br>use this!</div>
+      <div class="note">Here for a research session?<br>This is your device.</div>
     </div>
     <div class="card-footer"><span class="thank-you">Thank you</span></div>
   </div>
 
-  <div class="label">Option C</div>
-  <div class="card sz-c">
+  <!-- OPTION 3 -->
+  <div class="label">Option 3 — Blue banner directive</div>
+  <div class="card o3">
     <div class="card-header">
-      <svg viewBox="0 0 52 52" fill="none">
-        <circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/>
-        <circle cx="26" cy="26" r="6" fill="white"/>
-        <line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-      <span class="study-name">DRIVER Study Device</span>
+      <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/><circle cx="26" cy="26" r="6" fill="white"/><line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="study-name">Research Study Device</span>
     </div>
     <div class="card-body">
-      <h1>Part of the<br><span class="em">DRIVER study?</span><br>Use this device!</h1>
-      <p class="sub">Not in the study? Please use the<br>newer device down the hall.</p>
+      <div class="lead">If you're here for a<br>research study today:</div>
+      <div class="banner">Use this<br>device</div>
     </div>
     <div class="card-footer"><span class="thank-you">Thank you</span></div>
   </div>
 
-  <div class="label">Option D</div>
-  <div class="card sz-d">
+  <!-- OPTION 4 -->
+  <div class="label">Option 4 — Bold call + blue line</div>
+  <div class="card o4">
     <div class="card-header">
-      <svg viewBox="0 0 52 52" fill="none">
-        <circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/>
-        <circle cx="26" cy="26" r="6" fill="white"/>
-        <line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-        <line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-      <span class="study-name">DRIVER Study Device</span>
+      <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/><circle cx="26" cy="26" r="6" fill="white"/><line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+      <span class="study-name">Research Study Device</span>
     </div>
     <div class="card-body">
-      <h1><span class="em">Research study</span><br>participants only</h1>
-      <p class="sub">If you're not in the DRIVER study,<br>please use the other device.</p>
+      <div class="big">In a research<br>study?</div>
+      <div class="sub">This device is for you →<br>everyone else, use the other one.</div>
     </div>
     <div class="card-footer"><span class="thank-you">Thank you</span></div>
   </div>
