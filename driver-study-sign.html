@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Study Sign — Blue V2</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #e8f0fe;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .btn-row {
+      position: fixed; top: 20px; right: 20px;
+      display: flex; gap: 10px; z-index: 100;
+    }
+    .download-btn {
+      background: #3b82f6; color: white; border: none;
+      padding: 12px 24px; border-radius: 12px;
+      font-family: 'Nunito', sans-serif; font-size: 14px;
+      font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .download-btn.jpg { background: #10b981; }
+
+    .card {
+      width: 560px;
+      background: white;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 16px 60px rgba(59,130,246,0.18);
+    }
+
+    /* Header band — identifier only */
+    .card-header {
+      background: #2563eb;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .card-header svg {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+    .study-name {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* Body */
+    .card-body {
+      padding: 48px 50px 40px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 58px;
+      font-weight: 900;
+      color: #1e3a5f;
+      line-height: 1.0;
+      text-transform: uppercase;
+      margin-bottom: 0;
+    }
+    .emphasis {
+      color: #3b82f6;
+    }
+    .divider {
+      width: 50px; height: 4px; background: #bfdbfe;
+      border-radius: 2px; margin: 24px auto;
+    }
+    .sub {
+      font-size: 19px;
+      color: #334155;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    /* Footer band */
+    .card-footer {
+      background: #eff6ff;
+      border-top: 2px solid #dbeafe;
+      padding: 16px 28px;
+      text-align: center;
+    }
+    .thank-you {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #3b82f6;
+    }
+
+    @media print {
+      body { background: white; }
+      .btn-row { display: none; }
+    }
+    [contenteditable]:hover { outline: 2px dashed rgba(59,130,246,0.3); border-radius: 4px; cursor: text; }
+    [contenteditable]:focus { outline: 2px solid #3b82f6; border-radius: 4px; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="btn-row">
+    <button class="download-btn" onclick="downloadCard()">⬇ Card only (large)</button>
+    <button class="download-btn jpg" onclick="downloadWithBg()">⬇ With blue background</button>
+  </div>
+
+  <div class="card" id="capture">
+    <!-- Header — identifier only -->
+    <div class="card-header">
+      <svg viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="22" stroke="white" stroke-width="3.5" fill="none"/>
+        <circle cx="26" cy="26" r="6" fill="white"/>
+        <line x1="26" y1="4" x2="26" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <line x1="7.5" y1="37" x2="21" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <line x1="44.5" y1="37" x2="31" y2="29" stroke="white" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span class="study-name" contenteditable="true">DRIVER Study Device</span>
+    </div>
+
+    <!-- Main body -->
+    <div class="card-body">
+      <h1 contenteditable="true">For study<br><span class="emphasis">use only!</span></h1>
+      <div class="divider"></div>
+      <p class="sub" contenteditable="true">If you are in the DRIVER study,<br>please use <em>this</em> device — not the newer one.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer">
+      <span class="thank-you" contenteditable="true">Thank you</span>
+    </div>
+  </div>
+
+  <script>
+    function capture(el, opts, filename) {
+      document.activeElement.blur();
+      // Clone off-screen so full dimensions are used regardless of viewport
+      const clone = el.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.width = el.offsetWidth + 'px';
+      document.body.appendChild(clone);
+      html2canvas(clone, { scale: 3, useCORS: true, ...opts }).then(c => {
+        document.body.removeChild(clone);
+        const a = document.createElement('a');
+        a.download = filename;
+        a.href = c.toDataURL('image/png');
+        a.click();
+      });
+    }
+
+    // Card only — white background, no surrounding blue
+    function downloadCard() {
+      capture(
+        document.getElementById('capture'),
+        { backgroundColor: '#ffffff' },
+        'driver-study-sign-card.png'
+      );
+    }
+
+    // Card + blue background padding around it
+    function downloadWithBg() {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'background:#e8f0fe;padding:60px;display:inline-block;border-radius:0;';
+      const clone = document.getElementById('capture').cloneNode(true);
+      clone.style.position = '';
+      clone.style.top = '';
+      clone.style.left = '';
+      wrapper.appendChild(clone);
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '-9999px';
+      wrapper.style.left = '-9999px';
+      document.body.appendChild(wrapper);
+      html2canvas(wrapper, { scale: 3, useCORS: true, backgroundColor: '#e8f0fe' }).then(c => {
+        document.body.removeChild(wrapper);
+        const a = document.createElement('a');
+        a.download = 'driver-study-sign-with-bg.png';
+        a.href = c.toDataURL('image/png');
+        a.click();
+      });
+    }
+  </script>
+</body>
+</html>
