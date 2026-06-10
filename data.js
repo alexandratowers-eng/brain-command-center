@@ -339,6 +339,32 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     add('2026-06-09',{t:'1:00 PM',end:'3:00 PM',text:'💻 Big Project — Chunk 3 of 3',cls:'chop',sm:'Deep focus — Athenaeum is great for this',loc:'Athenaeum',_jun8:true,_id:'jun9_proj3'});
     d._planJun8V1=true;
   }
+  // Simplify to 4 picker colors: CHOP=teal(meetings), To-Do=blue, Personal=purple, Exercise/Health=green.
+  // Extras (mcat/medapp/deadline/reminder/braindump) stay alive for auto-created blocks but hide from the quick picker.
+  if(!d._cats4Simplify){
+    if(!d.cats)d.cats={};
+    if(!d.cats.todo)d.cats.todo={emoji:'✅',label:"To-Do's",color:'#60a5fa'};
+    const setC=(k,c)=>{if(d.cats[k])d.cats[k].color=c;};
+    setC('chop','#2dd4bf');
+    setC('todo','#60a5fa');
+    setC('personal','#a78bfa');
+    setC('exercise','#34d399');
+    setC('health','#34d399');
+    // merged-but-silent: recolor into the scheme, keep their signal emoji, hide from quick picker
+    setC('mcat','#60a5fa');
+    setC('medapp','#60a5fa');
+    setC('deadline','#60a5fa');
+    setC('braindump','#60a5fa');
+    setC('reminder','#a78bfa');
+    ['mcat','medapp','deadline','reminder','braindump','health'].forEach(k=>{if(d.cats[k])d.cats[k]._hidePick=true;});
+    ['chop','todo','personal','exercise'].forEach(k=>{if(d.cats[k])delete d.cats[k]._hidePick;});
+    const order=['chop','todo','personal','exercise','health','mcat','medapp','deadline','reminder','braindump'];
+    const ordered={};
+    order.forEach(k=>{if(d.cats[k])ordered[k]=d.cats[k];});
+    Object.keys(d.cats).forEach(k=>{if(!ordered[k])ordered[k]=d.cats[k];});
+    d.cats=ordered;
+    d._cats4Simplify=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -392,15 +418,16 @@ function defaults(){
   const today=todayStr();
   return{
     cats:{
-      chop:{emoji:'🔬',label:'CHOP',color:'#60a5fa'},
-      personal:{emoji:'🏠',label:'Personal',color:'#2dd4bf'},
+      chop:{emoji:'🔬',label:'CHOP',color:'#2dd4bf'},
+      todo:{emoji:'✅',label:"To-Do's",color:'#60a5fa'},
+      personal:{emoji:'🏠',label:'Personal',color:'#a78bfa'},
       exercise:{emoji:'🏃',label:'Exercise',color:'#34d399'},
-      mcat:{emoji:'📚',label:'MCAT',color:'#818cf8'},
-      medapp:{emoji:'🏥',label:'Med Apps',color:'#f87171'},
-      deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#f87171'},
-      health:{emoji:'💚',label:'Health/Wellbeing',color:'#34d399'},
-      reminder:{emoji:'⏰',label:'Reminder',color:'#fbbf24'},
-      braindump:{emoji:'🧠',label:'Brain Dump',color:'#a78bfa'},
+      health:{emoji:'💚',label:'Health/Wellbeing',color:'#34d399',_hidePick:true},
+      mcat:{emoji:'📚',label:'MCAT',color:'#60a5fa',_hidePick:true},
+      medapp:{emoji:'🏥',label:'Med Apps',color:'#60a5fa',_hidePick:true},
+      deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#60a5fa',_hidePick:true},
+      reminder:{emoji:'⏰',label:'Reminder',color:'#a78bfa',_hidePick:true},
+      braindump:{emoji:'🧠',label:'Brain Dump',color:'#60a5fa',_hidePick:true},
     },
     tasks:[
       {id:1,text:'Finalize resume/CV for letter writers',cat:'medapp',pri:'high',done:false,date:'2026-04-14'},
@@ -428,6 +455,14 @@ function defaults(){
 }
 
 // ===== HELPERS =====
+// Quick-picker category options: only the 4 mains (non _hidePick).
+// If ensureKey is a hidden category (editing an existing block/task), include it too
+// so its category isn't silently dropped on save.
+function catPickerOptions(ensureKey){
+  if(!D.cats)return '';
+  return Object.entries(D.cats).filter(([k,v])=>!v._hidePick||k===ensureKey)
+    .map(([k,v])=>`<option value="${k}">${v.emoji||''} ${v.label}</option>`).join('');
+}
 function parseMin(t){if(!t)return 0;const m=t.match(/(\d+):?(\d*)\s*(AM|PM|am|pm)?/);if(!m)return 0;let hr=parseInt(m[1]),min=parseInt(m[2])||0;const ap=(m[3]||'').toUpperCase();if(ap==='PM'&&hr!==12)hr+=12;if(ap==='AM'&&hr===12)hr=0;return hr*60+min;}
 function minToTime(mins){if(mins>=1440)mins=1439;let hr=Math.floor(mins/60),min=mins%60;const ap=hr>=12?'PM':'AM';if(hr>12)hr-=12;if(hr===0)hr=12;return hr+':'+String(min).padStart(2,'0')+' '+ap;}
 function slotDur(tl,i){if(i>=tl.length-1)return '';const a=parseMin(tl[i].t),b=parseMin(tl[i+1].t);const d=b-a;if(d<=0||d>480)return '';if(d<60)return d+'m';const h=Math.floor(d/60),m=d%60;return h+'h'+(m?m+'m':'');}

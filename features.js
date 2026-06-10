@@ -2821,7 +2821,7 @@ function renderBrainDumpCheckin(items){
   modal.id='bdCheckinModal';
   modal.className='modal-bg show';
   modal.onclick=function(e){if(e.target===this)dismissBrainDumpCheckin();};
-  const catOpts=Object.entries(D.cats).filter(([k])=>k!=='braindump').map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
+  const catOpts=catPickerOptions();
   const rows=items.map(t=>`
     <div class="bdci-row" data-id="${t.id}">
       <div class="bdci-text">${_bdEsc(t.text)}</div>

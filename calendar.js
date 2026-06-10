@@ -823,7 +823,7 @@ function openWkPopover(e, dt, hr){
   }
   document.getElementById('wpTime').innerHTML=timeOpts;
   document.getElementById('wpDate').value=dt;
-  const catOpts=Object.entries(D.cats).map(([k,v])=>`<option value="${k}">${v.emoji||''} ${v.label}</option>`).join('')+'<option value="free">--- Break</option>';
+  const catOpts=catPickerOptions()+'<option value="free">--- Break</option>';
   document.getElementById('wpCat').innerHTML=catOpts;
   document.getElementById('wpTitle').value='';
   document.getElementById('wpDetails').value='';
@@ -1067,7 +1067,7 @@ function renderDayView(){
   }
 
   // Quick actions bar
-  const catOpts=Object.entries(D.cats).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('')+'<option value="free">--- Break</option>';
+  const catOpts=catPickerOptions()+'<option value="free">--- Break</option>';
   html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
     <div class="topbar-dropdown" id="templateDropdown">
       <button class="topbar-dropdown-btn" onclick="document.getElementById('templateMenu').classList.toggle('open')" style="font-size:10px;display:flex;align-items:center;gap:4px;">📋 Templates ▾</button>
@@ -1991,9 +1991,11 @@ function openDvPopover(e,dt,hr,mins,editIdx){
   }
   document.getElementById('dpTime').innerHTML=timeOpts;
   document.getElementById('dpDate').value=dt;
-  const catOpts=Object.entries(D.cats).map(([k,v])=>`<option value="${k}">${v.emoji||''} ${v.label}</option>`).join('')+'<option value="free">--- Break</option>';
-  document.getElementById('dpCat').innerHTML=catOpts;
   const isEdit=_dvPopEditIdx!=null;
+  let _editCls='';
+  if(isEdit){const _tl=getTimeline(dt)||[];const _s=_tl[_dvPopEditIdx];if(_s&&_s.cls)_editCls=_s.cls;}
+  const catOpts=catPickerOptions(_editCls)+'<option value="free">--- Break</option>';
+  document.getElementById('dpCat').innerHTML=catOpts;
   pop.querySelector('h4').textContent=isEdit?'Edit Block':'+ New Block';
   const saveBtn=document.getElementById('dpSaveBtn');
   if(saveBtn)saveBtn.textContent=isEdit?'Save':'Add';
@@ -2692,7 +2694,7 @@ function renderLegend(){
   const today=todayStr();
   const el=document.getElementById('legendBox');
   if(!el)return;
-  el.innerHTML=Object.entries(D.cats).filter(([k])=>k!=='braindump').map(([k,v])=>{
+  el.innerHTML=Object.entries(D.cats).filter(([k,v])=>!v._hidePick).map(([k,v])=>{
     const count=D.tasks.filter(t=>t.cat===k&&t.date===today&&!t.done).length;
     return `<div class="leg-item"><div class="leg-dot" style="background:${v.color}"></div><div class="leg-label">${catIcon(v)} ${v.label}</div>${count?`<div class="leg-count">${count}</div>`:''}</div>`;
   }).join('');

@@ -1641,10 +1641,10 @@ function deleteFromModal(){trashTask(editId);closeModal();renderSidebarTasks();r
 // ===== CAT MANAGER =====
 function buildCatSelects(){
   const opts=Object.entries(D.cats).map(([k,v])=>`<option value="${k}">${v.icon?'●':v.emoji} ${v.label}</option>`).join('');
-  const qaCat=document.getElementById('qaCat');if(qaCat)qaCat.innerHTML=opts;
   document.getElementById('edCat').innerHTML=opts;
+  const qaCat=document.getElementById('qaCat');if(qaCat)qaCat.innerHTML=catPickerOptions();
   const slCat=document.getElementById('swimlaneAddCat');
-  if(slCat){slCat.innerHTML=Object.entries(D.cats).filter(([k])=>k!=='braindump').map(([k,v])=>`<option value="${k}" ${k==='personal'?'selected':''}>${v.emoji} ${v.label}</option>`).join('');}
+  if(slCat){slCat.innerHTML=Object.entries(D.cats).filter(([k,v])=>(!v._hidePick)).map(([k,v])=>`<option value="${k}" ${k==='personal'?'selected':''}>${v.emoji} ${v.label}</option>`).join('');}
 }
 function openCatMgr(){renderCatList();renderColorSwatches();renderEmojiGrid();renderIconGrid();document.getElementById('catModal').classList.add('show');}
 function closeCatMgr(){document.getElementById('catModal').classList.remove('show');buildCatSelects();renderLegend();updateDynamicBlockCSS();renderCalendar();renderAllTasks();}
@@ -1846,7 +1846,7 @@ function renderInbox(){
   document.getElementById('inboxCount').textContent=inboxTasks.length;
   const el=document.getElementById('inboxItems');
   if(!inboxTasks.length){el.innerHTML='<p style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">Empty</p>';return;}
-  const catOpts=Object.entries(D.cats).filter(([k])=>k!=='braindump').map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
+  const catOpts=catPickerOptions();
   el.innerHTML=inboxTasks.map(t=>{
     const hasRemind=t.remindAt&&new Date(t.remindAt)>new Date();
     const remindLabel=hasRemind?new Date(t.remindAt).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
@@ -1949,7 +1949,7 @@ function renderMobileTasks(){
 
   function taskRow(t,section){
     const cat=D.cats[t.cat];
-    const catOpts=Object.entries(D.cats||{}).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
+    const catOpts=Object.entries(D.cats||{}).filter(([k,v])=>(!v._hidePick||k===t.cat)).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     let actions='';
     if(section==='today'){
       actions=`<button onclick="openRemindPicker(event,${t.id})" style="font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--pink);cursor:pointer;">⏰</button>
