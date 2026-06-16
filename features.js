@@ -1667,8 +1667,15 @@ function generateCoachSuggestions(){
   const timeOfDay=hour<12?'morning':hour<17?'afternoon':hour<21?'evening':'night';
   const dayOfWeek=now.getDay();
 
+  // Difficulty fit: low energy -> easy tasks score best; high energy -> hard tasks score best.
+  const diffWeight=t=>(typeof DIFF_TAGS!=='undefined'&&DIFF_TAGS[t.diff]?DIFF_TAGS[t.diff].weight:0);
+  const diffFit=t=>{const w=diffWeight(t);if(!w)return 1;return energy<=2?Math.abs(w-1):energy>=4?Math.abs(w-3):Math.abs(w-2);};
   const pendingTasks=D.tasks.filter(t=>t.date===today&&!t.done&&!(typeof isSnoozed==='function'&&isSnoozed(t)))
-    .sort((a,b)=>({high:0,med:1,low:2})[a.pri]-({high:0,med:1,low:2})[b.pri]);
+    .sort((a,b)=>{
+      const pri=({high:0,med:1,low:2})[a.pri]-({high:0,med:1,low:2})[b.pri];
+      if(pri!==0)return pri;
+      return diffFit(a)-diffFit(b);
+    });
   const doneTasks=D.tasks.filter(t=>t.date===today&&t.done);
   const laterPool=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
 
@@ -2235,6 +2242,56 @@ function getTodayMode(){
 function getTodayPriorities(){
   const today=todayStr();
   return (D.dayPriorities&&D.dayPriorities[today])||[];
+}
+// Add a priority to an arbitrary date (used by the Day-view priorities band)
+function addDayPriority(dt){
+  const inp=document.getElementById('dvPriInput');
+  if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  if(!D.dayPriorities)D.dayPriorities={};
+  if(!D.dayPriorities[dt])D.dayPriorities[dt]=[];
+  if(D.dayPriorities[dt].length>=3){inp.value='';return;}
+  D.dayPriorities[dt].push({id:Date.now(),text,done:false});
+  inp.value='';save();renderCalendar();
+}
+// Build the calm priorities-first band shown at the top of the Day view
+function dayPriorityBandHtml(dt){
+  const pris=(D.dayPriorities&&D.dayPriorities[dt])||[];
+  const calls=(D.tasks||[]).filter(t=>t.date===dt&&!t.done&&(t.effort==='call'||t.cat==='personal'));
+  let h=`<div class="dv-pri-band">`;
+  h+=`<div class="dv-pri-head"><span class="dv-pri-eyebrow">Today, distilled</span><span class="dv-pri-sub">Pick 2\u20133 anchors. Everything else is a bonus.</span></div>`;
+  h+=`<div class="dv-pri-list">`;
+  if(pris.length){
+    pris.forEach((p,i)=>{
+      h+=`<div class="dv-pri-item ${p.done?'done':''}">
+        <button class="dv-pri-check" onclick="toggleModePri('${dt}',${p.id});renderCalendar();" title="${p.done?'Mark not done':'Mark done'}">${p.done?'\u2713':String.fromCharCode(65+i)}</button>
+        <span class="dv-pri-text">${(p.text||'').replace(/</g,'&lt;')}</span>
+        <button class="dv-pri-del" onclick="removeModePri('${dt}',${p.id});renderCalendar();" title="Remove">\u00d7</button>
+      </div>`;
+    });
+  }
+  if(pris.length<3){
+    h+=`<div class="dv-pri-add">
+      <span class="dv-pri-add-mark">${String.fromCharCode(65+pris.length)}</span>
+      <input type="text" id="dvPriInput" class="dv-pri-input" placeholder="${pris.length?'add another anchor\u2026':'what has to happen today?'}" onkeydown="if(event.key==='Enter')addDayPriority('${dt}')">
+    </div>`;
+  }
+  h+=`</div>`;
+  if(calls.length){
+    h+=`<div class="dv-pri-calls"><span class="dv-pri-calls-label">\ud83d\udcde Calls &amp; personal</span>`;
+    calls.forEach(t=>{
+      const cat=D.cats[t.cat];const color=cat?cat.color:'var(--blue)';
+      const short=t.text.length>30?t.text.slice(0,30)+'\u2026':t.text;
+      h+=`<span class="dv-pri-call-chip" style="border-color:${color}55;" title="${t.text.replace(/"/g,'&quot;')}">
+        <button class="dv-pri-call-done" style="color:${color};" onclick="togTask(${t.id});" title="Done">\u25cb</button>
+        <span>${short.replace(/</g,'&lt;')}</span>
+        <button class="dv-pri-call-add" style="color:${color};" onclick="taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
+      </span>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
 }
 
 // ===== TOMORROW VIEW =====

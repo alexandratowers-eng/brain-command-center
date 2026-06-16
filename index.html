@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260610a">
-<script src="sync-config.js?v=20260610a" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=20260615a">
+<script src="sync-config.js?v=20260615a" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -761,6 +761,8 @@ if('serviceWorker' in navigator){
     </div>
     <label>Effort (how lingering tasks are sorted in 🪣 Buckets)</label>
     <div id="edEffort" class="effort-chips"></div>
+    <label>Difficulty (helps the coach match tasks to your energy)</label>
+    <div id="edDiff" class="effort-chips"></div>
     <div class="modal-btns">
       <button class="t-btn"onclick="closeModal()">Cancel</button>
       <button class="t-btn" style="border-color:var(--red);color:var(--red);" onclick="deleteFromModal()">Delete</button>
@@ -965,12 +967,12 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260610a"></script>
-<script src="core.js?v=20260610a"></script>
-<script src="calendar.js?v=20260610a"></script>
-<script src="tasks.js?v=20260610a"></script>
-<script src="features.js?v=20260610a"></script>
-<script src="sync.js?v=20260610a"></script>
+<script src="data.js?v=20260615a"></script>
+<script src="core.js?v=20260615a"></script>
+<script src="calendar.js?v=20260615a"></script>
+<script src="tasks.js?v=20260615a"></script>
+<script src="features.js?v=20260615a"></script>
+<script src="sync.js?v=20260615a"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

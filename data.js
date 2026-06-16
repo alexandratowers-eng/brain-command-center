@@ -7,6 +7,11 @@ const EFFORT_TAGS={
   low:{emoji:'😴',label:'Low energy ok',color:'var(--dim)'},
   errand:{emoji:'🚗',label:'Errands',color:'var(--amber)'}
 };
+const DIFF_TAGS={
+  easy:{emoji:'🟢',label:'Easy',color:'var(--green)',weight:1},
+  med:{emoji:'🟡',label:'Medium',color:'var(--amber)',weight:2},
+  hard:{emoji:'🔴',label:'Hard',color:'var(--rose)',weight:3}
+};
 let D=load();
 function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(!d.days)d.days={};if(!d.selectedDate)d.selectedDate=todayStr();
   // Migrate: add reflections if missing
@@ -72,7 +77,7 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     if(d.cats&&d.cats.medapp) d.cats.medapp.color='#93c5fd';
     d._colorSwapV2=true;
   }
-  if(d.tasks)d.tasks.forEach(t=>{if(!t.effort)t.effort='';});
+  if(d.tasks)d.tasks.forEach(t=>{if(!t.effort)t.effort='';if(!t.diff)t.diff='';});
   // Seed daily 10-min MCAT review blocks May 1–31 2026
   if(!d._mcatMaySeeded){
     if(!d.days)d.days={};

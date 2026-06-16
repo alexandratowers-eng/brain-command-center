@@ -19,7 +19,7 @@ function renderTasksForDate(containerId,dt){
       return `<div class="task-item ${t.done?'done':''}" oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});">
         <div class="p-dot ${t.pri}"></div>
         <input type="checkbox" ${t.done?'checked':''} onchange="togTask(${t.id},this)">
-        <div class="t-label" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''}${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''} ${t.text}</div>
+        <div class="t-label" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat?cat.emoji:''}${t.effort&&EFFORT_TAGS[t.effort]?'<span class="task-effort-badge">'+EFFORT_TAGS[t.effort].emoji+'</span>':''}${t.diff&&typeof DIFF_TAGS!=='undefined'&&DIFF_TAGS[t.diff]?'<span class="task-effort-badge" title="'+DIFF_TAGS[t.diff].label+'">'+DIFF_TAGS[t.diff].emoji+'</span>':''} ${t.text}</div>
         <div class="task-defer-btns">
           <button class="defer-btn" onclick="openRemindPicker(event,${t.id})" title="Remind later">⏰</button>
           <button class="defer-btn" onclick="deferToTomorrow(${t.id})" title="Move to tomorrow">→ tmrw</button>
@@ -1627,9 +1627,12 @@ function openEdit(id){const t=D.tasks.find(x=>x.id===id);if(!t)return;editId=id;
   }
   const edEffortEl=document.getElementById('edEffort');
   if(edEffortEl){edEffortEl.innerHTML=Object.entries(EFFORT_TAGS).map(([k,v])=>`<button type="button" class="effort-chip${t.effort===k?' active':''}" data-effort="${k}" onclick="document.querySelectorAll('#edEffort .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');" style="${t.effort===k?'color:'+v.color+';border-color:'+v.color:''}">${v.emoji} ${v.label}</button>`).join('')+`<button type="button" class="effort-chip${!t.effort?' active':''}" data-effort="" onclick="document.querySelectorAll('#edEffort .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');">None</button>`;}
+  const edDiffEl=document.getElementById('edDiff');
+  if(edDiffEl){edDiffEl.innerHTML=Object.entries(DIFF_TAGS).map(([k,v])=>`<button type="button" class="effort-chip${t.diff===k?' active':''}" data-diff="${k}" onclick="document.querySelectorAll('#edDiff .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');" style="${t.diff===k?'color:'+v.color+';border-color:'+v.color:''}">${v.emoji} ${v.label}</button>`).join('')+`<button type="button" class="effort-chip${!t.diff?' active':''}" data-diff="" onclick="document.querySelectorAll('#edDiff .effort-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active');">None</button>`;}
   document.getElementById('editModal').classList.add('show');}
 function closeModal(){document.getElementById('editModal').classList.remove('show');editId=null;}
 function saveModal(){const t=D.tasks.find(x=>x.id===editId);if(!t)return;t.text=document.getElementById('edText').value;t.cat=document.getElementById('edCat').value;t.pri=document.getElementById('edPri').value;const newDate=document.getElementById('edDate').value;const oldDate=t.date;t.date=newDate;const activeChip=document.querySelector('#edEffort .effort-chip.active');t.effort=activeChip?activeChip.dataset.effort:'';
+  const activeDiff=document.querySelector('#edDiff .effort-chip.active');t.diff=activeDiff?activeDiff.dataset.diff:'';
   const remVal=document.getElementById('edRemindAt')?.value;
   if(remVal){t.remindAt=new Date(remVal).toISOString();}else{delete t.remindAt;}
   save();closeModal();renderSidebarTasks();renderAllTasks();renderLegend();

@@ -1020,6 +1020,9 @@ function renderDayView(){
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
+  // Priorities-first calm band (anchors + calls/personal)
+  if(typeof dayPriorityBandHtml==='function')html+=dayPriorityBandHtml(dt);
+
   // Location picker
   if(!D.daySpots)D.daySpots={};
   const _lPicked=D.daySpots[dt]||[];
