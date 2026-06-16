@@ -146,6 +146,7 @@ function init(){
   if(typeof checkDailyBrainDumpCheckin==='function')setTimeout(checkDailyBrainDumpCheckin,2500);
   if(typeof checkWeeklyReflect==='function')setTimeout(checkWeeklyReflect,3500);
   setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();if(typeof checkReminders==='function')checkReminders();},60000);
+  setInterval(()=>{if(document.visibilityState==='visible'&&typeof SyncEngine!=='undefined')SyncEngine.pull();},45000);
 }
 
 // ===== DATA DROPDOWN =====
