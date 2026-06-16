@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Where Things Go</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #14131a;
+      font-family: 'Inter', sans-serif;
+      color: #e6e1ee;
+      padding: 3rem 1rem 5rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 25% 30%, rgba(140, 170, 230, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse at 75% 70%, rgba(180, 150, 230, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #8a86a0;
+      text-decoration: none;
+      margin-bottom: 2rem;
+      transition: color 0.2s;
+    }
+    .home-link:hover { color: #c0bcd4; }
+
+    .header { margin-bottom: 2.6rem; }
+
+    .eyebrow {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: #7d9ad4;
+      margin-bottom: 0.9rem;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.7rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: #f2eefb;
+      margin-bottom: 0.8rem;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #a09cb4;
+      line-height: 1.6;
+      max-width: 520px;
+    }
+
+    .divider {
+      width: 54px;
+      height: 1.5px;
+      background: linear-gradient(to right, #7d9ad4, transparent);
+      margin: 1.6rem 0 2.4rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      padding: 1.6rem 1.7rem;
+      margin-bottom: 1.1rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .card:hover {
+      border-color: rgba(125, 154, 212, 0.3);
+      background: rgba(125, 154, 212, 0.04);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f2eefb;
+    }
+
+    .card-path {
+      display: inline-block;
+      font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+      font-size: 0.78rem;
+      color: #9fc0ff;
+      background: rgba(125, 154, 212, 0.1);
+      border: 1px solid rgba(125, 154, 212, 0.18);
+      border-radius: 6px;
+      padding: 0.25rem 0.55rem;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .card-desc {
+      font-size: 0.9rem;
+      color: #b4b0c6;
+      line-height: 1.65;
+      margin-bottom: 0.9rem;
+    }
+    .card-desc strong { color: #e0dcef; font-weight: 600; }
+
+    .finder-path {
+      font-size: 0.78rem;
+      color: #8a86a0;
+      letter-spacing: 0.02em;
+    }
+    .finder-path b { color: #c0bcd4; font-weight: 500; }
+
+    .subfolders {
+      list-style: none;
+      margin-top: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .subfolders li {
+      font-size: 0.72rem;
+      color: #c0bcd4;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 5px;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .auto-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #7fd4a0;
+      background: rgba(127, 212, 160, 0.1);
+      border: 1px solid rgba(127, 212, 160, 0.22);
+      border-radius: 5px;
+      padding: 0.22rem 0.5rem;
+      margin-left: 0.6rem;
+      vertical-align: middle;
+    }
+
+    .manual-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #d4b87f;
+      background: rgba(212, 184, 127, 0.1);
+      border: 1px solid rgba(212, 184, 127, 0.22);
+      border-radius: 5px;
+      padding: 0.22rem 0.5rem;
+      margin-left: 0.6rem;
+      vertical-align: middle;
+    }
+
+    .rule {
+      margin-top: 2.4rem;
+      padding: 1.4rem 1.6rem;
+      background: rgba(125, 154, 212, 0.06);
+      border: 1px solid rgba(125, 154, 212, 0.16);
+      border-radius: 14px;
+      font-size: 0.86rem;
+      color: #b4b0c6;
+      line-height: 1.65;
+    }
+    .rule strong { color: #e0dcef; }
+
+    .footer {
+      margin-top: 2.6rem;
+      text-align: center;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: #56536a;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="index.html" class="home-link">&larr; Command Center</a>
+
+    <div class="header">
+      <div class="eyebrow">Quick Reference</div>
+      <h1>Where Things Go</h1>
+      <p class="subtitle">A simple map of where files land on your Mac so you always know where to look.</p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- SCREENSHOTS -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">📸</span>
+        <span class="card-title">Screenshots</span>
+        <span class="auto-badge">● Auto-sorted</span>
+      </div>
+      <div class="card-path">~/Pictures/Screenshots/</div>
+      <p class="card-desc">Every screenshot you take (<strong>Cmd+Shift+3</strong> or <strong>Cmd+Shift+4</strong>) saves here, then files itself into a folder by month, automatically, within seconds.</p>
+      <p class="finder-path">In Finder: <b>Pictures</b> &rsaquo; <b>Screenshots</b> &rsaquo; pick the month</p>
+      <ul class="subfolders">
+        <li>2026-04</li>
+        <li>2026-05</li>
+        <li>2026-06</li>
+        <li>…new months appear on their own</li>
+      </ul>
+    </div>
+
+    <!-- DOWNLOADS -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">⬇️</span>
+        <span class="card-title">Downloads</span>
+        <span class="manual-badge">● Tidy on request</span>
+      </div>
+      <div class="card-path">~/Downloads/</div>
+      <p class="card-desc">Anything you save from the <strong>web</strong>, get from <strong>Claude</strong>, or receive as an <strong>email attachment</strong> lands here first. It's the catch-all inbox.</p>
+      <p class="finder-path">In Finder: <b>Downloads</b> (in the sidebar)</p>
+      <p class="card-desc" style="margin-top:1rem;">It's sorted into type-folders so older files are easy to find. New downloads sit loose at the top until you ask for a tidy-up.</p>
+      <ul class="subfolders">
+        <li>PDFs</li>
+        <li>Word Docs</li>
+        <li>Images</li>
+        <li>Spreadsheets</li>
+        <li>Presentations</li>
+        <li>Installers</li>
+        <li>Videos &amp; Audio</li>
+        <li>Calendar &amp; Data</li>
+        <li>Web &amp; Misc</li>
+      </ul>
+    </div>
+
+    <!-- DESKTOP -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">🖥️</span>
+        <span class="card-title">Desktop</span>
+      </div>
+      <div class="card-path">~/Desktop/</div>
+      <p class="card-desc">Kept clean, just active project folders, nothing loose. No more screenshot pile-up on the background.</p>
+      <p class="finder-path">In Finder: <b>Desktop</b> (in the sidebar)</p>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">📄</span>
+        <span class="card-title">Documents (on this Mac)</span>
+      </div>
+      <div class="card-path">~/Documents/</div>
+      <p class="card-desc">Your <strong>local</strong> documents, sorted into type-folders. This is one of the two "Documents" you see in the Finder sidebar.</p>
+      <p class="finder-path">In Finder: <b>Documents</b> (the one stored on this Mac)</p>
+    </div>
+
+    <!-- ONEDRIVE -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">☁️</span>
+        <span class="card-title">OneDrive (cloud)</span>
+      </div>
+      <div class="card-path">~/Library/CloudStorage/OneDrive-Personal/</div>
+      <p class="card-desc">Your <strong>cloud</strong> files, backed up and synced across devices. Already neatly organized into numbered folders, this is the second "Documents" in your sidebar.</p>
+      <p class="finder-path">In Finder: <b>OneDrive</b> (in the sidebar)</p>
+      <ul class="subfolders">
+        <li>01_MedSchool &amp; MCAT</li>
+        <li>02_Personal, School, Family</li>
+        <li>03_Admin &amp; Legal</li>
+        <li>04_Career &amp; Applications</li>
+        <li>05_Vehicles &amp; Insurance</li>
+        <li>06_Finances</li>
+        <li>10_CHOP</li>
+      </ul>
+    </div>
+
+    <div class="rule">
+      <strong>The one rule to remember:</strong> screenshots go to <strong>Pictures &rsaquo; Screenshots</strong> (and sort themselves). Everything else you download goes to <strong>Downloads</strong>. That's it.
+    </div>
+
+    <div class="footer">Brain Command Center</div>
+  </div>
+</body>
+</html>
