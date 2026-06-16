@@ -11,9 +11,9 @@
 :root.light{
   --bg:#f3f1ec;--bg2:#f7f5f0;--card:#fffefb;--border:#e6e2d8;
   --text:#2c2a26;--dim:#8a857a;
-  --blue:#5b7a9c;--indigo:#7c8cf6;--rose:#c2708a;--green:#5a9178;
-  --amber:#c79a5b;--red:#c2615a;--teal:#5a9b94;--purple:#9384b8;
-  --grad:linear-gradient(135deg,#5b7a9c,#9384b8);
+  --blue:#5b7a9c;--indigo:#7e88a6;--rose:#c2708a;--green:#5a9178;
+  --amber:#d97d5d;--red:#c2615a;--teal:#5a9b94;--purple:#9b8299;
+  --grad:linear-gradient(135deg,#5b7a9c,#9b8299);
 }
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:11px;}
 .mi{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:16px;display:inline-block;line-height:1;vertical-align:middle;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400;}

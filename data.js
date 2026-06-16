@@ -370,6 +370,22 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     d.cats=ordered;
     d._cats4Simplify=true;
   }
+  // Calm palette v1: coral for obligations (no yellow), muted slate for MCAT, dusty plum instead of candy purple
+  if(!d._calmPaletteV1){
+    if(!d.cats)d.cats={};
+    const setC=(k,c)=>{if(d.cats[k])d.cats[k].color=c;};
+    setC('chop','#5a9b94');     // meetings — calm teal
+    setC('todo','#5b7a9c');     // to-dos — slate blue
+    setC('personal','#9b8299'); // dusty plum (was candy purple)
+    setC('exercise','#5a9178'); // muted green
+    setC('health','#5a9178');
+    setC('mcat','#7e88a6');     // muted slate-indigo (was periwinkle)
+    setC('medapp','#d97d5d');   // obligations — coral (was blue/yellow)
+    setC('deadline','#c2615a'); // warm red
+    setC('reminder','#d97d5d'); // obligations — coral (was yellow)
+    setC('braindump','#9b8299');
+    d._calmPaletteV1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -423,16 +439,16 @@ function defaults(){
   const today=todayStr();
   return{
     cats:{
-      chop:{emoji:'🔬',label:'CHOP',color:'#2dd4bf'},
-      todo:{emoji:'✅',label:"To-Do's",color:'#60a5fa'},
-      personal:{emoji:'🏠',label:'Personal',color:'#a78bfa'},
-      exercise:{emoji:'🏃',label:'Exercise',color:'#34d399'},
-      health:{emoji:'💚',label:'Health/Wellbeing',color:'#34d399',_hidePick:true},
-      mcat:{emoji:'📚',label:'MCAT',color:'#60a5fa',_hidePick:true},
-      medapp:{emoji:'🏥',label:'Med Apps',color:'#60a5fa',_hidePick:true},
-      deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#60a5fa',_hidePick:true},
-      reminder:{emoji:'⏰',label:'Reminder',color:'#a78bfa',_hidePick:true},
-      braindump:{emoji:'🧠',label:'Brain Dump',color:'#60a5fa',_hidePick:true},
+      chop:{emoji:'🔬',label:'CHOP',color:'#5a9b94'},
+      todo:{emoji:'✅',label:"To-Do's",color:'#5b7a9c'},
+      personal:{emoji:'🏠',label:'Personal',color:'#9b8299'},
+      exercise:{emoji:'🏃',label:'Exercise',color:'#5a9178'},
+      health:{emoji:'💚',label:'Health/Wellbeing',color:'#5a9178',_hidePick:true},
+      mcat:{emoji:'📚',label:'MCAT',color:'#7e88a6',_hidePick:true},
+      medapp:{emoji:'🏥',label:'Med Apps',color:'#d97d5d',_hidePick:true},
+      deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#c2615a',_hidePick:true},
+      reminder:{emoji:'⏰',label:'Reminder',color:'#d97d5d',_hidePick:true},
+      braindump:{emoji:'🧠',label:'Brain Dump',color:'#9b8299',_hidePick:true},
     },
     tasks:[
       {id:1,text:'Finalize resume/CV for letter writers',cat:'medapp',pri:'high',done:false,date:'2026-04-14'},
