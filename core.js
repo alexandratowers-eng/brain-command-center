@@ -108,14 +108,14 @@ function init(){
     });
     D.trash=Object.values(byText);
   }
-  // Always default to week view + today on load — avoids "blank day with no events" feeling
-  D.calView='week';
+  // Default to day view + today on load — opens straight to the "Today, distilled" anchors band
+  D.calView='day';
   D.selectedDate=todayStr();
   // Sync the Day/Week/Month button active state to match
   setTimeout(()=>{
     document.querySelectorAll('.vt-btn').forEach(b=>{
       const t=(b.textContent||'').toLowerCase();
-      b.classList.toggle('active',t.includes('week'));
+      b.classList.toggle('active',t.includes('day')&&!t.includes('week'));
     });
   },0);
   const _tbd=document.getElementById('topbarDate');if(_tbd)_tbd.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
