@@ -6,10 +6,10 @@ function isMeetingBlock(slot){
   return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar|debrief|consult)\b/i.test(lc);
 }
 function getBlockColor(slot){
-  if(slot.cls==='deadline')return '#c2615a';
-  if(slot.cls==='focus')return '#9b8299';
-  if(slot.cls==='_task')return '#c2615a';
-  if(slot.cls==='_todo')return '#5b7a9c';
+  if(slot.cls==='deadline')return '#d65951';
+  if(slot.cls==='focus')return '#8a7cc6';
+  if(slot.cls==='_task')return '#d65951';
+  if(slot.cls==='_todo')return '#7eb2e3';
   const cat=D.cats[slot.cls];
   if(cat)return cat.color;
   return 'var(--blue)';
