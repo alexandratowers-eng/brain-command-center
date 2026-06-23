@@ -1011,6 +1011,14 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block{transition:opacity .15s,box-shadow .15s,transform .08s !important;border-radius:6px !important;}
 .wk-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:5 !important;transform:scale(1.01);}
 
+/* Hover-to-expand: reveal the full title when an event is too small to show all its words.
+   The block grows to fit and pops above its neighbors, instead of clipping mid-word. */
+.dv-block:hover{overflow:visible!important;height:auto!important;min-height:28px;z-index:20!important;box-shadow:0 4px 16px rgba(0,0,0,.4)!important;backdrop-filter:blur(4px)!important;}
+.dv-block:hover .dv-main-input{white-space:normal!important;overflow:visible!important;}
+.wk-block:hover{overflow:visible!important;height:auto!important;min-height:20px;z-index:40!important;box-shadow:0 4px 16px rgba(0,0,0,.35)!important;backdrop-filter:blur(4px)!important;}
+.wk-block:hover>div{-webkit-line-clamp:unset!important;display:block!important;overflow:visible!important;white-space:normal!important;text-overflow:clip!important;word-break:break-word!important;}
+:root.light .dv-block:hover,:root.light .wk-block:hover{box-shadow:0 4px 16px rgba(0,0,0,.18)!important;}
+
 /* Light mode overrides */
 :root.light .mtg-day-card{box-shadow:0 1px 3px rgba(0,0,0,.05);}
 :root.light .mtg-compose-section{box-shadow:0 1px 3px rgba(0,0,0,.05);}
