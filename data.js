@@ -403,6 +403,36 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     setC('braindump','#9aa0a8');// brain dump — grey
     d._alexPaletteV2=true;
   }
+  // Alex recurring work meetings — weekly/biweekly/monthly seeded through end of 2026.
+  // Biweeklies anchored to the week of Jun 22 2026 (all three occur that week).
+  if(!d._workMeetingsV1){
+    if(!d.days)d.days={};
+    const pad2=n=>String(n).padStart(2,'0');
+    const keyOf=dt=>`${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`;
+    const addMtg=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      if(!d.days[key].some(s=>s._wm===b._wm))d.days[key].push(Object.assign({cls:'chop',_workMeeting:true},b));
+    };
+    const DAY=86400000;
+    const start=new Date(2026,5,22,12); // Jun 22 2026, noon (DST-safe)
+    const end=new Date(2026,11,31,12);  // Dec 31 2026
+    const aMaura=new Date(2026,5,23,12); // Tue Jun 23 — biweekly anchor
+    const aBrian=new Date(2026,5,25,12); // Thu Jun 25 — biweekly anchor
+    const aBiwk =new Date(2026,5,26,12); // Fri Jun 26 — biweekly anchor
+    const isBi=(cur,anchor)=>{const diff=Math.round((cur-anchor)/DAY);return diff>=0&&diff%14===0;};
+    for(let cur=new Date(start);cur<=end;cur=new Date(cur.getTime()+DAY)){
+      const dow=cur.getDay(),day=cur.getDate(),key=keyOf(cur);
+      if(dow===5)addMtg(key,{t:'9:00 AM',end:'9:30 AM',text:'Study Check-In',sm:'Weekly',_wm:'checkin'});
+      if(dow===1)addMtg(key,{t:'1:00 PM',end:'1:30 PM',text:'Team Touch-base',sm:'Weekly',_wm:'touchbase'});
+      if(dow===3)addMtg(key,{t:'4:00 PM',end:'4:30 PM',text:'6-mo follow-up / out-of-window calls',sm:'Weekly',_wm:'oow'});
+      if(dow===2&&isBi(cur,aMaura))addMtg(key,{t:'12:30 PM',end:'1:00 PM',text:'Alex + Maura Check-in',sm:'Biweekly',_wm:'maura'});
+      if(dow===4&&isBi(cur,aBrian))addMtg(key,{t:'3:30 PM',end:'4:00 PM',text:'Alex / Brian call',sm:'Biweekly',_wm:'brian'});
+      if(dow===5&&isBi(cur,aBiwk))addMtg(key,{t:'10:00 AM',end:'10:45 AM',text:'Study Biweekly Meeting',sm:'Biweekly',_wm:'studybi'});
+      if(dow===1&&day<=14)addMtg(key,{t:'1:30 PM',end:'4:00 PM',text:'Larger Possibilities Meeting',sm:'1st & 2nd Monday',_wm:'larger'});
+    }
+    addMtg('2026-06-30',{t:'9:00 AM',end:'9:15 AM',text:'⚠️ Trainings DUE today',sm:'Deadline',cls:'deadline',_wm:'trainings'});
+    d._workMeetingsV1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
