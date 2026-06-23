@@ -403,6 +403,14 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     setC('braindump','#9aa0a8');// brain dump — grey
     d._alexPaletteV2=true;
   }
+  // Decouple CHOP work from meetings: general work = slate blue-grey, reminders = darker
+  // subdued blue. Meetings stay peach via MEETING_PEACH (not the chop category color).
+  if(!d._chopSlateV1){
+    if(!d.cats)d.cats={};
+    if(d.cats.chop)d.cats.chop.color='#7e8aa0';     // general work — slate blue-grey
+    if(d.cats.reminder)d.cats.reminder.color='#4a6b8a'; // reminders — darker subdued blue
+    d._chopSlateV1=true;
+  }
   // Alex recurring work meetings — weekly/biweekly/monthly seeded through end of 2026.
   // Biweeklies anchored to the week of Jun 22 2026 (all three occur that week).
   if(!d._workMeetingsV1){
@@ -486,7 +494,7 @@ function defaults(){
   const today=todayStr();
   return{
     cats:{
-      chop:{emoji:'🔬',label:'CHOP',color:'#f0a884'},
+      chop:{emoji:'🔬',label:'CHOP',color:'#7e8aa0'},
       todo:{emoji:'✅',label:"To-Do's",color:'#7eb2e3'},
       personal:{emoji:'🏠',label:'Personal',color:'#4fa39b'},
       exercise:{emoji:'🏃',label:'Exercise',color:'#5fb07a'},
@@ -494,7 +502,7 @@ function defaults(){
       mcat:{emoji:'📚',label:'MCAT',color:'#8a7cc6',_hidePick:true},
       medapp:{emoji:'🏥',label:'Med Apps',color:'#8a7cc6',_hidePick:true},
       deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#d65951',_hidePick:true},
-      reminder:{emoji:'⏰',label:'Reminder',color:'#f0a884',_hidePick:true},
+      reminder:{emoji:'⏰',label:'Reminder',color:'#4a6b8a',_hidePick:true},
       braindump:{emoji:'🧠',label:'Brain Dump',color:'#9aa0a8',_hidePick:true},
     },
     tasks:[

@@ -1,4 +1,7 @@
 // ===== MEETING/EVENT/CALL COLOR OVERRIDE =====
+// Peach is reserved for actual meetings/calls, independent of the CHOP (work) category,
+// so general work blocks can be slate while meetings stay peach across all views.
+const MEETING_PEACH='#f0a884';
 function isMeetingBlock(slot){
   if(!slot||!slot.text)return false;
   if(slot._isMeeting)return true;
@@ -6,6 +9,7 @@ function isMeetingBlock(slot){
   return /\b(meeting|call|zoom|teams|standup|huddle|touchbase|touch base|check-in|check in|1[:\s]?on[:\s]?1|sync|appointment|appt|event|conference|interview|webinar|debrief|consult)\b/i.test(lc);
 }
 function getBlockColor(slot){
+  if(isMeetingBlock(slot))return MEETING_PEACH;
   if(slot.cls==='deadline')return '#d65951';
   if(slot.cls==='focus')return '#8a7cc6';
   if(slot.cls==='_task')return '#d65951';

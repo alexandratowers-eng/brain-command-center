@@ -1817,8 +1817,9 @@ function updateDynamicBlockCSS(){
   css+=`.mo-cell .mo-block._todo{background:#60a5fa22;color:#93c5fd;border-left:2px solid #60a5fa;}`;
   css+=`:root.light .wk-block._todo{background:#60a5fa18;border-color:#60a5fa;color:#2563eb;}`;
   css+=`:root.light .dv-ev._todo{background:#60a5fa12;border-color:#60a5fa;color:#2563eb;}`;
-  // Meetings/calls/events: always carry the chop (peach) category color, in both themes.
-  const mtg=(D.cats.chop&&D.cats.chop.color)||'#f0a884';
+  // Meetings/calls/events: always peach, independent of the chop (work) category color
+  // so general CHOP work can be slate while meetings stay peach.
+  const mtg=(typeof MEETING_PEACH!=='undefined')?MEETING_PEACH:'#f0a884';
   const mtgLight=_lightenHex(mtg,40);
   const mtgDark=_darkenHex(mtg,90);
   const mtgBar=_darkenHex(mtg,30);
