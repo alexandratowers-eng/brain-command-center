@@ -301,33 +301,20 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .wk-day-hdr.wk-weekend-start{border-left:2px solid rgba(124,58,237,.15);}
 :root.light .wk-cell.wk-weekend-start{border-left:2px solid rgba(124,58,237,.1);}
 
-/* Block colors — PEACH=meetings/obligations, PURPLE=MCAT/med school, GREEN=health/exercise, BLUE=to-dos, RED=deadlines, TEAL=personal, GREY=braindump */
-.wk-block.chop{background:rgba(240,168,132,.22);border-color:#f0a884;color:#f7c9b1;}
-.wk-block.mcat{background:rgba(138,124,198,.22);border-color:#8a7cc6;color:#cabfe6;}
-.wk-block.gma{background:rgba(240,168,132,.2);border-color:#f0a884;color:#f7c9b1;}
-.wk-block.personal{background:rgba(79,163,155,.22);border-color:#4fa39b;color:#a3d9d3;}
-.wk-block.medapp{background:rgba(138,124,198,.2);border-color:#8a7cc6;color:#cabfe6;}
-.wk-block.exercise{background:rgba(95,176,122,.2);border-color:#5fb07a;color:#b3ddc0;}
-.wk-block.braindump{background:rgba(154,160,168,.18);border-color:#9aa0a8;color:#c9cdd2;}
-.wk-block.errands{background:rgba(240,168,132,.2);border-color:#f0a884;color:#f7c9b1;}
+/* Per-category block colors are generated dynamically from D.cats in updateDynamicBlockCSS()
+   (tasks.js) so day/week/month always match the palette. Do NOT hardcode per-category colors
+   here — static rules silently override the palette and cause stale-color bugs.
+   Only non-category visual states stay static below. */
 .wk-block.free{background:rgba(99,102,241,.04);border-color:var(--border);color:var(--dim);font-style:italic;}
-.wk-block.focus{background:rgba(138,124,198,.18);border-color:#8a7cc6;color:#cabfe6;font-style:italic;}
 .wk-block.focus::before{content:'💡 ';font-style:normal;}
-.wk-block.deadline{background:rgba(214,89,81,.22);border-color:#d65951;color:#f0a39e;}
-.wk-block.health{background:rgba(95,176,122,.2);border-color:#5fb07a;color:#b3ddc0;}
-.wk-block.todo{background:rgba(126,178,227,.2);border-color:#7eb2e3;color:#bcd9f2;}
-.wk-block.reminder{background:rgba(240,168,132,.2);border-color:#f0a884;color:#f7c9b1;}
-/* Meeting/call/event: peach fill, with a curved peach left bar */
+/* Meetings: keep the rounded left bar only. Fill/border/text color come from the chop (peach)
+   category via the dynamic rules, so meetings stay peach automatically. */
 .wk-block.is-meeting,.dv-block.is-meeting{
-  background:rgba(240,168,132,.3)!important;
-  border:1px solid #f0a884!important;
-  border-left:4px solid #e8915f!important;
+  border-left-width:4px!important;
   border-top-left-radius:10px!important;
   border-bottom-left-radius:10px!important;
-  color:#f7c9b1!important;
   outline:none!important;
 }
-.wk-block.is-meeting *,.dv-block.is-meeting *{color:#fae3d6!important;}
 .meeting-chop-tag{display:none;}
 .dv-block .meeting-chop-tag{display:none;}
 /* Location-only blocks — slim glowing vertical strip */
@@ -451,21 +438,10 @@ button,input,select,textarea{font-family:inherit;}
 .dv-add-go{width:26px;height:26px;border-radius:50%;border:1px solid var(--indigo);background:transparent;color:var(--indigo);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;transition:all .15s;}
 .dv-add-go:hover{background:var(--blue);border-color:var(--blue);color:white;box-shadow:0 0 12px rgba(99,102,241,.3);}
 
-/* Day view colors */
-.dv-ev.chop{background:rgba(240,168,132,.12);border-color:#f0a884;color:#f0a884;}
-.dv-ev.mcat{background:rgba(138,124,198,.12);border-color:#8a7cc6;color:#a99ed6;}
-.dv-ev.gma{background:rgba(240,168,132,.1);border-color:#f0a884;color:#f0a884;}
-.dv-ev.personal{background:rgba(79,163,155,.12);border-color:#4fa39b;color:#7cc4bd;}
-.dv-ev.medapp{background:rgba(138,124,198,.1);border-color:#8a7cc6;color:#a99ed6;}
-.dv-ev.exercise{background:rgba(95,176,122,.1);border-color:#5fb07a;color:#88c79c;}
-.dv-ev.braindump{background:rgba(154,160,168,.1);border-color:#9aa0a8;color:#b4b9c0;}
-.dv-ev.errands{background:rgba(240,168,132,.1);border-color:#f0a884;color:#f0a884;}
+/* Day view per-category colors are generated dynamically (updateDynamicBlockCSS in tasks.js).
+   Only non-category states stay static. */
 .dv-ev.free{background:rgba(99,102,241,.03);border-color:var(--border);color:var(--dim);font-style:italic;}
-.dv-ev.focus{background:rgba(138,124,198,.1);border-color:#8a7cc6;color:#a99ed6;font-style:italic;}
-.dv-ev.deadline{background:rgba(214,89,81,.12);border-color:#d65951;color:#e08a84;}
-.dv-ev.health{background:rgba(95,176,122,.1);border-color:#5fb07a;color:#88c79c;}
-.dv-ev.todo{background:rgba(126,178,227,.1);border-color:#7eb2e3;color:#a3cbed;}
-.dv-ev.reminder{background:rgba(240,168,132,.1);border-color:#f0a884;color:#f0a884;}
+.dv-ev.focus{font-style:italic;}
 
 /* ====== MONTH VIEW ====== */
 .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;}
@@ -572,31 +548,10 @@ button,input,select,textarea{font-family:inherit;}
 .emoji-pick:hover{background:rgba(96,165,250,.15);transform:scale(1.1);}
 .emoji-pick.selected{border-color:var(--blue);background:rgba(96,165,250,.15);}
 
-/* ====== LIGHT MODE BLOCK OVERRIDES ====== */
-:root.light .wk-block.chop{background:rgba(240,168,132,.18);color:#b25e35;border-color:#f0a884;}
-:root.light .wk-block.mcat{background:rgba(138,124,198,.14);color:#5e51a0;border-color:#8a7cc6;}
-:root.light .wk-block.gma{background:rgba(240,168,132,.14);color:#b25e35;}
-:root.light .wk-block.personal{background:rgba(79,163,155,.16);color:#2f7a72;border-color:#4fa39b;}
-:root.light .wk-block.medapp{background:rgba(138,124,198,.12);color:#5e51a0;border-color:#8a7cc6;}
-:root.light .wk-block.exercise{background:rgba(95,176,122,.14);color:#3a7a52;border-color:#5fb07a;}
-:root.light .wk-block.errands{background:rgba(240,168,132,.16);color:#b25e35;border-color:#f0a884;}
-:root.light .wk-block.braindump{background:rgba(154,160,168,.14);color:#5c636b;border-color:#9aa0a8;}
+/* ====== LIGHT MODE BLOCK OVERRIDES ======
+   Per-category light-mode colors are also generated dynamically (updateDynamicBlockCSS).
+   Only non-category states stay static here. */
 :root.light .wk-block.free{background:rgba(79,70,229,.03);color:var(--dim);}
-:root.light .wk-block.deadline{background:rgba(214,89,81,.12);color:#a83a32;border-color:#d65951;}
-:root.light .wk-block.health{background:rgba(95,176,122,.14);color:#3a7a52;border-color:#5fb07a;}
-:root.light .wk-block.todo{background:rgba(126,178,227,.14);color:#3a6c9c;border-color:#7eb2e3;}
-:root.light .wk-block.reminder{background:rgba(240,168,132,.14);color:#b25e35;border-color:#f0a884;}
-/* Meeting in light mode: warm readable peach */
-:root.light .wk-block.is-meeting,:root.light .dv-block.is-meeting{
-  background:rgba(240,168,132,.42)!important;
-  border:1px solid #e8915f!important;
-  border-left:4px solid #d97d4f!important;
-  border-top-left-radius:10px!important;
-  border-bottom-left-radius:10px!important;
-  color:#8a4a26!important;
-  outline:none!important;
-}
-:root.light .wk-block.is-meeting *,:root.light .dv-block.is-meeting *{color:#7a3f1f!important;}
 /* Expanded (double-click) blocks */
 .dv-block.dv-expanded,.wk-block.wk-expanded{overflow:visible!important;height:auto!important;}
 .dv-block.dv-expanded .dv-main-input{white-space:normal!important;overflow:visible!important;}
@@ -604,18 +559,6 @@ button,input,select,textarea{font-family:inherit;}
 .wk-block.wk-expanded{min-width:160px;}
 .wk-block.wk-expanded .wk-block-sub{-webkit-line-clamp:unset;white-space:normal;overflow:visible;}
 :root.light .dv-block{border-width:1px 1px 1px 4px!important;box-shadow:0 1px 3px rgba(0,0,0,.08);}
-:root.light .dv-ev.chop{background:rgba(240,168,132,.1);color:#b25e35;border-color:#f0a884;}
-:root.light .dv-ev.mcat{background:rgba(138,124,198,.1);color:#5e51a0;}
-:root.light .dv-ev.gma{background:rgba(240,168,132,.08);color:#b25e35;}
-:root.light .dv-ev.personal{background:rgba(79,163,155,.1);color:#2f7a72;}
-:root.light .dv-ev.medapp{background:rgba(138,124,198,.08);color:#5e51a0;}
-:root.light .dv-ev.exercise{background:rgba(95,176,122,.08);color:#3a7a52;}
-:root.light .dv-ev.errands{background:rgba(240,168,132,.1);color:#b25e35;}
-:root.light .dv-ev.braindump{background:rgba(154,160,168,.08);color:#5c636b;}
-:root.light .dv-ev.deadline{background:rgba(214,89,81,.1);color:#a83a32;}
-:root.light .dv-ev.health{background:rgba(95,176,122,.08);color:#3a7a52;}
-:root.light .dv-ev.todo{background:rgba(126,178,227,.1);color:#3a6c9c;}
-:root.light .dv-ev.reminder{background:rgba(240,168,132,.08);color:#b25e35;}
 :root.light .dv-ev.free{background:rgba(79,70,229,.02);color:var(--dim);}
 :root.light .dv-slot{border-bottom-color:rgba(79,70,229,.07);}
 :root.light .dv-slot:hover{background:rgba(79,70,229,.025);}

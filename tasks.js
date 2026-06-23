@@ -1817,6 +1817,15 @@ function updateDynamicBlockCSS(){
   css+=`.mo-cell .mo-block._todo{background:#60a5fa22;color:#93c5fd;border-left:2px solid #60a5fa;}`;
   css+=`:root.light .wk-block._todo{background:#60a5fa18;border-color:#60a5fa;color:#2563eb;}`;
   css+=`:root.light .dv-ev._todo{background:#60a5fa12;border-color:#60a5fa;color:#2563eb;}`;
+  // Meetings/calls/events: always carry the chop (peach) category color, in both themes.
+  const mtg=(D.cats.chop&&D.cats.chop.color)||'#f0a884';
+  const mtgLight=_lightenHex(mtg,40);
+  const mtgDark=_darkenHex(mtg,90);
+  const mtgBar=_darkenHex(mtg,30);
+  css+=`.wk-block.is-meeting,.dv-block.is-meeting{background:${mtg}4d!important;border-color:${mtg}!important;border-left-color:${mtgBar}!important;color:${mtgLight}!important;}`;
+  css+=`.wk-block.is-meeting *,.dv-block.is-meeting *{color:${mtgLight}!important;}`;
+  css+=`:root.light .wk-block.is-meeting,:root.light .dv-block.is-meeting{background:${mtg}6b!important;border-color:${mtgBar}!important;border-left-color:${mtgBar}!important;color:${mtgDark}!important;}`;
+  css+=`:root.light .wk-block.is-meeting *,:root.light .dv-block.is-meeting *{color:${mtgDark}!important;}`;
   styleEl.textContent=css;
 }
 
