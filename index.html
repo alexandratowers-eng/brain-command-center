@@ -19,7 +19,7 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260623b">
+<link rel="stylesheet" href="styles.css?v=20260626a">
 <script src="sync-config.js?v=20260623b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
@@ -100,6 +100,13 @@ if('serviceWorker' in navigator){
         <button class="vt-btn" onclick="setCalView('month',this)"><span class="mi" style="font-size:14px;">calendar_view_month</span> Month</button>
       </div>
     </div>
+  </div>
+
+  <!-- SYNC STATUS BANNER -->
+  <div id="syncBanner" class="sync-banner" data-state="disabled" style="display:none;">
+    <span class="sync-banner-dot"></span>
+    <span id="syncBannerText" class="sync-banner-text">Checking sync…</span>
+    <button id="syncBannerBtn" class="sync-banner-btn" style="display:none;" onclick="SyncEngine.showPairingModal()">Connect this device</button>
   </div>
 
   <!-- SIDEBAR -->
@@ -979,7 +986,7 @@ if('serviceWorker' in navigator){
 <script src="calendar.js?v=20260623b"></script>
 <script src="tasks.js?v=20260623b"></script>
 <script src="features.js?v=20260623b"></script>
-<script src="sync.js?v=20260623b"></script>
+<script src="sync.js?v=20260626a"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

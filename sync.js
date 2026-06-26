@@ -6,6 +6,40 @@ window.SyncEngine=(function(){
   let _timer=null;
   let _state='disabled';
   let _pulling=false;
+  let _lastSyncAt=0;
+
+  function relTime(ts){
+    if(!ts)return 'never';
+    const s=Math.floor((Date.now()-ts)/1000);
+    if(s<10)return 'just now';
+    if(s<60)return s+'s ago';
+    const m=Math.floor(s/60);
+    if(m<60)return m+'m ago';
+    const h=Math.floor(m/60);
+    if(h<24)return h+'h ago';
+    return new Date(ts).toLocaleDateString();
+  }
+
+  function refreshBanner(msg){
+    const b=document.getElementById('syncBanner');if(!b)return;
+    b.style.display='flex';
+    b.dataset.state=_state;
+    const txt=document.getElementById('syncBannerText');
+    const btn=document.getElementById('syncBannerBtn');
+    const connected=!!getConfig();
+    if(!connected){
+      if(txt)txt.textContent='This device is not synced — your phone and laptop won’t match.';
+      if(btn)btn.style.display='inline-block';
+      return;
+    }
+    if(btn)btn.style.display='none';
+    let label;
+    if(_state==='syncing')label='Syncing…';
+    else if(_state==='offline')label='Offline — will sync when back online';
+    else if(_state==='error')label='Sync error — tap the cloud icon to retry';
+    else label='Synced ✓ · last synced '+relTime(_lastSyncAt)+' · this device is connected';
+    if(txt)txt.textContent=msg||label;
+  }
 
   function getConfig(){
     const gistId=window.SYNC_GIST_ID||null;
@@ -18,14 +52,18 @@ window.SyncEngine=(function(){
 
   function setStatus(state,msg){
     _state=state;
-    const el=document.getElementById('syncStatusBtn');if(!el)return;
-    const icons={idle:'cloud',syncing:'cloud_sync',error:'cloud_off',offline:'cloud_off',disabled:'cloud_queue'};
-    const emoji={idle:'☁️',syncing:'🔄',error:'⚠️',offline:'📴',disabled:'🔗'};
-    const ic=el.querySelector('.mi');
-    if(ic)ic.textContent=icons[state]||'cloud';
-    else el.textContent=emoji[state]||'☁️';
-    el.title=msg||state;
-    el.dataset.state=state;
+    if(state==='idle')_lastSyncAt=Date.now();
+    const el=document.getElementById('syncStatusBtn');
+    if(el){
+      const icons={idle:'cloud',syncing:'cloud_sync',error:'cloud_off',offline:'cloud_off',disabled:'cloud_queue'};
+      const emoji={idle:'☁️',syncing:'🔄',error:'⚠️',offline:'📴',disabled:'🔗'};
+      const ic=el.querySelector('.mi');
+      if(ic)ic.textContent=icons[state]||'cloud';
+      else el.textContent=emoji[state]||'☁️';
+      el.title=msg||state;
+      el.dataset.state=state;
+    }
+    refreshBanner();
   }
 
   async function gistGet(cfg){
@@ -365,10 +403,11 @@ window.SyncEngine=(function(){
     }
     if(paired)setStatus('syncing','Connecting...');
     setTimeout(()=>pull(),800);
+    setInterval(()=>{if(_state==='idle')refreshBanner();},30000);
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible')pull();
     });
   }
 
-  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync};
+  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner};
 })();
