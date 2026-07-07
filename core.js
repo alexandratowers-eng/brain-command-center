@@ -470,6 +470,7 @@ function switchTab(id,el){
   if(mvt)mvt.style.display=(id==='cal')?'':'none';
   if(id==='tasks')renderAllTasks();
   if(id==='dump'){renderInbox();if(typeof initWorryNotes==='function')initWorryNotes();}
+  if(id==='cards'&&typeof renderCards==='function')renderCards();
   if(id==='cal')renderCalendar();
   if(id==='wins')renderWinsTab();
   if(id==='rec'&&typeof renderMtgCalendarView==='function')renderMtgCalendarView();

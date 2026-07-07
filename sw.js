@@ -1,4 +1,4 @@
-const CACHE='bcc-v55';
+const CACHE='bcc-v56';
 const ASSETS=[
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS=[
   './data.js',
   './calendar.js',
   './tasks.js',
+  './cards.js',
   './features.js',
   './studyplan-data.js',
   './studyplan.js',

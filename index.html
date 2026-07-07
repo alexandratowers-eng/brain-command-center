@@ -19,7 +19,7 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260706b">
+<link rel="stylesheet" href="styles.css?v=20260707a">
 <script src="sync-config.js?v=20260623b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
@@ -87,6 +87,7 @@ if('serviceWorker' in navigator){
         <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
         <button class="tab-btn" onclick="switchTab('wins',this)"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
         <button class="tab-btn" onclick="switchTab('tasks',this)"><span class="mi" style="color:var(--amber);">checklist</span> Tasks</button>
+        <button class="tab-btn" onclick="switchTab('cards',this)"><span class="mi" style="color:var(--teal);">view_agenda</span> Cards</button>
         <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
         <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
         <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
@@ -427,6 +428,11 @@ if('serviceWorker' in navigator){
       <div id="tasksParkingPane" style="display:none;"><div id="parkingList"></div></div>
       <div id="tasksBacklogPane" style="display:none;"><div id="backlogList"></div></div>
       <div id="parkingAddInput" style="display:none;"></div>
+    </div>
+
+    <!-- CARDS TAB -->
+    <div class="tab-panel" id="p-cards">
+      <div id="cardsView"></div>
     </div>
 
     <!-- BRAIN DUMP TAB -->
@@ -983,9 +989,10 @@ if('serviceWorker' in navigator){
 </div>
 
 <script src="data.js?v=20260623b"></script>
-<script src="core.js?v=20260623b"></script>
+<script src="core.js?v=20260707a"></script>
 <script src="calendar.js?v=20260706c"></script>
 <script src="tasks.js?v=20260706b"></script>
+<script src="cards.js?v=20260707a"></script>
 <script src="features.js?v=20260706b"></script>
 <script src="studyplan-data.js?v=20260706a"></script>
 <script src="studyplan.js?v=20260706a"></script>
