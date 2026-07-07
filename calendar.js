@@ -1115,6 +1115,7 @@ function renderDayView(){
           ${urgentBadge}
           <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
           <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
+          <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--dim);flex-shrink:0;" onclick="event.stopPropagation();deferToLater(${t.id});renderCalendar();" title="Move to later / stash">later</button>
           <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();togTask(${t.id});" title="Done">✓</button>
           <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();trashTask(${t.id});renderCalendar();renderCalTasks();renderAllTasks();updateStats();" title="Delete">✕</button>
         </div>`;
