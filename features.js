@@ -674,6 +674,7 @@ function renderMcat(){
   }).join('');
 
   el.innerHTML=ringHtml+stepsHtml;
+  if(typeof renderStudyPlan==='function') renderStudyPlan();
 }
 
 
