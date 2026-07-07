@@ -1495,7 +1495,7 @@ function taskToBlock(taskId,dt){
 }
 function dvSmEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();editSlotSm(dt,sid,val);}
 function dvTitleEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;const val=(el.innerText||'').trim();if(!val)return;const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;if(tl[i].text===val)return;tl[i].text=val;setTimeline(dt,tl);}
-function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
+function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);if(typeof maybeLogWorkWin==='function')maybeLogWorkWin(tl[i].text,tl[i].cls,{sourceBlockId:tl[i].id||(dt+'#'+sid)});}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 function removeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl.splice(i,1);setTimeline(dt,tl);renderCalendar();}
 function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const orig=tl[i];const newT=parseMin(orig.t)+30;tl.splice(i+1,0,{t:minToTime(newT),text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});setTimeline(dt,tl);renderCalendar();}
 
@@ -1654,6 +1654,11 @@ function removeManualWin(dt,idx){
 // ===== WINS TAB =====
 let _winsDate=null;
 let _winsViewAll=false;
+function winWorkBtn(text,isWork){
+  const logged=(typeof isWinInWorkLog==='function')&&isWinInWorkLog(text);
+  if(logged) return `<button class="win-worklog logged" disabled title="In your Work Log">✓ work</button>`;
+  return `<button class="win-worklog" onclick="sendWinToWorkLog(this,this.closest('.ref-completed-item').querySelector('.win-txt').innerText)" title="Add to Work Log">→ work</button>`;
+}
 function renderWinsTab(){
   const el=document.getElementById('winsContent');
   if(!el)return;
@@ -1692,10 +1697,10 @@ function renderWinsTab(){
 
       <div style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">What I accomplished</div>
       <div class="ref-completed">
-        ${completedSlots.map(s=>`<div class="ref-completed-item">✓ ${s.text}</div>`).join('')}
-        ${completedTasks.map(t=>`<div class="ref-completed-item">✓ ${t.text}</div>`).join('')}
+        ${completedSlots.map(s=>`<div class="ref-completed-item" style="display:flex;align-items:center;gap:6px;"><span>✓</span><span class="win-txt" style="flex:1">${s.text}</span>${winWorkBtn(s.text,isWorkCat(s.cls))}</div>`).join('')}
+        ${completedTasks.map(t=>`<div class="ref-completed-item" style="display:flex;align-items:center;gap:6px;"><span>✓</span><span class="win-txt" style="flex:1">${t.text}</span>${winWorkBtn(t.text,isWorkCat(t.cat))}</div>`).join('')}
         ${(ref.manualWins||[]).map((w,idx)=>`<div class="ref-completed-item" style="display:flex;align-items:center;gap:6px;">
-          <span>✓</span><span style="flex:1">${w}</span>
+          <span>✓</span><span class="win-txt" style="flex:1">${w}</span>${winWorkBtn(w,false)}
           <button onclick="removeManualWin('${dt}',${idx})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;" title="Remove">✕</button>
         </div>`).join('')}
         ${!hasCompleted&&!(ref.manualWins||[]).length ? `<div class="ref-empty">Nothing yet — add what you did!</div>` : ''}

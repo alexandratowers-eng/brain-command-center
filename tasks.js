@@ -61,7 +61,7 @@ function addSidebarTask(inp){
   D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:todayStr()});
   inp.value='';save();renderCalTasks();updateStats();
 }
-function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());}else{delete t.doneAt;}save();setTimeout(()=>{renderCalendar();renderCalTasks();renderAllTasks();updateStats();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderCalRightTrash==='function')renderCalRightTrash();},300);}
+function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());if(typeof maybeLogWorkWin==='function')maybeLogWorkWin(t.text,t.cat,{sourceTaskId:t.id});}else{delete t.doneAt;}save();setTimeout(()=>{renderCalendar();renderCalTasks();renderAllTasks();updateStats();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderCalRightTrash==='function')renderCalRightTrash();},300);}
 function moveTaskDate(id,dir){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   const d=new Date((t.date||todayStr())+'T12:00:00');

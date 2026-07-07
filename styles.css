@@ -1732,3 +1732,8 @@ button,input,select,textarea{font-family:inherit;}
 .sp-jtopic{flex:1;font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);}
 .sp-del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;padding:2px 6px;}
 .sp-jnotes{width:100%;min-height:48px;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;line-height:1.4;}
+
+/* Win -> Work Log button */
+.win-worklog{background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.35);color:var(--teal);border-radius:6px;font-size:9px;font-weight:600;padding:2px 7px;cursor:pointer;white-space:nowrap;}
+.win-worklog:hover{background:rgba(45,212,191,.2);}
+.win-worklog.logged{background:rgba(45,212,191,.18);border-color:var(--teal);cursor:default;opacity:.75;}

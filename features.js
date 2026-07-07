@@ -3837,6 +3837,55 @@ function addWorkLogEntry(opts){
   if(toast){toast.innerHTML='✓ Logged'+(starred?' ⭐':'');toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
 }
 
+// Which task/block categories count as "work" for auto-routing wins into the Work Log.
+// User can extend via D.workCats. CHOP = her workplace.
+function _workCats(){ return (D.workCats&&D.workCats.length)?D.workCats:['chop']; }
+function isWorkCat(cat){ return !!cat && _workCats().indexOf(cat)>=0; }
+
+// Log a win into the Work Log if it isn't already there (dedupe by source id, else text).
+// Returns true if a new entry was added.
+function logWorkWin(text,opts){
+  opts=opts||{};
+  text=(text||'').trim();
+  if(!text) return false;
+  _wlEnsureStore();
+  const srcTask=opts.sourceTaskId||null, srcBlock=opts.sourceBlockId||null;
+  const dup=D.workLog.some(e=>
+    (srcTask&&e.sourceTaskId===srcTask) ||
+    (srcBlock&&e.sourceBlockId===srcBlock) ||
+    (e.text===text)
+  );
+  if(dup) return false;
+  addWorkLogEntry({text,project:opts.project||'',impact:opts.impact||'med',sourceTaskId:srcTask,sourceBlockId:srcBlock});
+  return true;
+}
+
+// Called from win-completion paths. Auto-logs only when the item is work-categorized.
+function maybeLogWorkWin(text,cat,opts){
+  if(!isWorkCat(cat)) return false;
+  return logWorkWin(text,opts);
+}
+
+// Is this win text already in the Work Log?
+function isWinInWorkLog(text){
+  _wlEnsureStore();
+  text=(text||'').trim();
+  return D.workLog.some(e=>e.text===text);
+}
+
+// One-tap manual route: send a win to the Work Log from the Wins tab.
+function sendWinToWorkLog(btn,text){
+  if(isWinInWorkLog(text)){
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML='Already in Work Log';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1400);}
+    return;
+  }
+  logWorkWin(text,{});
+  if(btn){btn.classList.add('logged');btn.textContent='✓ work';btn.title='In your Work Log';}
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='✓ Added to Work Log';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
+}
+
 function setWlFilter(f,btn){
   _wlFilter=f;
   document.querySelectorAll('.wl-filter-btn').forEach(b=>b.classList.toggle('active',b===btn));
