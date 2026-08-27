@@ -904,18 +904,22 @@ function renderCalRightTasks(){
   const isToday=dt===today;
 
   // Include ALL tasks for this date + overdue — active + done (done shown greyed inline)
-  const overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)):[];
-  const todayActiveTasks=D.tasks.filter(t=>t.date===dt&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)).sort((a,b)=>{const p={high:0,med:1,low:2};return (p[a.pri]||1)-(p[b.pri]||1);});
-  const activeTasks=[...overdueTasks,...todayActiveTasks];
-  const doneTasks=D.tasks.filter(t=>t.date===dt&&t.done&&t.cat!=='braindump');
+  // Dedupe: a task already placed on the timeline as a block (has _taskId) must NOT
+  // also render in the Tasks section, or it shows up twice for the same day.
+  const scheduledTaskIds=new Set(tl.filter(s=>s._taskId).map(s=>s._taskId));
+  const overdueTasks=isToday?D.tasks.filter(t=>t.date&&t.date<today&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)&&!scheduledTaskIds.has(t.id)):[];
+  const todayActiveTasks=D.tasks.filter(t=>t.date===dt&&!t.done&&t.cat!=='braindump'&&!isSnoozed(t)&&!scheduledTaskIds.has(t.id)).sort((a,b)=>{const p={high:0,med:1,low:2};return (p[a.pri]||1)-(p[b.pri]||1);});
+  // Overdue items are rendered in their own collapsed "Carried over" group, not mixed into today's flow.
+  const activeTasks=todayActiveTasks;
+  const doneTasks=D.tasks.filter(t=>t.date===dt&&t.done&&t.cat!=='braindump'&&!scheduledTaskIds.has(t.id));
   const activeSlots=tl.filter(s=>!s.done);
   const doneSlots=tl.filter(s=>s.done);
   const activeCount=activeSlots.length+activeTasks.length;
   const doneCount=doneSlots.length+doneTasks.length;
   const badge=document.getElementById('calRightTaskBadge');
-  if(badge)badge.textContent=activeCount+(doneCount?` · ${doneCount}✓`:'');
+  if(badge)badge.textContent=activeCount+(overdueTasks.length?` · ${overdueTasks.length}⏰`:'')+(doneCount?` · ${doneCount}✓`:'');
 
-  if(!activeSlots.length&&!activeTasks.length&&!doneSlots.length&&!doneTasks.length){
+  if(!activeSlots.length&&!activeTasks.length&&!doneSlots.length&&!doneTasks.length&&!overdueTasks.length){
     el.innerHTML='<p style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">No tasks or events for this day</p>';return;
   }
 
@@ -1020,6 +1024,30 @@ function renderCalRightTasks(){
   if(allTaskBlocks.length){
     html+=`<div style="font-size:9px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;padding:${allSlotBlocks.length?'8':'4'}px 0 2px;">Tasks</div>`;
     html+=allTaskBlocks.join('');
+  }
+
+  // --- CARRIED OVER section (overdue) — collapsed by default, out of today's main flow ---
+  if(overdueTasks.length){
+    const collapsed=D._carriedOverOpen?false:true;
+    html+=`<div onclick="D._carriedOverOpen=!D._carriedOverOpen;save();renderCalRightTasks();" style="cursor:pointer;font-size:9px;font-weight:700;color:var(--amber,#fbbf24);text-transform:uppercase;letter-spacing:.5px;padding:8px 0 2px;display:flex;align-items:center;gap:4px;">
+      <span>${collapsed?'▸':'▾'}</span><span>⏰ Carried over</span>
+      <span style="color:var(--dim);font-weight:600;">${overdueTasks.length}</span>
+      <button onclick="event.stopPropagation();moveAllOverdueToToday();" title="Pull all into today" style="margin-left:auto;font-size:8px;border:1px solid var(--amber,#fbbf24);border-radius:3px;background:none;color:var(--amber,#fbbf24);cursor:pointer;padding:1px 5px;">→ all today</button>
+    </div>`;
+    if(!collapsed){
+      html+=overdueTasks.map(t=>{
+        const cat=D.cats[t.cat];
+        const catColor=cat?cat.color:'var(--dim)';
+        const emoji=cat?cat.emoji:'';
+        const wasDue=new Date(t.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        return renderBlock({
+          color:catColor, done:false, isPast:true, isCurrent:false,
+          label:emoji+' '+t.text, fullText:t.text, subtitle:'was due '+wasDue, taskId:t.id,
+          toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
+          extraBtn:`<button onclick="event.stopPropagation();moveOverdueToToday(${t.id})" title="Do it today" style="font-size:8px;border:1px solid var(--green);border-radius:3px;background:none;color:var(--green);cursor:pointer;padding:1px 4px;flex-shrink:0;">today</button><button onclick="event.stopPropagation();deferToLater(${t.id})" title="Stash for later" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;margin-left:3px;">stash</button>`
+        });
+      }).join('');
+    }
   }
 
   el.innerHTML=bannerHtml+html;
@@ -1341,11 +1369,13 @@ function autoParkingReview(){
   const laterTasks=D.tasks.filter(t=>!t.date&&!t.done&&t.cat!=='braindump');
   const stashCount=(D.parkingItems||[]).length+laterTasks.length;
   if(!stashCount)return;
+  // Twice-weekly cadence (Mon + Thu) so stash reminders nudge without nagging daily.
+  const dow=new Date().getDay(); // 0=Sun … 6=Sat
+  if(dow!==1&&dow!==4)return;
   const dt=todayStr();
   const lastReview=D._lastParkingReview||'';
   if(lastReview===dt)return;
   D._lastParkingReview=dt;
-  // Show a small daily check-in with 3-5 random stash items
   openDailyStashCheckin();
 }
 function openDailyStashCheckin(){
