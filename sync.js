@@ -217,6 +217,12 @@ window.SyncEngine=(function(){
     }
     // Keep higher nextId
     if(local.nextId>merged.nextId)merged.nextId=local.nextId;
+    // Carry over one-time migration/seed flags (keys like _npImported, _mcatMaySeeded) from
+    // whichever side has them. If a merge ever drops one of these, load() reruns that seed
+    // block on next load and re-pushes the same tasks/blocks — this is what caused duplicates.
+    Object.keys(local).forEach(k=>{
+      if(k[0]==='_'&&local[k]===true&&merged[k]!==true)merged[k]=true;
+    });
     // Preserve client-local UI state that shouldn't be overwritten by remote
     ['spotRowExpanded','daySpots','daySpotMeta','customSpots'].forEach(k=>{
       if(local[k]!==undefined){

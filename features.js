@@ -2540,9 +2540,12 @@ function surfaceLaterItems(){
 }
 
 // ===== FLEXIBLE TASK ROLL-FORWARD =====
-// Flexible tasks aren't "late." A task that didn't fit yesterday just quietly
-// becomes a today task. The only exception is a task with a hard due date (t.due):
-// it keeps its own date so the deadline-aware scheduling can still see it.
+// A task that didn't happen on its date isn't automatically "today's problem" —
+// dumping it back onto today just clutters the day with things that already didn't
+// fit once. Instead it drops into the dateless Later bucket, where the existing daily
+// stash check-in and Sunday/Monday weekly review periodically resurface it. The only
+// exception is a task with a hard due date (t.due) still in the future: it keeps its
+// own date so the deadline-aware scheduler can still see it.
 function checkOverdueTasks(){
   const today=todayStr();
   let rolled=false;
@@ -2551,7 +2554,7 @@ function checkOverdueTasks(){
     if(!t.date||t.date>=today)return;
     if(typeof isSnoozed==='function'&&isSnoozed(t))return;
     if(t.due&&t.due>=today)return; // deadline still in the future — leave it for the scheduler
-    t.date=today;
+    t.date='';
     rolled=true;
   });
   if(rolled)save();
