@@ -466,6 +466,33 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._floor13ListV1=true;
   }
+  // Week of Sept 21: time-locked work (calls) owns the same daytime slot every day
+  // so the start time never has to be re-decided; uncapped writing tasks get caps.
+  if(!d._weekSept21V1){
+    if(!d.days)d.days={};
+    const addB=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      if(!d.days[key].some(s=>s._w921===b._w921))d.days[key].push(b);
+    };
+    addB('2026-09-21',{t:'5:00 PM',end:'5:45 PM',text:'Store, then home',sm:'Transition, not an errand. Evening is off.',cls:'personal',_w921:'monStore'});
+    addB('2026-09-22',{t:'10:00 AM',end:'12:00 PM',text:'Call block 1: 20 calls',sm:'Beck Institute last, while already in phone mode',cls:'chop',_w921:'calls1'});
+    addB('2026-09-23',{t:'10:00 AM',end:'12:00 PM',text:'Call block 2: 20 calls',sm:'Same slot every day. Do not re-decide.',cls:'chop',_w921:'calls2'});
+    addB('2026-09-23',{t:'1:00 PM',end:'1:45 PM',text:'Resume: ugly draft only',sm:'45 min hard cap. Generate, do not edit.',cls:'todo',_w921:'resume'});
+    addB('2026-09-24',{t:'10:00 AM',end:'12:00 PM',text:'Call block 3: 20 calls (hits 60)',sm:'Target met Thursday so Friday is not a panic',cls:'chop',_w921:'calls3'});
+    addB('2026-09-24',{t:'1:00 PM',end:'1:30 PM',text:'LinkedIn: paste from resume',sm:'Must come after Wednesday or you do it twice',cls:'todo',_w921:'linkedin'});
+    addB('2026-09-25',{t:'1:00 PM',end:'1:30 PM',text:'Eric essay email: send it',sm:'Out of your head before the weekend',cls:'todo',_w921:'eric'});
+    addB('2026-09-25',{t:'2:00 PM',end:'3:00 PM',text:'Buffer: whatever slipped',sm:'Something will. Plan the slip.',cls:'todo',_w921:'buffer'});
+    if(!d.tasks)d.tasks=[];
+    const addT=(text,cat,pri,date,tag)=>{
+      if(!d.tasks.some(t=>t._w921===tag))d.tasks.push({id:1758490100+d.tasks.length,text,cat,pri,done:false,date,_w921:tag});
+    };
+    addT('TaskRabbit: book desk build','personal','med','2026-09-21','taskrabbit');
+    addT('Call Beck Institute','chop','high','2026-09-22','beck');
+    addT('Resume updates (45 min cap, ugly draft)','todo','high','2026-09-23','resume');
+    addT('LinkedIn update (paste from resume)','todo','med','2026-09-24','linkedin');
+    addT('Eric essay email','todo','high','2026-09-25','eric');
+    d._weekSept21V1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
