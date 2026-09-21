@@ -61,7 +61,7 @@ function addSidebarTask(inp){
   D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:todayStr()});
   inp.value='';save();renderCalTasks();updateStats();
 }
-function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());if(typeof maybeLogWorkWin==='function')maybeLogWorkWin(t.text,t.cat,{sourceTaskId:t.id});}else{delete t.doneAt;}save();setTimeout(()=>{renderCalendar();renderCalTasks();renderAllTasks();updateStats();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderCalRightTrash==='function')renderCalRightTrash();},300);}
+function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());}else{delete t.doneAt;}save();setTimeout(()=>{renderCalendar();renderCalTasks();renderAllTasks();updateStats();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderCalRightTrash==='function')renderCalRightTrash();},300);}
 function moveTaskDate(id,dir){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   const d=new Date((t.date||todayStr())+'T12:00:00');
@@ -1134,11 +1134,9 @@ function renderCalRightWinsDone(){
     html+=`<div style="margin-bottom:4px;">`;
     html+=`<div style="font-size:8px;color:var(--dim);font-weight:600;margin-bottom:2px;">${g.emoji} ${g.items.length}</div>`;
     g.items.forEach(item=>{
-      const logBtn=item.type==='task'?`<button class="wl-quick-log" onclick="event.stopPropagation();logTaskAsWork(${item.sourceId})" title="Add to Work Log"><span class="mi" style="font-size:11px;">work_history</span></button>`:item.type==='block'?`<button class="wl-quick-log" onclick="event.stopPropagation();logBlockAsWork('${item.dt}','${item.sourceId}')" title="Add to Work Log"><span class="mi" style="font-size:11px;">work_history</span></button>`:'';
       html+=`<div style="display:flex;align-items:center;gap:4px;padding:2px 0;opacity:.85;">
         <span style="color:var(--green);font-size:10px;">✓</span>
         <span style="font-size:10px;text-decoration:line-through;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.text}</span>
-        ${logBtn}
       </div>`;
     });
     html+=`</div>`;

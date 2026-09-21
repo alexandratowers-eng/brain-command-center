@@ -20,6 +20,11 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
   if(!d.worryLog) d.worryLog={};
   if(!d.weeklyGoals) d.weeklyGoals=[];
   if(!d.lists) d.lists=[];
+  if(!Array.isArray(d.mcatSteps)||!d.mcatSteps.length) d.mcatSteps=[
+    {text:'P/S: Khan Academy — Nervous System overview',time:'20 min',status:'todo'},
+    {text:'P/S: Flashcards — psych terms',time:'15 min',status:'todo'},
+    {text:'Kaplan QBank: 10 mixed Qs',time:'15 min',status:'todo'},
+  ];
   // Migrate: consolidate gma+errands into personal, inbox into braindump
   if(!d._catsMerged){
     // Merge category references in tasks

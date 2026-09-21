@@ -144,7 +144,6 @@ function cardDone(key){
     if(t){
       t.done = true; t.doneAt = Date.now();
       if(typeof autoAddWin==='function') autoAddWin(t.text, todayStr());
-      if(typeof maybeLogWorkWin==='function') maybeLogWorkWin(t.text, t.cat, {sourceTaskId:t.id});
       save();
     }
   }

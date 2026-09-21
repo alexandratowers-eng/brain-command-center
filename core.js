@@ -473,8 +473,8 @@ function switchTab(id,el){
   if(id==='cards'&&typeof renderCards==='function')renderCards();
   if(id==='cal')renderCalendar();
   if(id==='wins')renderWinsTab();
+  if(id==='mcat'&&typeof renderMcat==='function')renderMcat();
   if(id==='rec'&&typeof renderMtgCalendarView==='function')renderMtgCalendarView();
-  if(id==='worklog'&&typeof renderWorkLog==='function')renderWorkLog();
 }
 
 // ===== CAL VIEW =====
