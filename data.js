@@ -446,6 +446,26 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     addMtg('2026-06-30',{t:'9:00 AM',end:'9:15 AM',text:'⚠️ Trainings DUE today',sm:'Deadline',cls:'deadline',_wm:'trainings'});
     d._workMeetingsV1=true;
   }
+  // "13th Floor" list: location-locked work that can only be done on-site, so it
+  // rides along with a trip instead of sitting on the general to-do list.
+  if(!d._floor13ListV1){
+    if(!d.lists)d.lists=[];
+    if(!d.lists.some(l=>l.name==='📍 13th Floor')){
+      d.lists.push({id:1758490001,name:'📍 13th Floor',items:[
+        {id:1758490002,text:'Drive test (15 min): do it first thing on arrival',done:false},
+      ]});
+    }
+    if(!d.tasks)d.tasks=[];
+    if(!d.tasks.some(t=>t._f13==='driveTest')){
+      d.tasks.push({id:1758490003,text:'Drive test, 13th floor (15 min)',cat:'chop',pri:'high',done:false,date:'2026-09-22',_f13:'driveTest'});
+    }
+    if(!d.days)d.days={};
+    if(!d.days['2026-09-22'])d.days['2026-09-22']=[];
+    if(!d.days['2026-09-22'].some(b=>b._f13==='driveTest')){
+      d.days['2026-09-22'].push({t:'9:00 AM',end:'9:15 AM',text:'Drive test, 13th floor',sm:'15 min. Go up first, then the day starts.',cls:'chop',loc:'13th floor',_f13:'driveTest'});
+    }
+    d._floor13ListV1=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
