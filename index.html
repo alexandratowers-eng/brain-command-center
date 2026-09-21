@@ -19,7 +19,7 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260921c">
+<link rel="stylesheet" href="styles.css?v=20260921d">
 <script src="sync-config.js?v=20260623b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
@@ -85,13 +85,13 @@ if('serviceWorker' in navigator){
     </div>
     <div class="topbar-center">
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('cal',this)"><span class="mi" style="color:var(--blue);">calendar_month</span> Calendar</button>
-        <button class="tab-btn" onclick="switchTab('wins',this)"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
-        <button class="tab-btn" onclick="switchTab('tasks',this)"><span class="mi" style="color:var(--amber);">checklist</span> Tasks</button>
-        <button class="tab-btn" onclick="switchTab('cards',this)"><span class="mi" style="color:var(--teal);">view_agenda</span> Cards</button>
-        <button class="tab-btn" onclick="switchTab('dump',this)"><span class="mi" style="color:var(--purple);">psychology</span> Dump</button>
-        <button class="tab-btn" onclick="switchTab('mcat',this)"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
-        <button class="tab-btn" onclick="switchTab('rec',this)"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
+        <button class="tab-btn active" onclick="switchTab('cal',this)" style="--tab-accent:var(--blue);"><span class="mi">calendar_month</span> Calendar</button>
+        <button class="tab-btn" onclick="switchTab('wins',this)" style="--tab-accent:var(--green);"><span class="mi">emoji_events</span> Wins</button>
+        <button class="tab-btn" onclick="switchTab('tasks',this)" style="--tab-accent:var(--amber);"><span class="mi">checklist</span> Tasks</button>
+        <button class="tab-btn" onclick="switchTab('cards',this)" style="--tab-accent:var(--teal);"><span class="mi">view_agenda</span> Cards</button>
+        <button class="tab-btn" onclick="switchTab('dump',this)" style="--tab-accent:var(--purple);"><span class="mi">psychology</span> Dump</button>
+        <button class="tab-btn" onclick="switchTab('mcat',this)" style="--tab-accent:var(--indigo);"><span class="mi">menu_book</span> MCAT</button>
+        <button class="tab-btn" onclick="switchTab('rec',this)" style="--tab-accent:var(--rose);"><span class="mi">groups</span> Meetings</button>
       </div>
     </div>
     <div class="topbar-right">

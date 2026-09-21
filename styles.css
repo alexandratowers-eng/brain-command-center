@@ -15,7 +15,7 @@
   --amber:#d97d5d;--red:#c2615a;--teal:#5a9b94;--purple:#9b8299;
   --grad:linear-gradient(135deg,#5b7a9c,#9b8299);
 }
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:11px;}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:11px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .mi{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:16px;display:inline-block;line-height:1;vertical-align:middle;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 400;}
 button,input,select,textarea{font-family:inherit;}
 ::-webkit-scrollbar{width:6px;height:6px;}
@@ -77,13 +77,13 @@ button,input,select,textarea{font-family:inherit;}
 .view-toggle{display:flex;gap:2px;background:var(--bg);border-radius:9px;padding:3px;border:1px solid var(--border);flex-shrink:0;}
 .vt-btn{font-family:'Inter',-apple-system,sans-serif;padding:5px 11px;border:none;background:transparent;color:var(--dim);font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px;}
 .vt-btn:hover{color:var(--text);}
-.vt-btn.active{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(99,102,241,.12);}
+.vt-btn.active{background:var(--card);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.10);}
 :root.light .vt-btn.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);}
 /* Inline view toggle above calendar */
 .view-toggle-inline{padding:3px;}
 
 /* Topbar action cluster */
-.topbar-actions{display:flex;align-items:center;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;flex-shrink:0;box-shadow:0 1px 3px rgba(99,102,241,.06);}
+.topbar-actions{display:flex;align-items:center;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.06);}
 :root.light .topbar-actions{background:#fff;}
 .tb-icon-btn{background:none;border:none;color:var(--text);width:30px;height:30px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;padding:0;}
 .tb-icon-btn .mi{font-size:18px;color:var(--blue);font-variation-settings:'FILL' 0,'wght' 400;}
@@ -103,16 +103,16 @@ button,input,select,textarea{font-family:inherit;}
 .vt-day-menu button+button{border-top:1px solid var(--border);}
 
 /* TABS — center pill */
-.tabs{display:flex;gap:2px;margin:0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;flex-shrink:0;box-shadow:0 1px 3px rgba(99,102,241,.05);}
-:root.light .tabs{background:#fff;}
+.tabs{display:flex;gap:2px;margin:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;flex-shrink:0;}
+:root.light .tabs{background:var(--bg);}
 .tab-btn{font-family:'Inter',-apple-system,sans-serif;padding:5px 11px;border:none;background:transparent;color:var(--dim);font-size:11.5px;font-weight:600;border-radius:7px;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:4px;}
-.tab-btn .mi{font-size:15px;opacity:.85;}
-.tab-btn:hover{background:rgba(99,102,241,.06);color:var(--text);}
+.tab-btn .mi{font-size:15px;color:currentColor;opacity:.75;}
+.tab-btn:hover{background:rgba(127,127,150,.08);color:var(--text);}
 .tab-btn:hover .mi{opacity:1;}
-.tab-btn.active{background:rgba(99,102,241,.1);color:var(--blue);}
+.tab-btn.active{background:var(--card);color:var(--tab-accent,var(--blue));box-shadow:0 1px 3px rgba(0,0,0,.10);}
 .tab-btn.active .mi{opacity:1;}
-:root.light .tab-btn:hover{background:rgba(99,102,241,.07);}
-:root.light .tab-btn.active{background:rgba(99,102,241,.12);}
+:root.light .tab-btn:hover{background:rgba(120,115,100,.08);}
+:root.light .tab-btn.active{background:var(--card);}
 
 /* TASKS SUB-TABS */
 .tasks-subtabs{display:flex;gap:2px;background:var(--bg);border-radius:8px;padding:3px;border:1px solid var(--border);margin-bottom:12px;width:fit-content;}
