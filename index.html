@@ -19,7 +19,7 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260920a">
+<link rel="stylesheet" href="styles.css?v=20260921c">
 <script src="sync-config.js?v=20260623b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
@@ -69,6 +69,7 @@ if('serviceWorker' in navigator){
         </div>
         <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status"><span class="mi">cloud</span></button>
         <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders"><span class="mi">notifications</span></button>
+        <button id="breakBtn" class="tb-icon-btn" onclick="openBreaks()" title="Take a break"><span class="mi" style="color:var(--green);">self_improvement</span></button>
         <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme"><span class="mi">light_mode</span></button>
         <div class="topbar-dropdown" id="dataDropdown">
           <button class="tb-icon-btn" onclick="toggleDataMenu()" title="Data management"><span class="mi">settings</span></button>
@@ -897,6 +898,7 @@ if('serviceWorker' in navigator){
   <button onclick="toggleMobileSidebar();closeMobileMore()"><span class="mi" style="color:var(--green);">psychology</span> ADHD Coach</button>
   <button onclick="showNotifSetup();closeMobileMore()"><span class="mi" style="color:var(--amber);">notifications</span> Phone Notifications</button>
   <button onclick="toggleTheme();closeMobileMore()"><span class="mi" style="color:var(--amber);">light_mode</span> Toggle Theme</button>
+  <button onclick="closeMobileMore();openBreaks()"><span class="mi" style="color:var(--green);">self_improvement</span> Take a break</button>
   <button onclick="document.getElementById('dataMenu').classList.toggle('show');closeMobileMore()"><span class="mi" style="color:var(--dim);">settings</span> Data / Backup</button>
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
@@ -910,6 +912,7 @@ if('serviceWorker' in navigator){
 <script src="studyplan-data.js?v=20260706a"></script>
 <script src="studyplan.js?v=20260706a"></script>
 <script src="sync.js?v=20260626a"></script>
+<script src="breaks.js?v=20260921c"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){
