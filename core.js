@@ -523,6 +523,7 @@ function renderCalendar(){
   }
   if(typeof renderCalRightTasks==='function')renderCalRightTasks();
   if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();
+  if(typeof renderCalRightStash==='function')renderCalRightStash();
   if(typeof renderCalRightParking==='function')renderCalRightParking();
   if(typeof renderCalRightBacklog==='function')renderCalRightBacklog();
   if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();

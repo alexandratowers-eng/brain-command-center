@@ -1309,7 +1309,7 @@ function renderCalRightStash(){
         ?`<button class="defer-btn" onclick="laterToToday(${o.id})" style="font-size:9px;">→ today</button><button class="pi-act" onclick="markStashTaskDone(${o.id})" title="Done" style="font-size:9px;color:var(--green);">✓</button>`
         :`<button class="defer-btn" onclick="promoteParkingItem(${o.id});renderCalRightStash();" style="font-size:9px;">→ task</button><button class="pi-act" onclick="parkingItemDone(${o.id});renderCalRightStash();" title="Done" style="font-size:9px;color:var(--green);">✓</button>`;
       html+=`<div class="task-item" style="padding:2px 0;">
-        <div class="t-label" style="flex:1;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${o.text}">${o.emoji} ${o.text}</div>${act}
+        <div class="t-label" style="flex:1;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${o.text.replace(/"/g,'&quot;')}">${o.emoji} ${o.text}</div>${act}
       </div>`;
     });
     html+=`</div>`;
