@@ -294,6 +294,7 @@ function renderWeekView(){
       <button class="cal-nav-btn" onclick="navWeek(1)" title="Next week">›</button>
       <button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
     </div>
+    <button class="ics-btn" onclick="openWeekDump()" title="List everything for the week, get it planned into blocks" style="border-color:rgba(139,92,246,.4);">🗒️ Week Dump</button>
     <button class="ics-btn" onclick="openIcalModal()" title="Sync from Apple Calendar">🍎 Sync</button>
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
@@ -2800,3 +2801,127 @@ function celebrate(){const msgs=['Nice!','Crushed it','Go you!','Yes!'];const el
   },true);
 })();
 
+
+// ===== WEEK DUMP — list everything, get it planned into blocks =====
+let _wdPlan=null;
+function openWeekDump(){
+  const existing=document.getElementById('weekDumpModal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='weekDumpModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:20px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);">🗒️ Week Dump</div>
+      <button onclick="document.getElementById('weekDumpModal').remove()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px;line-height:1.5;">One thing per line — brain-dump it all, messy is fine. Add <b>(45m)</b> or <b>(1h)</b> if you know how long; otherwise 30 min. Start a line with <b>work:</b> or <b>mcat:</b> to color it. Nothing lands on the calendar until you approve the plan.</div>
+    <textarea id="weekDumpText" placeholder="call pharmacy (15m)&#10;work: draft device signage&#10;mcat: CARS passage set (1h)&#10;order birthday gift" oninput="D.weekDumpDraft=this.value;save();" style="width:100%;min-height:130px;padding:10px 12px;font-size:12.5px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:inherit;box-sizing:border-box;resize:vertical;line-height:1.6;">${(D.weekDumpDraft||'').replace(/</g,'&lt;')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+      <button onclick="weekDumpPlan()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--purple,#8b5cf6);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">Plan my week →</button>
+    </div>
+    <div id="weekDumpPreview" style="margin-top:12px;"></div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+
+function _wdFreeSlots(dt,need,extra){
+  const busy=(getTimeline(dt)||[]).map(b=>{
+    const s=parseMin(b.t);let e=b.end?parseMin(b.end):s+30;if(e<=s)e=s+30;return [s,e];
+  }).concat(extra||[]).sort((a,b)=>a[0]-b[0]);
+  const DAY_START=9*60,DAY_END=17*60;
+  let cur=DAY_START;
+  if(dt===todayStr()){
+    const now=new Date();
+    cur=Math.max(cur,Math.ceil((now.getHours()*60+now.getMinutes()+15)/15)*15);
+  }
+  const slots=[];
+  for(const [s,e] of busy){
+    if(s-cur>=need)slots.push([cur,s]);
+    cur=Math.max(cur,e);
+  }
+  if(DAY_END-cur>=need)slots.push([cur,DAY_END]);
+  return slots;
+}
+
+function weekDumpPlan(){
+  const ta=document.getElementById('weekDumpText');
+  const prev=document.getElementById('weekDumpPreview');
+  const lines=ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){prev.innerHTML='<div style="font-size:11px;color:var(--dim);">Nothing to plan yet — dump a few lines above first.</div>';return;}
+  const items=lines.map(line=>{
+    let text=line,dur=30,cat='personal';
+    const dm=text.match(/\((\d+(?:\.\d+)?)\s*(h|hr|hour|m|min)[a-z]*\)/i);
+    if(dm){dur=Math.round(parseFloat(dm[1])*(/^h/i.test(dm[2])?60:1));text=text.replace(dm[0],'').trim();}
+    const cm=text.match(/^(work|chop|mcat|life|home|personal)\s*:\s*/i);
+    if(cm){
+      const k=cm[1].toLowerCase();
+      cat=(k==='work'||k==='chop')?'chop':(k==='mcat'?'mcat':'personal');
+      text=text.slice(cm[0].length).trim();
+    }
+    dur=Math.max(10,Math.min(240,dur));
+    return {text,dur,cat};
+  }).filter(i=>i.text);
+  const week=getWeekDates(D.selectedDate);
+  const today=todayStr();
+  let days=week.filter(dt=>dt>=today);
+  if(!days.length)days=week;
+  const virt={},placedCount={},plan=[],unplaced=[];
+  for(const it of items){
+    const cands=days.filter(dt=>(placedCount[dt]||0)<3)
+      .map(dt=>({dt,slots:_wdFreeSlots(dt,it.dur+10,virt[dt]||[])}))
+      .filter(c=>c.slots.length);
+    if(!cands.length){unplaced.push(it);continue;}
+    cands.sort((a,b)=>(placedCount[a.dt]||0)-(placedCount[b.dt]||0));
+    const c=cands[0],start=c.slots[0][0];
+    plan.push(Object.assign({},it,{dt:c.dt,start}));
+    (virt[c.dt]=virt[c.dt]||[]).push([start,start+it.dur+10]);
+    placedCount[c.dt]=(placedCount[c.dt]||0)+1;
+  }
+  _wdPlan={plan,unplaced};
+  const esc=s=>String(s).replace(/</g,'&lt;');
+  let html='<div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--purple,#8b5cf6);margin-bottom:6px;">PROPOSED PLAN — max 3 per day, around what\'s already there</div>';
+  const byDay={};plan.forEach(p=>{(byDay[p.dt]=byDay[p.dt]||[]).push(p);});
+  Object.keys(byDay).sort().forEach(dt=>{
+    const d=dateObj(dt);
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--text);margin:8px 0 3px;">${d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${dt===today?' (today)':''}</div>`;
+    byDay[dt].sort((a,b)=>a.start-b.start).forEach(p=>{
+      const em=D.cats[p.cat]?D.cats[p.cat].emoji:'';
+      html+=`<div style="font-size:11.5px;color:var(--text);padding:3px 0 3px 10px;border-left:2px solid ${D.cats[p.cat]?D.cats[p.cat].color:'var(--border)'};margin-bottom:2px;">${minToTime(p.start)}–${minToTime(p.start+p.dur)} · ${em} ${esc(p.text)}</div>`;
+    });
+  });
+  if(unplaced.length){
+    html+=`<div style="font-size:11px;color:var(--amber,#f59e0b);margin-top:8px;">⚠ Didn't fit this week (week's full — they'll stay in the box): ${unplaced.map(u=>esc(u.text)).join(', ')}</div>`;
+  }
+  if(plan.length){
+    html+=`<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+      <button onclick="weekDumpPlan()" style="padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">↻ Reshuffle</button>
+      <button onclick="weekDumpApply()" style="padding:7px 16px;border-radius:7px;border:none;background:var(--green,#22c55e);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">✓ Add ${plan.length} block${plan.length>1?'s':''}</button>
+    </div>`;
+  }
+  prev.innerHTML=html;
+}
+
+function weekDumpApply(){
+  if(!_wdPlan||!_wdPlan.plan.length)return;
+  _wdPlan.plan.forEach(p=>{
+    const tl=(getTimeline(p.dt)||[]).slice();
+    const block={t:minToTime(p.start),end:minToTime(p.start+p.dur),text:p.text,cls:p.cat,sm:''};
+    let idx=tl.length;
+    for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>p.start){idx=j;break;}}
+    tl.splice(idx,0,block);
+    setTimeline(p.dt,tl);
+  });
+  const kept=_wdPlan.unplaced.map(u=>u.text+(u.dur!==30?` (${u.dur}m)`:'')).join('\n');
+  D.weekDumpDraft=kept;
+  const n=_wdPlan.plan.length;
+  _wdPlan=null;
+  save();renderCalendar();renderMiniCal();
+  const modal=document.getElementById('weekDumpModal');if(modal)modal.remove();
+  const toast=document.getElementById('saveToast');
+  if(toast){
+    toast.innerHTML=`✓ ${n} block${n>1?'s':''} placed across your week`;
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),2500);
+  }
+}
