@@ -88,7 +88,6 @@ if('serviceWorker' in navigator){
         <button class="tab-btn active" onclick="switchTab('cal',this)" style="--tab-accent:var(--blue);"><span class="mi">calendar_month</span> Calendar</button>
         <button class="tab-btn" onclick="switchTab('wins',this)" style="--tab-accent:var(--green);"><span class="mi">emoji_events</span> Wins</button>
         <button class="tab-btn" onclick="switchTab('tasks',this)" style="--tab-accent:var(--amber);"><span class="mi">checklist</span> Tasks</button>
-        <button class="tab-btn" onclick="switchTab('cards',this)" style="--tab-accent:var(--teal);"><span class="mi">view_agenda</span> Cards</button>
         <button class="tab-btn" onclick="switchTab('dump',this)" style="--tab-accent:var(--purple);"><span class="mi">psychology</span> Dump</button>
         <button class="tab-btn" onclick="switchTab('mcat',this)" style="--tab-accent:var(--indigo);"><span class="mi">menu_book</span> MCAT</button>
         <button class="tab-btn" onclick="switchTab('rec',this)" style="--tab-accent:var(--rose);"><span class="mi">groups</span> Meetings</button>
@@ -126,100 +125,6 @@ if('serviceWorker' in navigator){
     <!-- Tomorrow Preview (hidden compat) -->
     <div id="sidebarTmrwPreview" style="display:none;"></div>
 
-    <!-- ADHD Coach -->
-    <div class="s-card coach-card" data-card="coach">
-      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">psychology</span> ADHD Coach<button class="s-collapse" onclick="toggleCard('coach',this)">▾</button></div>
-      <div class="s-body" id="cardBody-coach">
-        <div style="margin-bottom:8px;">
-          <div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;justify-content:space-between;">
-            <span>Energy</span>
-            <span id="eAdvice" style="font-style:italic;"></span>
-          </div>
-          <div class="e-bar" id="eBar"></div>
-        </div>
-        <div id="coachSuggestions" style="margin-bottom:6px;"></div>
-        <div style="display:flex;gap:4px;justify-content:center;margin-top:4px;flex-wrap:wrap;">
-          <button class="t-btn" id="breatheBtn" onclick="toggleBreathe()" style="font-size:9px;display:flex;align-items:center;gap:3px;">
-            <span class="mi" style="font-size:13px;">air</span> Breathe
-          </button>
-          <button class="t-btn" onclick="openTimerModal()" style="font-size:9px;display:flex;align-items:center;gap:3px;">
-            <span class="mi" style="font-size:13px;">timer</span> Timer
-            <span style="font-size:8px;color:var(--dim);" id="timerMiniDisp"></span>
-          </button>
-          <button id="rescueBtn" class="t-btn" onclick="openRescueModal()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--amber);color:var(--amber);" title="Stuck? Bike-hard sprint + breathing reset">
-            <span class="mi" style="font-size:13px;">bolt</span> Stuck?
-          </button>
-          <button id="whatNowBtn" class="t-btn" onclick="openWhatNow()" style="font-size:9px;display:flex;align-items:center;gap:3px;border-color:var(--blue);color:var(--blue);" title="Can't decide? Errand vs focus, based on your time + energy">
-            <span class="mi" style="font-size:13px;">help</span> What now?
-          </button>
-        </div>
-        <!-- What now? modal -->
-        <div id="whatNowModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;width:340px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.4);">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span class="mi" style="font-size:18px;color:var(--blue);">help</span><div style="font-size:14px;font-weight:700;color:var(--text);">What now?</div></div>
-            <div id="whatNowStep1">
-              <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">No deciding. Answer two things and I'll pick.</div>
-              <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">How much unbroken time do you have?</div>
-              <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
-                <button class="t-btn" onclick="whatNowPick('time','short')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">⏱️ A short gap (under ~30 min)</button>
-                <button class="t-btn" onclick="whatNowPick('time','long')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">🪟 A real block (30+ min)</button>
-              </div>
-              <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">Where's your brain right now?</div>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <button class="t-btn" onclick="whatNowPick('energy','low')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">🪫 Foggy / low — can't focus hard</button>
-                <button class="t-btn" onclick="whatNowPick('energy','high')" style="font-size:12px;justify-content:flex-start;text-align:left;padding:9px 12px;">🔋 Clear enough to focus</button>
-              </div>
-              <button class="t-btn" onclick="closeWhatNow()" style="font-size:11px;margin-top:14px;color:var(--dim);width:100%;">Cancel</button>
-            </div>
-            <div id="whatNowStep2" style="display:none;">
-              <div id="whatNowVerdict" style="font-size:13px;font-weight:700;color:var(--text);margin:6px 0 4px;"></div>
-              <div id="whatNowWhy" style="font-size:10px;color:var(--dim);margin-bottom:10px;"></div>
-              <div id="whatNowPicks" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
-              <div style="display:flex;gap:6px;">
-                <button class="t-btn" onclick="resetWhatNow()" style="font-size:11px;flex:1;color:var(--dim);">↺ Re-ask</button>
-                <button class="t-btn" onclick="closeWhatNow()" style="font-size:11px;flex:1;">Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Rescue modal -->
-        <div id="rescueModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;width:320px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.4);">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span class="mi" style="font-size:18px;color:var(--amber);">bolt</span><div style="font-size:14px;font-weight:700;color:var(--text);">Rescue — pick one</div></div>
-            <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">Stuck on a task? Move your body first, then re-enter.</div>
-            <div id="rescueChoices" style="display:flex;flex-direction:column;gap:6px;">
-              <button class="t-btn" onclick="startBikeSprint(5)" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;">🚴 Bike HARD — 5 min</button>
-              <button class="t-btn" onclick="startBikeSprint(8)" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;">🚴 Bike HARD — 8 min</button>
-              <button class="t-btn" onclick="startBikeSprint(10)" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;">🚴 Bike HARD — 10 min</button>
-              <button class="t-btn" onclick="startBikeBreatheCombo()" style="font-size:12px;justify-content:flex-start;text-align:left;padding:10px 12px;border-color:var(--amber);color:var(--amber);">⚡ Combo: 8 min bike → 2 min breathing</button>
-              <button class="t-btn" onclick="closeRescueModal()" style="font-size:11px;margin-top:6px;color:var(--dim);">Cancel</button>
-            </div>
-            <div id="rescueActive" style="display:none;text-align:center;">
-              <div id="rescueLabel" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;"></div>
-              <div id="rescueTime" style="font-family:'Quicksand',sans-serif;font-size:48px;font-weight:700;color:var(--amber);margin:8px 0;letter-spacing:-.5px;">5:00</div>
-              <div id="rescueHint" style="font-size:10px;color:var(--dim);margin-bottom:10px;">Pedal HARD. You can stop after this.</div>
-              <div style="display:flex;gap:6px;justify-content:center;">
-                <button class="t-btn" onclick="stopRescue()" style="font-size:11px;">Stop</button>
-                <button class="t-btn" onclick="closeRescueModal()" style="font-size:11px;color:var(--dim);">Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="breatheOverlay" style="display:none;text-align:center;padding:10px 0;">
-          <div id="breatheCircle" class="breathe-circle"></div>
-          <div id="breatheLabel" style="font-size:10px;color:var(--dim);margin-top:4px;">Inhale...</div>
-          <button class="t-btn" onclick="stopBreathe()" style="font-size:9px;margin-top:6px;">Done</button>
-        </div>
-        <!-- Quick Park a Thought -->
-        <div class="distraction-section">
-          <div style="font-size:9px;color:var(--dim);margin-bottom:3px;">🧠 Park a thought</div>
-          <div class="distraction-input-row">
-            <input type="text" id="distractInput" placeholder="thought popped up? park it here..." onkeydown="if(event.key==='Enter')quickParkThought()">
-            <button class="distraction-add-btn" onclick="quickParkThought()">+</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Remind Later Today -->
     <div class="s-card" data-card="remind-later" style="border-color:rgba(251,191,36,.25);">
@@ -429,11 +334,6 @@ if('serviceWorker' in navigator){
       <div id="tasksParkingPane" style="display:none;"><div id="parkingList"></div></div>
       <div id="tasksBacklogPane" style="display:none;"><div id="backlogList"></div></div>
       <div id="parkingAddInput" style="display:none;"></div>
-    </div>
-
-    <!-- CARDS TAB -->
-    <div class="tab-panel" id="p-cards">
-      <div id="cardsView"></div>
     </div>
 
     <!-- BRAIN DUMP TAB -->
@@ -699,7 +599,7 @@ if('serviceWorker' in navigator){
     </div>
     <label>Effort (how lingering tasks are sorted in 🪣 Buckets)</label>
     <div id="edEffort" class="effort-chips"></div>
-    <label>Difficulty (helps the coach match tasks to your energy)</label>
+    <label>Difficulty (optional)</label>
     <div id="edDiff" class="effort-chips"></div>
     <div class="modal-btns">
       <button class="t-btn"onclick="closeModal()">Cancel</button>
@@ -897,7 +797,6 @@ if('serviceWorker' in navigator){
   <button onclick="mobNav('wins')"><span class="mi" style="color:var(--green);">emoji_events</span> Wins</button>
   <button onclick="mobNav('mcat')"><span class="mi" style="color:var(--indigo);">menu_book</span> MCAT</button>
   <button onclick="mobNav('rec')"><span class="mi" style="color:var(--rose);">groups</span> Meetings</button>
-  <button onclick="toggleMobileSidebar();closeMobileMore()"><span class="mi" style="color:var(--green);">psychology</span> ADHD Coach</button>
   <button onclick="showNotifSetup();closeMobileMore()"><span class="mi" style="color:var(--amber);">notifications</span> Phone Notifications</button>
   <button onclick="toggleTheme();closeMobileMore()"><span class="mi" style="color:var(--amber);">light_mode</span> Toggle Theme</button>
   <button onclick="closeMobileMore();openBreaks()"><span class="mi" style="color:var(--green);">self_improvement</span> Take a break</button>
@@ -906,10 +805,9 @@ if('serviceWorker' in navigator){
 </div>
 
 <script src="data.js?v=20260921b"></script>
-<script src="core.js?v=20260920a"></script>
+<script src="core.js?v=20260923a"></script>
 <script src="calendar.js?v=20260922b"></script>
 <script src="tasks.js?v=20260920a"></script>
-<script src="cards.js?v=20260920a"></script>
 <script src="features.js?v=20260922b"></script>
 <script src="studyplan-data.js?v=20260706a"></script>
 <script src="studyplan.js?v=20260706a"></script>

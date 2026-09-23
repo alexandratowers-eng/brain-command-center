@@ -447,6 +447,8 @@ function toggleCard(id,btn){
 }
 function restoreCollapsed(){
   const collapsed=JSON.parse(localStorage.getItem('collapsedCards')||'{}');
+  // Utility cards start tucked away; expanding once keeps them open.
+  ['calright-trash','calright-clockout'].forEach(id=>{if(!(id in collapsed))collapsed[id]=true;});
   Object.entries(collapsed).forEach(([id,val])=>{
     if(val){
       const body=document.getElementById('cardBody-'+id);
@@ -470,7 +472,7 @@ function switchTab(id,el){
   if(mvt)mvt.style.display=(id==='cal')?'':'none';
   if(id==='tasks')renderAllTasks();
   if(id==='dump'){renderInbox();if(typeof initWorryNotes==='function')initWorryNotes();}
-  if(id==='cards'&&typeof renderCards==='function')renderCards();
+
   if(id==='cal')renderCalendar();
   if(id==='wins')renderWinsTab();
   if(id==='mcat'&&typeof renderMcat==='function')renderMcat();
