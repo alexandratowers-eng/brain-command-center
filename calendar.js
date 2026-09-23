@@ -1022,12 +1022,20 @@ function renderDayView(){
       <button class="cal-nav-btn" onclick="navDay(1)" title="Next day">›</button>
       ${!isToday?`<button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
+    <div class="topbar-dropdown" id="templateDropdown" style="display:inline-block;">
+      <button class="ics-btn" onclick="document.getElementById('templateMenu').classList.toggle('open')" title="Day templates">📋 ▾</button>
+      <div class="topbar-dropdown-menu" id="templateMenu" style="right:0;left:auto;min-width:160px;">
+        <button onclick="applyTemplate('remote');document.getElementById('templateMenu').classList.remove('open');">🏠 Remote</button>
+        <button onclick="applyTemplate('inperson');document.getElementById('templateMenu').classList.remove('open');">🏢 In-Person</button>
+        <button onclick="applyTemplate('study');document.getElementById('templateMenu').classList.remove('open');">📚 Study</button>
+        <button onclick="applyTemplate('light');document.getElementById('templateMenu').classList.remove('open');">🌿 Light</button>
+        <button onclick="applyTemplate('nightowl');document.getElementById('templateMenu').classList.remove('open');">🌙 Night Owl</button>
+        <button onclick="applyTemplate('weekend');document.getElementById('templateMenu').classList.remove('open');">🛋️ Weekend</button>
+      </div>
+    </div>
     <button class="ics-btn" onclick="openIcalModal()" title="Sync from Apple Calendar">🍎 Sync</button>
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
-
-  // Priorities-first calm band (anchors + calls/personal)
-  if(typeof dayPriorityBandHtml==='function')html+=dayPriorityBandHtml(dt);
 
   // Location picker
   if(!D.daySpots)D.daySpots={};
@@ -1074,22 +1082,6 @@ function renderDayView(){
       <span>Yesterday you said: "<em>${prevRef.focusTomorrow.trim()}</em>"</span>
     </div>`;
   }
-
-  // Quick actions bar
-  const catOpts=catPickerOptions()+'<option value="free">--- Break</option>';
-  html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
-    <div class="topbar-dropdown" id="templateDropdown">
-      <button class="topbar-dropdown-btn" onclick="document.getElementById('templateMenu').classList.toggle('open')" style="font-size:10px;display:flex;align-items:center;gap:4px;">📋 Templates ▾</button>
-      <div class="topbar-dropdown-menu" id="templateMenu" style="left:0;right:auto;min-width:160px;">
-        <button onclick="applyTemplate('remote');document.getElementById('templateMenu').classList.remove('open');">🏠 Remote</button>
-        <button onclick="applyTemplate('inperson');document.getElementById('templateMenu').classList.remove('open');">🏢 In-Person</button>
-        <button onclick="applyTemplate('study');document.getElementById('templateMenu').classList.remove('open');">📚 Study</button>
-        <button onclick="applyTemplate('light');document.getElementById('templateMenu').classList.remove('open');">🌿 Light</button>
-        <button onclick="applyTemplate('nightowl');document.getElementById('templateMenu').classList.remove('open');">🌙 Night Owl</button>
-        <button onclick="applyTemplate('weekend');document.getElementById('templateMenu').classList.remove('open');">🛋️ Weekend</button>
-      </div>
-    </div>
-  </div>`;
 
 
   // Task strip — tasks dated today (active + completed)

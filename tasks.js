@@ -1294,6 +1294,27 @@ function renderCalRightStash(){
 
   let html='';
 
+  // "From earlier" — resurface old unfinished items so they keep circulating
+  const _cut=Date.now()-3*86400000;
+  const _oldOnes=[];
+  laterTasks.forEach(t=>{if((t.id||0)<_cut)_oldOnes.push({kind:'task',id:t.id,text:t.text,emoji:(D.cats[t.cat]?D.cats[t.cat].emoji:'')});});
+  parked.forEach(p=>{if(p.added&&new Date(p.added+'T00:00:00').getTime()<_cut)_oldOnes.push({kind:'park',id:p.id,text:p.text,emoji:'📌'});});
+  if(_oldOnes.length){
+    const _dayN=Math.floor(Date.now()/86400000);
+    const _off=_dayN%_oldOnes.length;
+    const _picks=[_oldOnes[_off],_oldOnes.length>1?_oldOnes[(_off+1)%_oldOnes.length]:null].filter(Boolean);
+    html+=`<div class="ondeck-earlier"><div style="font-size:9px;font-weight:600;letter-spacing:.4px;color:var(--purple);margin-bottom:3px;">↻ FROM EARLIER — still want these?</div>`;
+    _picks.forEach(o=>{
+      const act=o.kind==='task'
+        ?`<button class="defer-btn" onclick="laterToToday(${o.id})" style="font-size:9px;">→ today</button><button class="pi-act" onclick="markStashTaskDone(${o.id})" title="Done" style="font-size:9px;color:var(--green);">✓</button>`
+        :`<button class="defer-btn" onclick="promoteParkingItem(${o.id});renderCalRightStash();" style="font-size:9px;">→ task</button><button class="pi-act" onclick="parkingItemDone(${o.id});renderCalRightStash();" title="Done" style="font-size:9px;color:var(--green);">✓</button>`;
+      html+=`<div class="task-item" style="padding:2px 0;">
+        <div class="t-label" style="flex:1;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${o.text}">${o.emoji} ${o.text}</div>${act}
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
   // Compact status row (snoozed + nudge folded into one line)
   const statusBits=[];
   if(snoozedToday.length) statusBits.push(`<span style="color:var(--pink);">⏰ ${snoozedToday.length} due today</span>`);
@@ -1319,6 +1340,11 @@ function renderCalRightStash(){
   if(total>0) html+=`<button class="ondeck-review-btn" onclick="openParkingReview()">📋 Review queue</button>`;
 
   el.innerHTML=html;
+}
+
+function markStashTaskDone(id){
+  const t=D.tasks.find(x=>x.id===id);
+  if(t){t.done=true;t.completedDate=todayStr();save();renderCalRightStash();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 }
 
 function addToStash(inp){

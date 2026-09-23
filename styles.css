@@ -1333,6 +1333,7 @@ button,input,select,textarea{font-family:inherit;}
 @media(max-width:600px){.search-input-wrap{width:200px;}.search-results{width:260px;right:-20px;}}
 
 /* On Deck (cleaned up) */
+.ondeck-earlier{padding:5px 7px;margin-bottom:6px;background:rgba(139,92,246,.07);border:1px dashed rgba(139,92,246,.3);border-radius:8px;}
 .ondeck-status{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:9px;color:var(--dim);padding:4px 6px;margin-bottom:6px;background:rgba(192,132,252,.06);border-radius:6px;}
 .ondeck-sep{opacity:.4;margin:0 2px;}
 .ondeck-list{display:flex;flex-direction:column;gap:1px;}
@@ -1588,6 +1589,20 @@ button,input,select,textarea{font-family:inherit;}
 .dv-pri-calls-label{font-size:10px;font-weight:600;color:var(--dim);margin-right:2px;}
 .dv-pri-call-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text);}
 .dv-pri-call-done,.dv-pri-call-add{background:none;border:none;cursor:pointer;font-size:12px;padding:0 1px;line-height:1;}
+/* Compact variant when the band lives in the right side panel */
+#calRightAnchors .dv-pri-band{background:none;border:none;border-radius:0;padding:0;margin-bottom:0;}
+#calRightAnchors .dv-pri-head{margin-bottom:6px;}
+#calRightAnchors .dv-pri-eyebrow{display:none;}
+#calRightAnchors .dv-pri-sub{font-size:10px;}
+#calRightAnchors .dv-pri-list{gap:4px;}
+#calRightAnchors .dv-pri-item{padding:4px 6px;gap:6px;border-radius:8px;}
+#calRightAnchors .dv-pri-check{width:17px;height:17px;min-width:17px;font-size:9px;}
+#calRightAnchors .dv-pri-text{font-size:11px;}
+#calRightAnchors .dv-pri-add{padding:4px 6px;gap:6px;border-radius:8px;}
+#calRightAnchors .dv-pri-add-mark{width:17px;height:17px;min-width:17px;font-size:9px;}
+#calRightAnchors .dv-pri-input{font-size:11px;}
+#calRightAnchors .dv-pri-calls{margin-top:6px;padding-top:6px;}
+#calRightAnchors .dv-pri-call-chip{font-size:10px;padding:3px 6px;}
 
 /* ===== Study Plan (MCAT native view) ===== */
 .sp-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;}

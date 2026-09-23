@@ -389,6 +389,11 @@ function toggleRightPanel(){
         const map={};cards.forEach(c=>{map[c.dataset.card]=c;});
         order.forEach(k=>{if(map[k])p.appendChild(map[k]);});
         cards.forEach(c=>{if(!order.includes(c.dataset.card))p.appendChild(c);});
+        if(p.id==='cal-right-panel'&&!order.includes('calright-anchors')){
+          const a=p.querySelector('[data-card="calright-anchors"]');
+          const first=[...p.querySelectorAll('.s-card')].find(c=>c!==a);
+          if(a&&first)p.insertBefore(a,first);
+        }
       }catch(e){}
     }
   });
@@ -511,6 +516,11 @@ function renderCalendar(){
   else if(D.calView==='day')renderDayView();
   else if(D.calView==='tomorrow'&&typeof renderTomorrowView==='function')renderTomorrowView();
   else renderMonthView();
+  const _anch=document.getElementById('calRightAnchors');
+  if(_anch&&typeof dayPriorityBandHtml==='function'){
+    const _adt=(D.calView==='day'&&D.selectedDate)?D.selectedDate:todayStr();
+    _anch.innerHTML=dayPriorityBandHtml(_adt);
+  }
   if(typeof renderCalRightTasks==='function')renderCalRightTasks();
   if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();
   if(typeof renderCalRightParking==='function')renderCalRightParking();
