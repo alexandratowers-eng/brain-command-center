@@ -704,6 +704,7 @@ function renderMcat(){
 
   el.innerHTML=ringHtml+stepsHtml;
   if(typeof renderStudyPlan==='function') renderStudyPlan();
+  if(typeof renderPocket==='function') renderPocket();
 }
 
 
