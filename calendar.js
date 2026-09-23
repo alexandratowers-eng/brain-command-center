@@ -148,7 +148,7 @@ function parseQuickAdd(raw){
   // --- Category detection ---
   const lc=text.toLowerCase();
   if(/\b(mcat|anki|qbank|uworld|kaplan|content\s*review|cars|p\/s)\b/i.test(lc))result.cat='mcat';
-  else if(/\b(meeting|mtg|standup|huddle|touchbase|call|phone|zoom|teams)\b/i.test(lc))result.cat='errands';
+  else if(/\b(meeting|mtg|standup|huddle|touchbase|call|phone|zoom|teams)\b/i.test(lc))result.cat='chop';
   else if(/\b(chop|cold\s*call)\b/i.test(lc))result.cat='chop';
   else if(/\b(gym|pool|swim|walk|run|jog|dogs?\s*out|exercise|workout|hike|bike)\b/i.test(lc))result.cat='exercise';
   else if(/\b(med\s*app|application|personal\s*statement|secondary|amcas|experience)\b/i.test(lc))result.cat='medapp';

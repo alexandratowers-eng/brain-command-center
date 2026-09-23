@@ -493,6 +493,47 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     addT('Eric essay email','todo','high','2026-09-25','eric');
     d._weekSept21V1=true;
   }
+  // Fresh start Sept 23: merge To-Do's into Life, pastel palette, daily arm circuit + buffer/reset blocks
+  if(!d._freshStartSept23){
+    if(!d.cats)d.cats={};
+    d.cats.personal={emoji:'🌸',label:'Life',color:'#e7a9c4'};
+    delete d.cats.todo;
+    const ensure=(k,def)=>{if(!d.cats[k])d.cats[k]=def;else d.cats[k].color=def.color;};
+    ensure('chop',{emoji:'🔬',label:'CHOP',color:'#a5c3e8'});
+    ensure('exercise',{emoji:'🏃',label:'Exercise',color:'#a9d8ae'});
+    ensure('health',{emoji:'💚',label:'Health/Wellbeing',color:'#9cd6c8',_hidePick:true});
+    ensure('mcat',{emoji:'📚',label:'MCAT',color:'#c3b2ea',_hidePick:true});
+    ensure('medapp',{emoji:'🏥',label:'Med Apps',color:'#d3aede',_hidePick:true});
+    ensure('deadline',{emoji:'🎯',label:'Deadline/Goal',color:'#eda49d',_hidePick:true});
+    ensure('reminder',{emoji:'⏰',label:'Reminder',color:'#e8d59f',_hidePick:true});
+    ensure('braindump',{emoji:'🧠',label:'Brain Dump',color:'#c2c0d6',_hidePick:true});
+    const fixCat=c=>c==='todo'?'personal':(c==='errands'?'chop':c);
+    // Calls/meetings that landed in personal belong to work — unless clearly personal (Gma, doctor, etc.)
+    const isWorkCall=txt=>{
+      if(!txt)return false;
+      const lc=txt.toLowerCase();
+      if(/\b(gma|grandma|grandmother|mom|dad|doctor|dentist|dr|vet|hair|pharmacy|friend)\b/.test(lc))return false;
+      return /\b(calls?|meeting|mtg|zoom|teams|standup|huddle|touchbase|touch base|check-?in|sync|debrief|interview|webinar)\b/.test(lc);
+    };
+    const fixItem=(o,key)=>{o[key]=fixCat(o[key]);if(o[key]==='personal'&&isWorkCall(o.text))o[key]='chop';};
+    (d.tasks||[]).forEach(t=>fixItem(t,'cat'));
+    (d.trash||[]).forEach(t=>fixItem(t,'cat'));
+    if(!d.days)d.days={};
+    Object.values(d.days).forEach(tl=>(tl||[]).forEach(s=>fixItem(s,'cls')));
+    const DAY=86400000;
+    const keyOf=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+    const addDaily=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      if(!d.days[key].some(s=>s._daily===b._daily))d.days[key].push(Object.assign({loc:'',_id:b._daily+'_'+key},b));
+    };
+    for(let cur=new Date(2026,8,23,12);cur<=new Date(2027,0,31,12);cur=new Date(cur.getTime()+DAY)){
+      const key=keyOf(cur);
+      addDaily(key,{t:'8:00 AM',end:'8:12 AM',text:'💪 Arm circuit',sm:'12 min. Timer on, brain off.',cls:'exercise',_daily:'arm'});
+      addDaily(key,{t:'11:30 AM',end:'12:00 PM',text:'🧯 Buffer: whatever slipped',sm:'Catch up on the morning. Nothing new starts here.',cls:'personal',_daily:'buf1'});
+      addDaily(key,{t:'4:30 PM',end:'5:00 PM',text:'🌊 Reset: move first',sm:'Spiraling? Run or swim, even 10 min counts. Nap only if your body is truly done — 20 min, alarm set.',cls:'health',_daily:'reset'});
+    }
+    d._freshStartSept23=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
@@ -546,16 +587,15 @@ function defaults(){
   const today=todayStr();
   return{
     cats:{
-      chop:{emoji:'🔬',label:'CHOP',color:'#7e8aa0'},
-      todo:{emoji:'✅',label:"To-Do's",color:'#7eb2e3'},
-      personal:{emoji:'🏠',label:'Personal',color:'#4fa39b'},
-      exercise:{emoji:'🏃',label:'Exercise',color:'#5fb07a'},
-      health:{emoji:'💚',label:'Health/Wellbeing',color:'#5fb07a',_hidePick:true},
-      mcat:{emoji:'📚',label:'MCAT',color:'#8a7cc6',_hidePick:true},
-      medapp:{emoji:'🏥',label:'Med Apps',color:'#8a7cc6',_hidePick:true},
-      deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#d65951',_hidePick:true},
-      reminder:{emoji:'⏰',label:'Reminder',color:'#4a6b8a',_hidePick:true},
-      braindump:{emoji:'🧠',label:'Brain Dump',color:'#9aa0a8',_hidePick:true},
+      chop:{emoji:'🔬',label:'CHOP',color:'#a5c3e8'},
+      personal:{emoji:'🌸',label:'Life',color:'#e7a9c4'},
+      exercise:{emoji:'🏃',label:'Exercise',color:'#a9d8ae'},
+      health:{emoji:'💚',label:'Health/Wellbeing',color:'#9cd6c8',_hidePick:true},
+      mcat:{emoji:'📚',label:'MCAT',color:'#c3b2ea',_hidePick:true},
+      medapp:{emoji:'🏥',label:'Med Apps',color:'#d3aede',_hidePick:true},
+      deadline:{emoji:'🎯',label:'Deadline/Goal',color:'#eda49d',_hidePick:true},
+      reminder:{emoji:'⏰',label:'Reminder',color:'#e8d59f',_hidePick:true},
+      braindump:{emoji:'🧠',label:'Brain Dump',color:'#c2c0d6',_hidePick:true},
     },
     tasks:[
       {id:1,text:'Finalize resume/CV for letter writers',cat:'medapp',pri:'high',done:false,date:'2026-04-14'},
