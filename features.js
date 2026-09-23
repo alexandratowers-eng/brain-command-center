@@ -320,7 +320,36 @@ const VOCAB_BANK=[
   {w:'ingenuous',pos:'adj',def:'innocent, frank, unable to deceive',hook:'in-genu- → inborn honesty, naive',watch:'NOT ingenious (clever)'},
   {w:'flout',pos:'verb',def:'to openly disregard a rule',hook:'flout the law = defy it',watch:'vs flaunt (show off)'},
   {w:'censure',pos:'verb/noun',def:'to formally criticize; strong disapproval',hook:'a formal reprimand',watch:'vs censor (to suppress content)'},
-  {w:'paradigm',pos:'noun',def:'a typical model or framework of thought',hook:'a "paradigm shift" replaces one whole model with another'}
+  {w:'paradigm',pos:'noun',def:'a typical model or framework of thought',hook:'a "paradigm shift" replaces one whole model with another'},
+  // ---- SCIENCE RECALL: endocrine + lymphatic (rotates with CARS words) ----
+  {w:'peptide hormones',pos:'class',def:'water-soluble; bind surface receptors → second messengers (cAMP); fast, short-lived',hook:'a knock on the door — message relayed inside without entering',watch:'cannot cross the membrane; that is the steroid move'},
+  {w:'steroid hormones',pos:'class',def:'cholesterol-derived (adrenal cortex + gonads); enter the cell, bind intracellular receptors, change transcription; slow, long-lasting',hook:'has the house key — walks in and rewrites the to-do list',watch:'need carrier proteins in blood (lipids hate water)'},
+  {w:'thyroid hormones (T3/T4)',pos:'class',def:'tyrosine + iodine; act like steroids (intracellular receptor); set basal metabolic rate',hook:'the body thermostat',watch:'amino-acid derived yet lipid-soluble — the favorite exam exception'},
+  {w:'tropic hormone',pos:'class',def:'a hormone whose target is another endocrine gland',hook:'middle management — bosses other glands around',watch:'FLAT of FLAT PEG = the tropic ones (FSH, LH, ACTH, TSH)'},
+  {w:'FSH + LH',pos:'hormone',def:'anterior pituitary gonadotropins; follicle growth / spermatogenesis and ovulation / testosterone',hook:'the LH surge is the ovulation trigger'},
+  {w:'ACTH',pos:'hormone',def:'anterior pituitary → adrenal CORTEX → cortisol',hook:'A-C-T-H: Adrenal Cortex To Hustle'},
+  {w:'TSH',pos:'hormone',def:'anterior pituitary → thyroid → T3/T4',hook:'thyroid-stimulating, says it on the tin',watch:'HIGH TSH usually means LOW thyroid output (negative feedback)'},
+  {w:'growth hormone (GH)',pos:'hormone',def:'anterior pituitary direct actor; growth + protein synthesis, raises blood glucose',hook:'growing bodies spare glucose for the brain'},
+  {w:'prolactin',pos:'hormone',def:'anterior pituitary; milk PRODUCTION',hook:'pro-lact = for milk',watch:'production only — EJECTION is oxytocin'},
+  {w:'oxytocin',pos:'hormone',def:'posterior pituitary; uterine contractions, milk ejection, bonding',hook:'the squeeze-and-bond hormone',watch:'made in the hypothalamus, only STORED in the posterior pituitary'},
+  {w:'ADH (vasopressin)',pos:'hormone',def:'posterior pituitary; adds aquaporins to the collecting duct → reabsorb WATER → concentrated urine, higher BP',hook:'anti-diuretic = anti-pee',watch:'saves water directly; aldosterone saves salt and water follows'},
+  {w:'insulin',pos:'hormone',def:'pancreatic beta cells; moves glucose INTO cells, builds glycogen and fat stores',hook:'insulin = IN',watch:'beta = Builds'},
+  {w:'glucagon',pos:'hormone',def:'pancreatic alpha cells; glycogen breakdown + gluconeogenesis → raises blood glucose',hook:'gluca-GONE — sugar stores are gone, dumped into blood'},
+  {w:'cortisol',pos:'hormone',def:'adrenal cortex; CHRONIC stress — raises glucose, suppresses immunity',hook:'cortex = chronic',watch:'the seconds-fast one is epinephrine, from the medulla'},
+  {w:'epinephrine',pos:'hormone',def:'adrenal medulla catecholamine; fight-or-flight in seconds — HR up, airways open, glucose up',hook:'medulla = middle of the emergency',watch:'tyrosine-derived but signals via surface receptors like a peptide'},
+  {w:'aldosterone',pos:'hormone',def:'adrenal cortex mineralocorticoid; kidney keeps Na+ (dumps K+) → water follows → BP up',hook:'ALL-DOSE-of-salt-erone',watch:'triggered by renin-angiotensin, not the pituitary'},
+  {w:'ANP',pos:'hormone',def:'released by stretched atria; kidneys dump Na+ and water → lowers blood volume and pressure',hook:'the heart saying "too full, drain some"',watch:'the anti-aldosterone'},
+  {w:'PTH',pos:'hormone',def:'parathyroid; RAISES blood Ca2+ — bone resorption, kidney reabsorption, activates vitamin D',hook:'PTH raids the bones for calcium',watch:'opposed by calcitonin'},
+  {w:'calcitonin',pos:'hormone',def:'thyroid C cells; LOWERS blood Ca2+ by parking it in bone',hook:'calci-TONIN TONES calcium down'},
+  {w:'erythropoietin (EPO)',pos:'hormone',def:'kidney; low O2 → bone marrow makes more red blood cells',hook:'the altitude-training hormone'},
+  {w:'melatonin',pos:'hormone',def:'pineal gland; darkness signal that sets circadian rhythm',hook:'MELLOW-tonin'},
+  {w:'lymph',pos:'lymphatic',def:'interstitial fluid once it enters lymph vessels; returned to blood at the subclavian veins',hook:'plasma leaks out → interstitial fluid → enters a vessel → new name: lymph'},
+  {w:'lacteal',pos:'lymphatic',def:'lymph capillary inside each intestinal villus; absorbs dietary fat as chylomicrons',hook:'lacteal ~ milky — fat makes lymph look like milk',watch:'fats ride the lymph highway; sugars and amino acids ride blood'},
+  {w:'lymph node',pos:'lymphatic',def:'filter along lymph vessels where B and T cells meet antigens; swells during infection',hook:'immune security checkpoint'},
+  {w:'thoracic duct',pos:'lymphatic',def:'largest lymph vessel; drains most of the body into the LEFT subclavian vein',hook:'the final off-ramp back into blood',watch:'right arm + right side of head use the right lymphatic duct'},
+  {w:'spleen',pos:'lymphatic',def:'filters BLOOD (not lymph); recycles old RBCs, hosts immune cells',hook:'the blood quality-control plant',watch:'nodes filter lymph, the spleen filters blood'},
+  {w:'thymus',pos:'lymphatic',def:'site of T cell maturation; large in kids, shrinks with age',hook:'T cells = Thymus',watch:'B cells mature in Bone marrow'},
+  {w:'edema',pos:'lymphatic',def:'fluid trapped in tissue when leakage outpaces lymph drainage',hook:'the drainage system backing up'}
 ];
 
 // Number of new words shown per day
