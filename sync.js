@@ -22,11 +22,13 @@ window.SyncEngine=(function(){
 
   function refreshBanner(msg){
     const b=document.getElementById('syncBanner');if(!b)return;
-    b.style.display='flex';
-    b.dataset.state=_state;
     const txt=document.getElementById('syncBannerText');
     const btn=document.getElementById('syncBannerBtn');
     const connected=!!getConfig();
+    // Only surface the banner when something needs attention; when synced and calm, stay invisible.
+    if(connected&&(_state==='idle'||_state==='syncing')&&!msg){b.style.display='none';return;}
+    b.style.display='flex';
+    b.dataset.state=_state;
     if(!connected){
       if(txt)txt.textContent='This device is not synced — your phone and laptop won’t match.';
       if(btn)btn.style.display='inline-block';

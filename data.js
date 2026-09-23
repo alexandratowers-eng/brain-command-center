@@ -534,6 +534,19 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._freshStartSept23=true;
   }
+  if(!d._swimSept23){
+    // The 4:30 reset becomes the 4:00 swim; one block, not two.
+    Object.entries(d.days||{}).forEach(([key,tl])=>{
+      if(key<'2026-09-23')return;
+      (tl||[]).forEach(s=>{
+        if(s._daily==='reset'){
+          s.t='4:00 PM';s.end='4:45 PM';s.text='🏊 Swim';s.cls='exercise';
+          s.sm="Can't swim today? Any movement for 10 min still counts. The slot is the routine, not the sport.";
+        }
+      });
+    });
+    d._swimSept23=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
