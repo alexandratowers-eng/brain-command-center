@@ -530,3 +530,45 @@ function renderCalendar(){
   if(typeof renderCalRightTrash==='function')renderCalRightTrash();
 }
 
+
+// ===== "AM I ON THE RIGHT BCC?" — build + origin check =====
+const BCC_HOME='alexandratowers-eng.github.io';
+function showBuildCheck(){
+  const existing=document.getElementById('bccBuildModal');if(existing)existing.remove();
+  const host=location.hostname||'(local file)';
+  const onHome=host===BCC_HOME;
+  const originRow=onHome
+    ? `<div style="color:var(--green,#22c55e);">✅ Right address — ${host}</div>`
+    : `<div style="color:var(--amber,#f59e0b);">⚠️ You're on <b>${host}</b>, not your real BCC.<br><span style="color:var(--dim);">The only real one is <b>${BCC_HOME}/brain-command-center/</b> — anything else is a copy and won't sync.</span></div>`;
+  const modal=document.createElement('div');
+  modal.id='bccBuildModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:20px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border:1px solid var(--border);">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;">Am I on the right BCC?</div>
+    <div style="font-size:12px;line-height:1.7;color:var(--text);">
+      ${originRow}
+      <div id="bccBuildLine" style="margin-top:6px;color:var(--dim);">Checking build…</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+      <button onclick="forceBccUpdate()" style="padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;">↻ Force latest</button>
+      <button onclick="document.getElementById('bccBuildModal').remove()" style="padding:7px 16px;border-radius:7px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;">Got it</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  const line=document.getElementById('bccBuildLine');
+  if(window.caches&&caches.keys){
+    caches.keys().then(keys=>{
+      const b=keys.filter(k=>k.indexOf('bcc-v')===0).sort().pop();
+      line.innerHTML=b?`📦 Build <b>${b.replace('bcc-','')}</b> — if this matches what I last told you, you're current.`:'📦 No cached build yet (fresh load).';
+    }).catch(()=>{line.textContent='📦 Build unknown.';});
+  } else line.textContent='📦 Build info unavailable in this browser.';
+}
+function forceBccUpdate(){
+  const done=()=>location.reload(true);
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+    navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister())))
+      .then(()=>window.caches&&caches.keys?caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))):null)
+      .then(done).catch(done);
+  } else done();
+}
