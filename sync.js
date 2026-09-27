@@ -415,6 +415,12 @@ window.SyncEngine=(function(){
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible')pull();
     });
+    // iOS PWAs resumed from the background often fire pageshow (bfcache) instead of
+    // visibilitychange, so reopening the app wasn't always pulling. Cover both, plus
+    // re-pull the moment we regain a connection.
+    window.addEventListener('pageshow',e=>{if(e.persisted||document.visibilityState==='visible')pull();});
+    window.addEventListener('focus',()=>pull());
+    window.addEventListener('online',()=>pull());
   }
 
   return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner};

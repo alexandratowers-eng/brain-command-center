@@ -299,6 +299,9 @@ function renderWeekView(){
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
+  // Weekly brain-dump inbox (collapsible, sits above the grid)
+  html+='<div id="wkDumpBar"></div>';
+
   // Grid
   html+='<div class="week-grid" style="max-height:calc(100vh - 140px);overflow-y:auto;">';
   // Corner
@@ -327,6 +330,8 @@ function renderWeekView(){
   }
   html+='</div>';
   el.innerHTML=html;
+
+  if(typeof renderWeekDump==='function')renderWeekDump();
 
   // Place blocks
   dates.forEach(dt=>{
@@ -833,7 +838,7 @@ function openWkPopover(e, dt, hr){
   document.getElementById('wpCat').innerHTML=catOpts;
   document.getElementById('wpTitle').value='';
   document.getElementById('wpDetails').value='';
-  document.getElementById('wpLoc').value='';
+  const wpLocEl=document.getElementById('wpLoc');if(wpLocEl)wpLocEl.value='';
   const wpLocOnly=document.getElementById('wpLocOnly');if(wpLocOnly)wpLocOnly.checked=false;
   pop.classList.add('show');
   setTimeout(()=>document.getElementById('wpTitle').focus(), 50);
@@ -849,7 +854,7 @@ function wkPopoverSave(){
   const catKey=document.getElementById('wpCat').value;
   const title=document.getElementById('wpTitle').value.trim();
   const details=document.getElementById('wpDetails').value.trim();
-  const loc=document.getElementById('wpLoc').value.trim();
+  const loc=(document.getElementById('wpLoc')?.value||'').trim();
   const locOnly=document.getElementById('wpLocOnly')?.checked||false;
   const isMtg=document.getElementById('wpIsMeeting')?.checked||false;
   const cat=D.cats[catKey];
@@ -2010,7 +2015,7 @@ function openDvPopover(e,dt,hr,mins,editIdx){
     if(slot){
       document.getElementById('dpTitle').value=slot.text||'';
       document.getElementById('dpDetails').value=slot.sm||'';
-      document.getElementById('dpLoc').value=slot.loc||'';
+      {const _l=document.getElementById('dpLoc');if(_l)_l.value=slot.loc||'';}
       if(slot.cls)document.getElementById('dpCat').value=slot.cls;
       const slotMin=parseMin(slot.t);
       const rounded=Math.round(slotMin/15)*15;
@@ -2019,7 +2024,7 @@ function openDvPopover(e,dt,hr,mins,editIdx){
   } else {
     document.getElementById('dpTitle').value='';
     document.getElementById('dpDetails').value='';
-    document.getElementById('dpLoc').value='';
+    {const _l=document.getElementById('dpLoc');if(_l)_l.value='';}
   }
   const locOnlyCb=document.getElementById('dpLocOnly');
   if(locOnlyCb){
@@ -2055,7 +2060,7 @@ function dvPopoverSave(){
   const catKey=document.getElementById('dpCat').value;
   const title=document.getElementById('dpTitle').value.trim();
   const details=document.getElementById('dpDetails').value.trim();
-  const loc=document.getElementById('dpLoc').value.trim();
+  const loc=(document.getElementById('dpLoc')?.value||'').trim();
   const locOnly=document.getElementById('dpLocOnly')?.checked||false;
   const isMtg=document.getElementById('dpIsMeeting')?.checked||false;
   const cat=D.cats[catKey];

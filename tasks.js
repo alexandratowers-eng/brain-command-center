@@ -1927,6 +1927,123 @@ function renderInbox(){
   </div>`;}).join('');
 }
 
+// ===== WEEKLY BRAIN-DUMP INBOX (collapsible bar at top of Week view) =====
+let _wkSorting=false;
+function _wkBucketOptions(sel){
+  if(!D.cats)return '';
+  return Object.entries(D.cats).filter(([k])=>k!=='braindump')
+    .map(([k,v])=>`<option value="${k}" ${k===sel?'selected':''}>${v.emoji||''} ${v.label}</option>`).join('');
+}
+function guessBucket(text){
+  const s=(text||'').toLowerCase();
+  const has=arr=>arr.some(w=>s.includes(w));
+  let g='personal';
+  if(has(['mcat','aamc','uworld','anki','flashcard',' cars','full length','content review','practice test','ochem','o-chem','biochem','physics','psych','sociology','passage','p/s','b/b','c/p','amino acid']))g='mcat';
+  else if(has(['secondary','personal statement','amcas','letter of rec',' lor','med school','application','interview','casper','committee','transcript request']))g='medapp';
+  else if(has(['run','gym','workout','exercise','walk','yoga','lift','stretch','bike','swim','pilates','cardio','steps']))g='exercise';
+  else if(has(['doctor','dentist','therapy','therapist','meds','medication','refill','vitamin','drink water','sleep','nap','appointment','dermatologist','pharmacy','bloodwork']))g='health';
+  else if(has(['participant','protocol',' irb','device','enroll','clinical','study visit','chop','recruit','consent','data entry','redcap','manuscript','abstract','coordinator','meeting','standup','1:1',' sync','zoom','presentation','report'])) g='chop';
+  else if(has(['due ','deadline','submit','deposit','bill','pay ','taxes','rent','invoice','register','renew','expires']))g='deadline';
+  return (D.cats&&D.cats[g])?g:'personal';
+}
+function renderWeekDump(){
+  const bar=document.getElementById('wkDumpBar');
+  if(!bar)return;
+  const items=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
+  const collapsed=!!D._wkDumpCollapsed;
+  let h='<div class="wkdump'+(collapsed?' collapsed':'')+'">';
+  h+='<div class="wkdump-head" onclick="toggleWeekDump()">'
+    +'<span class="wkdump-title">🧠 Brain Dump'
+    +(items.length?' <span class="wkdump-count">'+items.length+'</span>':'')+'</span>'
+    +'<span class="mi wkdump-chevron">'+(collapsed?'expand_more':'expand_less')+'</span>'
+    +'</div>';
+  if(!collapsed){
+    h+='<div class="wkdump-body">';
+    h+='<div class="wkdump-input-row">'
+      +'<input id="wkDumpInput" class="wkdump-input" placeholder="Dump a task, hit Enter..." '
+      +'onkeydown="if(event.key===\'Enter\')addWeekDump()">'
+      +'<button class="wkdump-add" onclick="addWeekDump()">Add</button>'
+      +((items.length&&!_wkSorting)?'<button class="wkdump-sort" onclick="suggestWeekDump()">✨ Sort</button>':'')
+      +'</div>';
+    if(!items.length){
+      h+='<p class="wkdump-empty">Nothing here yet. Dump whatever\'s on your mind, then tap ✨ Sort and I\'ll suggest a bucket for each.</p>';
+    } else if(_wkSorting){
+      h+='<div class="wkdump-note">I guessed a bucket for each. Change any that are off, then tap Apply.</div>';
+      h+='<div class="wkdump-list">';
+      items.forEach(t=>{
+        h+='<div class="wkdump-item">'
+          +'<span class="wkdump-item-text">'+t.text+'</span>'
+          +'<select class="wkdump-select" data-id="'+t.id+'">'+_wkBucketOptions(guessBucket(t.text))+'</select>'
+          +'</div>';
+      });
+      h+='</div>';
+      h+='<div class="wkdump-actions">'
+        +'<button class="wkdump-cancel" onclick="cancelWeekDump()">Cancel</button>'
+        +'<button class="wkdump-apply" onclick="applyWeekDump()">Apply buckets</button>'
+        +'</div>';
+    } else {
+      h+='<div class="wkdump-list">';
+      items.forEach(t=>{
+        h+='<div class="wkdump-item">'
+          +'<span class="wkdump-item-text">'+t.text+'</span>'
+          +'<button class="wkdump-del" onclick="deleteWeekDump('+t.id+')" title="Delete"><span class="mi">close</span></button>'
+          +'</div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  bar.innerHTML=h;
+}
+function toggleWeekDump(){
+  D._wkDumpCollapsed=!D._wkDumpCollapsed;
+  if(D._wkDumpCollapsed)_wkSorting=false;
+  save();renderWeekDump();
+}
+function addWeekDump(){
+  const inp=document.getElementById('wkDumpInput');
+  if(!inp)return;
+  const lines=inp.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length)return;
+  const today=todayStr();
+  lines.forEach(l=>D.tasks.push({id:D.nextId++,text:l,cat:'braindump',pri:'med',done:false,date:today}));
+  inp.value='';
+  save();renderWeekDump();
+  if(typeof renderInbox==='function')renderInbox();
+  if(typeof renderSidebarTasks==='function')renderSidebarTasks();
+  const el=document.getElementById('wkDumpInput');if(el)el.focus();
+}
+function deleteWeekDump(id){
+  trashTask(id);
+  renderWeekDump();
+  if(typeof renderInbox==='function')renderInbox();
+  if(typeof renderSidebarTasks==='function')renderSidebarTasks();
+}
+function suggestWeekDump(){
+  _wkSorting=true;
+  renderWeekDump();
+}
+function cancelWeekDump(){
+  _wkSorting=false;
+  renderWeekDump();
+}
+function applyWeekDump(){
+  document.querySelectorAll('#wkDumpBar .wkdump-select').forEach(sel=>{
+    const id=parseInt(sel.getAttribute('data-id'),10);
+    const t=D.tasks.find(x=>x.id===id);
+    if(t&&sel.value)t.cat=sel.value;
+  });
+  _wkSorting=false;
+  save();renderWeekDump();
+  if(typeof renderInbox==='function')renderInbox();
+  if(typeof renderSidebarTasks==='function')renderSidebarTasks();
+  if(typeof renderBuckets==='function')renderBuckets();
+  if(typeof renderLegend==='function')renderLegend();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='✨ Sorted into buckets';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
+}
+
 // Brain dump item → reminder picker (mirrors openRemindPicker but writes a calendar block too)
 function remindBrainDumpItem(e,id){
   e.stopPropagation();

@@ -230,6 +230,21 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     d.calView='day';
     d._defaultDay=true;
   }
+  // One-time cleanup: purge manualWins that duplicate an already-completed task or
+  // calendar block on the same day (old autoAddWin behavior double-listed them).
+  if(!d._winDedupeV1){
+    if(d.reflections){
+      Object.keys(d.reflections).forEach(dt=>{
+        const ref=d.reflections[dt];
+        if(!ref||!Array.isArray(ref.manualWins))return;
+        const doneTaskTexts=new Set((d.tasks||[]).filter(t=>t.done&&(t.date||'')===dt).map(t=>t.text));
+        const daySlots=(d.days&&d.days[dt])||[];
+        const doneSlotTexts=new Set(daySlots.filter(s=>s&&s.done).map(s=>s.text));
+        ref.manualWins=ref.manualWins.filter(w=>!doneTaskTexts.has(w)&&!doneSlotTexts.has(w));
+      });
+    }
+    d._winDedupeV1=true;
+  }
   // Personal → teal, exercise → green, keep CHOP light blue
   if(!d._personalTealV1){
     if(d.cats&&d.cats.personal)d.cats.personal.color='#2dd4bf';
@@ -654,6 +669,11 @@ function setTimeline(dt,tl){D.days[dt]=tl;save();}
 function autoAddWin(text,dt){
   if(!text)return;
   if(!dt)dt=todayStr();
+  // Completed tasks and calendar blocks already appear in the Wins tab on their own.
+  // Copying them into manualWins too is what made the same item show up twice.
+  if((D.tasks||[]).some(t=>t.done&&(t.date||todayStr())===dt&&t.text===text))return;
+  const _daySlots=(D.days&&D.days[dt])||[];
+  if(_daySlots.some(s=>s&&s.done&&s.text===text))return;
   if(!D.reflections)D.reflections={};
   if(!D.reflections[dt])D.reflections[dt]={};
   if(!D.reflections[dt].manualWins)D.reflections[dt].manualWins=[];

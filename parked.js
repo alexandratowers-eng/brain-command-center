@@ -22,6 +22,7 @@ function renderParked(){
       +'<button class="parked-done" onclick="doneParked('+p.id+')" title="Done, clear it"><span class="mi">check_circle</span></button>'
       +'<span class="parked-text">'+parkedEsc(p.text)+'</span>'
       +'<span class="parked-age'+(age.stale?' stale':'')+'">'+age.label+'</span>'
+      +'<button class="parked-del" onclick="deleteParked('+p.id+')" title="Delete this"><span class="mi">close</span></button>'
       +'</div>';
   });
   bar.innerHTML='<div class="parked-card'+(D.parked.length?'':' empty')+'">'
@@ -44,6 +45,10 @@ function addParked(){
 }
 
 function doneParked(id){
+  D.parked=(D.parked||[]).filter(p=>p.id!==id);
+  save();renderParked();
+}
+function deleteParked(id){
   D.parked=(D.parked||[]).filter(p=>p.id!==id);
   save();renderParked();
 }

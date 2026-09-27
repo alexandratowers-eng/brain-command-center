@@ -475,7 +475,7 @@ function switchTab(id,el){
   if(vt)vt.style.display=(id==='cal')?'flex':'none';
   const mvt=document.getElementById('mobileViewToggle');
   if(mvt)mvt.style.display=(id==='cal')?'':'none';
-  if(id==='tasks')renderAllTasks();
+  if(id==='tasks'){renderAllTasks();if(typeof renderBuckets==='function')renderBuckets();}
   if(id==='dump'){renderInbox();if(typeof initWorryNotes==='function')initWorryNotes();}
 
   if(id==='cal')renderCalendar();
