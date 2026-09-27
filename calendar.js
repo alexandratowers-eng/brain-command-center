@@ -838,8 +838,6 @@ function openWkPopover(e, dt, hr){
   document.getElementById('wpCat').innerHTML=catOpts;
   document.getElementById('wpTitle').value='';
   document.getElementById('wpDetails').value='';
-  const wpLocEl=document.getElementById('wpLoc');if(wpLocEl)wpLocEl.value='';
-  const wpLocOnly=document.getElementById('wpLocOnly');if(wpLocOnly)wpLocOnly.checked=false;
   pop.classList.add('show');
   setTimeout(()=>document.getElementById('wpTitle').focus(), 50);
 }
@@ -854,17 +852,15 @@ function wkPopoverSave(){
   const catKey=document.getElementById('wpCat').value;
   const title=document.getElementById('wpTitle').value.trim();
   const details=document.getElementById('wpDetails').value.trim();
-  const loc=(document.getElementById('wpLoc')?.value||'').trim();
-  const locOnly=document.getElementById('wpLocOnly')?.checked||false;
   const isMtg=document.getElementById('wpIsMeeting')?.checked||false;
   const cat=D.cats[catKey];
-  const text=title||(locOnly&&loc?'📍 '+loc:(cat?cat.emoji+' '+cat.label:'Break'));
+  const text=title||(cat?cat.emoji+' '+cat.label:'Break');
   const tl=getTimeline(newDate)||[];
   const newMin=parseMin(t);
   let idx=tl.length;
   for(let j=0;j<tl.length;j++){if(parseMin(tl[j].t)>newMin){idx=j;break;}}
   const endTime=minToTime(Math.min(24*60,newMin+30));
-  tl.splice(idx,0,{t, text, cls:catKey, sm:details, loc, _locOnly:locOnly, _isMeeting:isMtg, end:endTime, _id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+  tl.splice(idx,0,{t, text, cls:catKey, sm:details, _isMeeting:isMtg, end:endTime, _id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
   setTimeline(newDate, tl);
   closeWkPopover();
   renderCalendar(); renderMiniCal();
@@ -2015,7 +2011,6 @@ function openDvPopover(e,dt,hr,mins,editIdx){
     if(slot){
       document.getElementById('dpTitle').value=slot.text||'';
       document.getElementById('dpDetails').value=slot.sm||'';
-      {const _l=document.getElementById('dpLoc');if(_l)_l.value=slot.loc||'';}
       if(slot.cls)document.getElementById('dpCat').value=slot.cls;
       const slotMin=parseMin(slot.t);
       const rounded=Math.round(slotMin/15)*15;
@@ -2024,12 +2019,6 @@ function openDvPopover(e,dt,hr,mins,editIdx){
   } else {
     document.getElementById('dpTitle').value='';
     document.getElementById('dpDetails').value='';
-    {const _l=document.getElementById('dpLoc');if(_l)_l.value='';}
-  }
-  const locOnlyCb=document.getElementById('dpLocOnly');
-  if(locOnlyCb){
-    if(isEdit){const tl2=getTimeline(dt)||[];const sl=tl2[_dvPopEditIdx];locOnlyCb.checked=sl&&sl._locOnly||false;}
-    else locOnlyCb.checked=false;
   }
   const mtgCb=document.getElementById('dpIsMeeting');
   if(mtgCb){
@@ -2060,11 +2049,9 @@ function dvPopoverSave(){
   const catKey=document.getElementById('dpCat').value;
   const title=document.getElementById('dpTitle').value.trim();
   const details=document.getElementById('dpDetails').value.trim();
-  const loc=(document.getElementById('dpLoc')?.value||'').trim();
-  const locOnly=document.getElementById('dpLocOnly')?.checked||false;
   const isMtg=document.getElementById('dpIsMeeting')?.checked||false;
   const cat=D.cats[catKey];
-  const text=title||(locOnly&&loc?'📍 '+loc:(cat?cat.emoji+' '+cat.label:'Break'));
+  const text=title||(cat?cat.emoji+' '+cat.label:'Break');
   const tl=getTimeline(_dvPopDate)||[];
   if(_dvPopEditIdx!=null&&tl[_dvPopEditIdx]){
     const slot=tl[_dvPopEditIdx];
@@ -2081,15 +2068,13 @@ function dvPopoverSave(){
       const newTl=getTimeline(newDate)||[];
       let idx=newTl.length;
       for(let j=0;j<newTl.length;j++){if(parseMin(newTl[j].t)>newMin){idx=j;break;}}
-      newTl.splice(idx,0,{t,text,cls:catKey,sm:details,loc,_isMeeting:isMtg,end:minToTime(Math.min(24*60,newMin+(dur>0?dur:30))),_id:slot._id||'s'+Date.now()+'_'+idx});
+      newTl.splice(idx,0,{t,text,cls:catKey,sm:details,_isMeeting:isMtg,end:minToTime(Math.min(24*60,newMin+(dur>0?dur:30))),_id:slot._id||'s'+Date.now()+'_'+idx});
       setTimeline(newDate,newTl);
     } else {
       slot.t=t;
       slot.text=text;
       slot.cls=catKey;
       slot.sm=details;
-      slot.loc=loc;
-      slot._locOnly=locOnly;
       slot._isMeeting=isMtg;
       slot.end=minToTime(Math.min(24*60,newMin+(dur>0?dur:30)));
       slot.done=false;
@@ -2102,7 +2087,7 @@ function dvPopoverSave(){
     let idx=destTl.length;
     for(let j=0;j<destTl.length;j++){if(parseMin(destTl[j].t)>newMin){idx=j;break;}}
     const endTime=minToTime(Math.min(24*60,newMin+30));
-    destTl.splice(idx,0,{t,text,cls:catKey,sm:details,loc,_locOnly:locOnly,_isMeeting:isMtg,end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
+    destTl.splice(idx,0,{t,text,cls:catKey,sm:details,_isMeeting:isMtg,end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
     setTimeline(newDate,destTl);
   }
   closeDvPopover();

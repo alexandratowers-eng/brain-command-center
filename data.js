@@ -245,6 +245,18 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._winDedupeV1=true;
   }
+  // Location feature removed: strip loc/_locOnly from every calendar slot so no
+  // stray 📍 location-only strips render from old data.
+  if(!d._locRemovedV1){
+    if(d.days){
+      Object.keys(d.days).forEach(dt=>{
+        const tl=d.days[dt];
+        if(!Array.isArray(tl))return;
+        tl.forEach(s=>{if(s){delete s.loc;delete s._locOnly;}});
+      });
+    }
+    d._locRemovedV1=true;
+  }
   // Personal → teal, exercise → green, keep CHOP light blue
   if(!d._personalTealV1){
     if(d.cats&&d.cats.personal)d.cats.personal.color='#2dd4bf';
