@@ -2,6 +2,16 @@
 
 Read this first. It exists so you can make a quick change without reading the whole codebase.
 
+## Making a small edit? Do EXACTLY this (nothing more)
+The single biggest waste of effort here is re-reading the codebase to make a one-line change. Don't. Follow this and stop:
+1. **Reuse the clone.** If `/tmp/brain-command-center` already exists, `cd` in and `git pull`. Only clone if it's missing.
+2. **One grep, right file.** Use the "Find it with one grep" table below to pick the file, then grep for the function/string IN THAT FILE. Do not grep the whole repo. Do not open files you aren't editing.
+3. **Read a tiny window.** Read only ±20–40 lines around the match. Never read a whole file, never read all of a big file to "get context."
+4. **Edit in place**, commit the touched files, `git push origin main`. Done.
+5. **Bump the cache** (one command, see below) only if a JS/CSS change must reach already-open browsers.
+
+Anti-patterns that burn the rate limit (never do these): reading whole files "to be safe", re-reading files to verify after a successful Edit, re-cloning when a clone exists, or grepping the entire repo when this guide already says which file it's in. Trust this map over exploring.
+
 ## What this is
 A static, single-page dashboard hosted on **GitHub Pages**. No build step, no framework, no npm. Plain HTML + CSS + vanilla JS. All state lives in the browser's `localStorage` under the key `SK` (see `data.js`).
 
@@ -23,7 +33,13 @@ git clone https://github.com/alexandratowers-eng/brain-command-center.git /tmp/b
 # edit files
 git add <files> && git commit -m "..." && git push origin main
 ```
-Changes go live in 1–2 minutes. To force browsers to pull new JS/CSS, bump the `?v=YYYYMMDD` query string on the `<script>`/`<link>` tags in `index.html` (currently `?v=20260521d`). There is a service worker (`sw.js`) so a hard refresh (twice) may be needed.
+Changes go live in 1–2 minutes. To force already-open browsers (and the `sw.js` service worker) to pull new JS/CSS, bump BOTH the `?v=` query strings in `index.html` and the `CACHE=` version in `sw.js`. Don't hand-track the current number — this one command does it all (run from the repo root):
+```
+V=$(date +%Y%m%d%H%M); \
+sed -i '' -E "s/\?v=[0-9a-z]+/?v=$V/g" index.html; \
+sed -i '' -E "s/bcc-v[0-9]+/bcc-v$V/" sw.js
+```
+Then commit `index.html` + `sw.js` with the rest. A hard refresh (twice) may still be needed on an open tab.
 
 ## File map (what lives where)
 | File | Lines | Holds |
@@ -33,10 +49,34 @@ Changes go live in 1–2 minutes. To force browsers to pull new JS/CSS, bump the
 | `core.js` | ~517 | App lifecycle: `init()`, `switchTab()`, theme, sidebar toggles, `renderCalendar()`. `init()` calls the per-tab render functions. |
 | `calendar.js` | ~2795 | Calendar views: `renderDayView()`, `renderWeekView()`, `renderWeekBlocks()`, quick-add parsing (`parseQuickAdd`), drag/drop, popovers. |
 | `tasks.js` | ~2037 | Tasks tab + sidebar tasks: `renderAllTasks()`, `quickAdd()`, reminders, buckets, swimlanes. |
-| `features.js` | ~3814 | Everything else: weekly goal, **MCAT tab** (`renderMcat`, `renderVocab`, `VOCAB_BANK`), meeting notes, **import/export** (`exportData`, `importData`, `importIcs`+`parseIcs`, `importOutlookPdf`+`parseOutlookPdfRows`). |
-| `sync.js` | ~374 | Optional GitHub Gist sync. |
+| `features.js` | ~4000 | Everything else: weekly goal, **MCAT Study Steps tab** (`renderMcat`, `renderVocab`, `VOCAB_BANK`), meeting notes/transcripts, global search, photo import, **import/export** (`exportData`, `importData`, `importIcs`+`parseIcs`, `importOutlookPdf`+`parseOutlookPdfRows`). |
+| `studyplan.js` | ~147 | **Study Plan block inside the MCAT tab**: `renderStudyPlan()` + its sub-tabs `spDaily`, `spWeekly`, `spSessions`, `spResources`, `spScores`, `spJournal`. Content data is in `studyplan-data.js`. |
+| `sync.js` | ~420 | Optional GitHub Gist sync. |
 | `styles.css` | — | All styling. CSS vars: `--text --dim --bg --border --blue --green --amber --purple --indigo --rose --teal`. |
 | `sw.js`, `manifest.json` | — | PWA bits. |
+
+## Find it with one grep (feature → file → grep this)
+Pick the file, grep the term IN THAT FILE ONLY, read ±30 lines, edit. Don't repo-wide grep.
+| I want to touch… | File | grep for |
+|------|------|----------|
+| A nav tab / which render runs on tab switch | `core.js` | `function switchTab` |
+| App startup / which renders run on load | `core.js` | `function init` |
+| Theme, sidebar, collapse toggles | `core.js` | `toggleTheme` / `toggleSidebar` |
+| Data load / save / one-time migrations | `data.js` | `function load` (migrations are `if(!d.x)` lines inside it) |
+| Default new-user data shape | `data.js` | `function defaults` |
+| Time/date helpers | `data.js` | `parseMin` / `minToTime` / `todayStr` |
+| Day / Week calendar rendering | `calendar.js` | `renderDayView` / `renderWeekView` |
+| Quick-add typed-event parsing | `calendar.js` | `parseQuickAdd` |
+| Block popovers / edit / drag-drop | `calendar.js` | `openWkBlockMenu` / `dropTaskOnDayCell` |
+| Tasks tab, buckets, reminders | `tasks.js` | `renderAllTasks` / `quickAdd` |
+| MCAT Study Steps ring + steps | `features.js` | `function renderMcat` |
+| Vocab tracker / word bank | `features.js` | `renderVocab` / `VOCAB_BANK` |
+| Meeting notes / transcript tools | `features.js` | `parseTranscript` / `summarizeTranscript` |
+| Global search | `features.js` | `runGlobalSearch` |
+| Import/export (JSON, ICS, Outlook PDF, photo) | `features.js` | `exportData` / `importIcs` / `importOutlookPdf` / `addPhotoEvents` |
+| Study Plan (Daily/Weekly/Scores/Journal) | `studyplan.js` | `renderStudyPlan` / `spDaily` / `spScores` |
+| A tab's HTML panel / nav button | `index.html` | `id="p-<tab>"` (e.g. `p-mcat`) or `switchTab('<tab>'` |
+| Colors / spacing / any styling | `styles.css` | the CSS class name from the element |
 
 ## Data model (the important part)
 Calendar events ("blocks") live in:
