@@ -1651,9 +1651,12 @@ function removeManualWin(dt,idx){
 // ===== WINS TAB =====
 let _winsDate=null;
 let _winsViewAll=false;
+let _winsViewWeek=false;
+let _winsWeekOffset=0;
 function renderWinsTab(){
   const el=document.getElementById('winsContent');
   if(!el)return;
+  if(_winsViewWeek){renderWeekRecapView(el);return;}
   if(_winsViewAll){renderAllWinsView(el);return;}
   const dt=_winsDate||todayStr();
   _winsDate=dt;
@@ -1679,6 +1682,7 @@ function renderWinsTab(){
       <h2 style="font-size:18px;font-weight:600;flex:1;text-align:center;">${d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</h2>
       <button class="t-btn" onclick="navWins(1)" style="padding:4px 10px;">&gt;</button>
       <button class="t-btn" onclick="_winsDate=todayStr();renderWinsTab();" style="font-size:10px;">Today</button>
+      <button class="t-btn" onclick="_winsViewWeek=true;_winsWeekOffset=0;renderWinsTab();" style="font-size:10px;border-color:var(--green);color:var(--green);">📆 My Week</button>
       <button class="t-btn" onclick="_winsViewAll=true;renderWinsTab();" style="font-size:10px;border-color:var(--green);color:var(--green);">All Wins</button>
     </div>
 
@@ -1799,7 +1803,106 @@ function navWins(dir){
   d.setDate(d.getDate()+dir);
   _winsDate=dateStr(d);
   _winsViewAll=false;
+  _winsViewWeek=false;
   renderWinsTab();
+}
+
+function renderWeekRecapView(el){
+  function gatherWins(dt){
+    const ref=(D.reflections&&D.reflections[dt])||{};
+    const manualWins=(ref.manualWins||[]).map(w=>({text:w,cat:'_win'}));
+    const completedSlots=(getTimeline(dt)||[]).filter(s=>s.done).map(s=>({text:s.text,cat:s.cls||'_block'}));
+    const completedTasks=D.tasks.filter(t=>t.date===dt&&t.done).map(t=>({text:t.text,cat:t.cat||'_task'}));
+    return{items:[...completedSlots,...completedTasks,...manualWins],smallWin:ref.smallWin||''};
+  }
+  const today=dateObj(todayStr());
+  const mon=new Date(today.getTime());
+  mon.setDate(mon.getDate()-((mon.getDay()+6)%7)+_winsWeekOffset*7);
+  const days=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(mon.getTime());d.setDate(d.getDate()+i);
+    const dt=dateStr(d);
+    days.push({dt,d,...gatherWins(dt)});
+  }
+  const sun=days[6].d;
+  const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const isThisWeek=_winsWeekOffset===0;
+  const title=isThisWeek?'This Week':_winsWeekOffset===-1?'Last Week':fmt(mon)+' – '+fmt(sun);
+  const total=days.reduce((s,d)=>s+d.items.length,0);
+  const activeDays=days.filter(d=>d.items.length).length;
+  const maxDay=Math.max(1,...days.map(d=>d.items.length));
+
+  // bucket totals across the week
+  const catTotals={};
+  days.forEach(d=>d.items.forEach(w=>{const k=w.cat||'_other';catTotals[k]=(catTotals[k]||0)+1;}));
+  const catChips=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([k,n])=>{
+    const cat=D.cats[k];
+    const emoji=k==='_win'?'✨':k==='_block'?'📅':k==='_task'?'✅':cat?cat.emoji:'📌';
+    const label=k==='_win'?'Wins':k==='_block'?'Blocks':k==='_task'?'Tasks':cat?cat.label:k;
+    const color=k==='_win'?'var(--green)':cat?cat.color:'var(--blue)';
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:${color}12;border:1px solid ${color}25;border-radius:999px;padding:4px 10px;font-size:10px;color:${color};font-weight:600;">${emoji} ${label} · ${n}</span>`;
+  }).join('');
+
+  let hero;
+  if(!total){
+    hero=isThisWeek?'This week is still unfolding — everything you finish will show up here. 🌱':'A quiet week. Rest counts too. 🌙';
+  }else{
+    hero=`You did <b style="color:var(--green);">${total} thing${total!==1?'s':''}</b> across <b>${activeDays} day${activeDays!==1?'s':''}</b>${isThisWeek?' this week':''}. That's not nothing — that's a lot. 💚`;
+  }
+
+  // day strip: mini bars Mon..Sun
+  const strip=days.map(({dt,d,items})=>{
+    const isToday=dt===todayStr();
+    const h=items.length?Math.max(14,Math.round(items.length/maxDay*44)):4;
+    const barColor=items.length?'var(--green)':'var(--border)';
+    return `<div onclick="_winsViewWeek=false;_winsDate='${dt}';renderWinsTab();" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;" title="${items.length} on ${fmt(d)}">
+      <span style="font-size:10px;font-weight:600;color:${items.length?'var(--text)':'var(--dim)'};">${items.length||''}</span>
+      <div style="width:100%;max-width:26px;height:48px;display:flex;align-items:flex-end;"><div style="width:100%;height:${h}px;background:${barColor};border-radius:5px;opacity:${items.length?'.85':'.6'};"></div></div>
+      <span style="font-size:9px;letter-spacing:.4px;color:${isToday?'var(--green)':'var(--dim)'};font-weight:${isToday?'700':'500'};">${['MON','TUE','WED','THU','FRI','SAT','SUN'][(d.getDay()+6)%7]}</span>
+    </div>`;
+  }).join('');
+
+  // per-day cards, only days that have items
+  let daysHtml='';
+  days.filter(d=>d.items.length).forEach(({dt,d,items,smallWin})=>{
+    const isToday=dt===todayStr();
+    const groups={};
+    items.forEach(w=>{const k=w.cat||'_other';(groups[k]=groups[k]||[]).push(w.text);});
+    let groupsHtml='';
+    Object.keys(groups).sort((a,b)=>{if(a==='_win')return 1;if(b==='_win')return -1;return groups[b].length-groups[a].length;}).forEach(k=>{
+      const cat=D.cats[k];
+      const emoji=k==='_win'?'✨':k==='_block'?'📅':k==='_task'?'✅':cat?cat.emoji:'📌';
+      const color=k==='_win'?'var(--green)':cat?cat.color:'var(--blue)';
+      groupsHtml+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+        ${groups[k].map(w=>`<span style="display:inline-flex;align-items:center;gap:4px;background:${color}12;border:1px solid ${color}25;border-radius:6px;padding:3px 8px;font-size:10px;color:${color};">${emoji} ${(w||'').replace(/</g,'&lt;')}</span>`).join('')}
+      </div>`;
+    });
+    daysHtml+=`<div style="margin-bottom:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;${isToday?'border-color:rgba(52,211,153,.4);':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:600;${isToday?'color:var(--green);':''}">${isToday?'Today — ':''}${d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</span>
+        <span style="font-size:10px;color:var(--dim);">${items.length}</span>
+      </div>
+      ${groupsHtml}
+      ${smallWin?`<div style="margin-top:6px;font-size:10px;color:var(--dim);font-style:italic;">"${smallWin}"</div>`:''}
+    </div>`;
+  });
+
+  el.innerHTML=`<div style="max-width:800px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <button class="t-btn" onclick="_winsViewWeek=false;renderWinsTab();" style="padding:4px 10px;font-size:10px;">&lt; Daily View</button>
+      <button class="t-btn" onclick="_winsWeekOffset--;renderWinsTab();" style="padding:4px 10px;">&lt;</button>
+      <h2 style="font-size:18px;font-weight:600;flex:1;text-align:center;">📆 ${title}</h2>
+      <button class="t-btn" onclick="_winsWeekOffset++;renderWinsTab();" style="padding:4px 10px;${isThisWeek?'visibility:hidden;':''}">&gt;</button>
+      <span style="font-size:11px;color:var(--green);font-weight:600;">${total} total</span>
+    </div>
+    <div class="reflection-section" style="max-width:none;margin-bottom:14px;">
+      <div style="font-size:14px;line-height:1.5;text-align:center;padding:2px 6px 12px;">${hero}</div>
+      <div style="display:flex;gap:4px;align-items:flex-end;padding:0 6px 4px;">${strip}</div>
+      ${catChips?`<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px;">${catChips}</div>`:''}
+    </div>
+    ${daysHtml||''}
+    ${total?`<div style="text-align:center;font-size:11px;color:var(--dim);padding:6px 0 16px;">Forgot you did all that? That's exactly why this page exists. 💚</div>`:''}
+  </div>`;
 }
 
 // ===== LOGO PICKER =====
