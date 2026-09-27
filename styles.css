@@ -455,6 +455,18 @@ button,input,select,textarea{font-family:inherit;}
 .inbox-empty p{font-size:14px;color:var(--text);margin:10px 0 4px;font-weight:600;}
 .inbox-empty span{font-size:12px;color:var(--dim);display:block;max-width:340px;margin:0 auto;line-height:1.5;}
 .inbox-noresults{text-align:center;font-size:12px;color:var(--dim);padding:14px;}
+
+/* ===== Buckets board bar (search + bucket chips) ===== */
+.board-bar{display:flex;flex-direction:column;gap:9px;margin-bottom:12px;}
+.board-search{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;max-width:420px;}
+.board-search .mi{font-size:17px;color:var(--dim);}
+.board-search input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit;}
+.board-search input::placeholder{color:var(--dim);}
+.board-chips{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+.board-chips::-webkit-scrollbar{display:none;}
+.board-chip{--chip:var(--dim);flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--border);color:var(--dim);font-size:11px;font-weight:600;padding:5px 11px;border-radius:999px;cursor:pointer;font-family:inherit;transition:all .15s;}
+.board-chip:hover{border-color:var(--chip);}
+.board-chip.active{border-color:var(--chip);color:var(--chip);background:var(--bg2);background:color-mix(in srgb,var(--chip) 12%,transparent);}
 @media(max-width:600px){
   .inbox-card{flex-wrap:wrap;}
   .inbox-card-actions{width:100%;justify-content:flex-end;}

@@ -650,11 +650,16 @@ function renderBuckets(){
   const orderedKeys=_getBucketOrder();
   const buckets=orderedKeys.map(k=>[k,cats[k]]).filter(([,c])=>c);
   if(!buckets.length){el.innerHTML='<p style="color:var(--dim);text-align:center;padding:24px;font-size:12px;">No categories yet.</p>';return;}
-  let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:4px 0;">';
+  let h='<div class="board-bar">'
+    +'<div class="board-search"><span class="mi">search</span><input id="boardSearch" placeholder="Search all buckets…" oninput="filterBoard(this.value)"></div>'
+    +'<div class="board-chips"><button class="board-chip'+(!_boardChip?' active':'')+'" data-chip="" onclick="setBoardChip(\'\')">All</button>'
+    +buckets.map(([k,c])=>'<button class="board-chip'+(k===_boardChip?' active':'')+'" data-chip="'+k+'" style="--chip:'+(c.color||'var(--blue)')+'" onclick="setBoardChip(\''+k+'\')">'+(c.emoji||'')+' '+c.label+'</button>').join('')
+    +'</div></div>';
+  h+='<div id="bucketsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:4px 0;">';
   buckets.forEach(([k,cat])=>{
     const tasks=activeTasks.filter(t=>t.cat===k).sort((a,b)=>{const p={high:0,med:1,low:2};return p[a.pri]-p[b.pri];});
     const done=D.tasks.filter(t=>t.done&&t.cat===k&&t.date&&t.date<=today);
-    h+=`<div data-bucketkey="${k}"
+    h+=`<div data-bucketkey="${k}" data-name="${cat.label}"
           ondragover="event.preventDefault();this.style.outline='2px solid var(--blue)';event.dataTransfer.dropEffect='move';"
           ondragleave="this.style.outline='';"
           ondrop="event.preventDefault();this.style.outline='';const dt=event.dataTransfer.getData('text/plain');if(_bucketDragKey&&_bucketDragKey!=='${k}'){const o=_getBucketOrder();const fi=o.indexOf(_bucketDragKey);const ti=o.indexOf('${k}');if(fi>-1&&ti>-1){o.splice(fi,1);o.splice(ti,0,_bucketDragKey);}D.catOrder=o;save();_bucketDragKey=null;renderBuckets();return;}_bucketDragKey=null;if(dt&&dt.match(/^[0-9]+$/)){_dragTaskId=parseInt(dt);taskDropOnCat(event,'${k}');}"
@@ -688,7 +693,7 @@ function renderBuckets(){
       const items=list.items||[];
       const doneCount=items.filter(i=>i.done).length;
       const activeItems=items.filter(i=>!i.done);
-      h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;">
+      h+=`<div data-listcard="list-${list.id}" data-name="${list.name}" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:80px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <span style="font-size:16px;">✅</span>
           <span style="font-size:12px;font-weight:600;color:var(--text);">${list.name}</span>
@@ -696,7 +701,7 @@ function renderBuckets(){
           <button onclick="bucketListInlineAdd('list-${list.id}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;" title="Add item">+</button>
         </div>
         <div>
-          ${items.map(item=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
+          ${items.map(item=>`<div data-lrow style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);">
             <input type="checkbox" ${item.done?'checked':''} onchange="toggleListItem(${list.id},${item.id},this)" style="flex-shrink:0;">
             <span style="flex:1;font-size:12px;${item.done?'text-decoration:line-through;color:var(--dim);':''}">${item.text}</span>
             <button onclick="deleteListItem(${list.id},${item.id});renderBuckets();" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;opacity:.4;">✕</button>
@@ -733,6 +738,34 @@ function renderBuckets(){
   }
   h+='</div>';
   el.innerHTML=h;
+  if(_boardQ||_boardChip){
+    const bs=document.getElementById('boardSearch');if(bs)bs.value=_boardQ;
+    filterBoard(_boardQ);
+  }
+}
+let _boardChip='',_boardQ='';
+function filterBoard(q){
+  _boardQ=q||'';
+  const grid=document.getElementById('bucketsGrid');if(!grid)return;
+  const needle=_boardQ.toLowerCase().trim();
+  Array.from(grid.children).forEach(card=>{
+    const bk=card.getAttribute('data-bucketkey');
+    const lk=card.getAttribute('data-listcard');
+    if(!bk&&!lk){card.style.display=(needle||_boardChip)?'none':'';return;}
+    if(_boardChip&&bk!==_boardChip){card.style.display='none';return;}
+    const rows=card.querySelectorAll('.simple-task-row,[data-lrow]');
+    if(!needle){card.style.display='';rows.forEach(r=>r.style.display='');return;}
+    let m=0;
+    rows.forEach(r=>{const ok=(r.textContent||'').toLowerCase().includes(needle);r.style.display=ok?'':'none';if(ok)m++;});
+    const nameOk=(card.getAttribute('data-name')||'').toLowerCase().includes(needle);
+    if(nameOk)rows.forEach(r=>r.style.display='');
+    card.style.display=(m||nameOk)?'':'none';
+  });
+}
+function setBoardChip(k){
+  _boardChip=(_boardChip===k)?'':k;
+  document.querySelectorAll('.board-chip').forEach(b=>b.classList.toggle('active',(b.getAttribute('data-chip')||'')===_boardChip));
+  filterBoard(_boardQ);
 }
 function bucketListInlineAdd(wrapperId){
   const d=document.getElementById('bucket-add-'+wrapperId);if(!d)return;
