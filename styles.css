@@ -425,6 +425,41 @@ button,input,select,textarea{font-family:inherit;}
 .wkdump-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
 .wkdump-cancel{background:var(--card);border:1px solid var(--border)!important;color:var(--dim);}
 .wkdump-apply{background:rgba(52,211,153,.9);color:#0b3b2e;}
+
+/* ===== Brain Dump inbox (calm, searchable, sortable) ===== */
+.inbox-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.inbox-search{flex:1;min-width:180px;display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;}
+.inbox-search .mi{font-size:17px;color:var(--dim);}
+.inbox-search input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit;}
+.inbox-search input::placeholder{color:var(--dim);}
+.inbox-sort-btn{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(180deg,rgba(167,139,250,.16),rgba(167,139,250,.06));border:1px solid rgba(167,139,250,.4);color:var(--purple);font-size:12px;font-weight:600;padding:8px 14px;border-radius:10px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s;}
+.inbox-sort-btn:hover{background:rgba(167,139,250,.24);}
+.inbox-sortbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(167,139,250,.1),rgba(167,139,250,.03));border:1px solid rgba(167,139,250,.32);border-radius:10px;padding:11px 14px;margin-bottom:12px;}
+.inbox-sortbar .mi{color:var(--purple);font-size:18px;}
+.inbox-sortbar-msg{flex:1;min-width:150px;font-size:12px;color:var(--text);line-height:1.4;}
+.inbox-sortbar-actions{display:flex;gap:6px;}
+.inbox-list{display:flex;flex-direction:column;gap:8px;}
+.inbox-card{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 14px;transition:border-color .15s;}
+.inbox-card:hover{border-color:rgba(167,139,250,.35);}
+.inbox-card-text{flex:1;font-size:13.5px;line-height:1.45;color:var(--text);word-break:break-word;}
+.inbox-remind-tag{display:inline-block;margin-left:8px;font-size:10px;color:var(--amber);white-space:nowrap;}
+.inbox-card-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.inbox-act{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;background:none;border-radius:8px;color:var(--dim);cursor:pointer;transition:all .15s;}
+.inbox-act .mi{font-size:17px;}
+.inbox-act:hover{background:var(--bg2);color:var(--text);}
+.inbox-act.danger:hover{background:rgba(248,113,113,.14);color:var(--red);}
+.inbox-move{font-size:11px;padding:6px 9px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);max-width:130px;cursor:pointer;font-family:inherit;}
+.inbox-select{font-size:12px;padding:7px 10px;background:var(--bg);border:1px solid rgba(167,139,250,.4);border-radius:8px;color:var(--text);min-width:130px;cursor:pointer;font-family:inherit;}
+.inbox-empty{text-align:center;padding:36px 18px;}
+.inbox-empty .mi{font-size:34px;color:var(--green);opacity:.75;}
+.inbox-empty p{font-size:14px;color:var(--text);margin:10px 0 4px;font-weight:600;}
+.inbox-empty span{font-size:12px;color:var(--dim);display:block;max-width:340px;margin:0 auto;line-height:1.5;}
+.inbox-noresults{text-align:center;font-size:12px;color:var(--dim);padding:14px;}
+@media(max-width:600px){
+  .inbox-card{flex-wrap:wrap;}
+  .inbox-card-actions{width:100%;justify-content:flex-end;}
+  .inbox-move,.inbox-select{flex:1;max-width:none;}
+}
 .cal-header-title{font-family:'Inter',-apple-system,sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px;margin:0 4px;white-space:nowrap;}
 .cal-nav-btn{background:none;border:1px solid var(--border);color:var(--dim);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;line-height:1;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;padding:0;}
 .cal-nav-btn:hover{border-color:var(--blue);color:var(--blue);background:rgba(99,102,241,.07);}

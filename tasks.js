@@ -1908,23 +1908,87 @@ function dumpToInbox(){
   lines.forEach(l=>{D.tasks.push({id:D.nextId++,text:l.trim(),cat:'braindump',pri:'med',done:false,date:today});});
   document.getElementById('brainDump').value='';D.brainDump='';save();renderInbox();renderSidebarTasks();
 }
+let _inboxSorting=false, _inboxFilter='';
+function _ie(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _ia(s){return _ie(s).replace(/"/g,'&quot;');}
 function renderInbox(){
-  const inboxTasks=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
-  document.getElementById('inboxCount').textContent=inboxTasks.length;
+  const all=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
+  const cnt=document.getElementById('inboxCount');
+  if(cnt)cnt.textContent=all.length;
   const el=document.getElementById('inboxItems');
-  if(!inboxTasks.length){el.innerHTML='<p style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">Empty</p>';return;}
+  if(!el)return;
+  if(!all.length){
+    _inboxSorting=false;_inboxFilter='';
+    el.innerHTML='<div class="inbox-empty"><span class="mi">spa</span><p>Your inbox is clear.</p>'
+      +'<span>Anything on your mind? Jot it above and tap Dump to Inbox — you can sort it whenever you\'re ready.</span></div>';
+    return;
+  }
   const catOpts=catPickerOptions();
-  el.innerHTML=inboxTasks.map(t=>{
+  let h='<div class="inbox-toolbar">';
+  h+='<div class="inbox-search"><span class="mi">search</span>'
+    +'<input id="inboxSearch" placeholder="Find a thought…" value="'+_ia(_inboxFilter)+'" oninput="filterInboxCards(this.value)"></div>';
+  if(!_inboxSorting) h+='<button class="inbox-sort-btn" onclick="sortInbox()">✨ Sort into buckets</button>';
+  h+='</div>';
+  if(_inboxSorting){
+    h+='<div class="inbox-sortbar"><span class="mi">auto_awesome</span>'
+      +'<span class="inbox-sortbar-msg">I picked a bucket for each — tweak any that are off, then Apply.</span>'
+      +'<span class="inbox-sortbar-actions">'
+      +'<button class="t-btn" onclick="cancelInboxSort()">Cancel</button>'
+      +'<button class="t-btn primary" onclick="applyInboxSort()">Apply all</button>'
+      +'</span></div>';
+  }
+  h+='<div class="inbox-list">';
+  all.forEach(t=>{
     const hasRemind=t.remindAt&&new Date(t.remindAt)>new Date();
     const remindLabel=hasRemind?new Date(t.remindAt).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
-    return `<div class="task-item" style="margin-bottom:2px;">
-    <div style="flex:1;"><div class="t-label">${t.text}${hasRemind?`<span style="font-size:9px;color:var(--amber);margin-left:6px;">⏰ ${remindLabel}</span>`:''}</div></div>
-    <button class="task-act-btn" onclick="remindBrainDumpItem(event,${t.id})" title="Remind me about this" style="color:var(--amber);"><span class="mi" style="font-size:14px;">notifications</span></button>
-    <select onchange="if(this.value){const tk=D.tasks.find(x=>x.id===${t.id});if(tk){tk.cat=this.value;save();renderInbox();renderSidebarTasks();renderLegend();}}" style="font-size:10px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);max-width:120px;">
-      <option value="">Move to...</option>${catOpts}
-    </select>
-    <button class="task-act-btn" onclick="trashTask(${t.id});renderInbox();">x</button>
-  </div>`;}).join('');
+    h+='<div class="inbox-card" data-text="'+_ia(t.text)+'">';
+    h+='<div class="inbox-card-text">'+_ie(t.text)+(hasRemind?'<span class="inbox-remind-tag">⏰ '+_ie(remindLabel)+'</span>':'')+'</div>';
+    if(_inboxSorting){
+      h+='<select class="inbox-select" data-id="'+t.id+'">'+_wkBucketOptions(guessBucket(t.text))+'</select>';
+    } else {
+      h+='<div class="inbox-card-actions">'
+        +'<button class="inbox-act" title="Remind me about this" onclick="remindBrainDumpItem(event,'+t.id+')"><span class="mi">notifications</span></button>'
+        +'<select class="inbox-move" onchange="if(this.value){const tk=D.tasks.find(x=>x.id==='+t.id+');if(tk){tk.cat=this.value;save();renderInbox();renderSidebarTasks();if(typeof renderLegend===\'function\')renderLegend();if(typeof renderBuckets===\'function\')renderBuckets();}}"><option value="">Move to…</option>'+catOpts+'</select>'
+        +'<button class="inbox-act danger" title="Delete" onclick="trashTask('+t.id+');renderInbox()"><span class="mi">close</span></button>'
+        +'</div>';
+    }
+    h+='</div>';
+  });
+  h+='<p class="inbox-noresults" id="inboxNoResults" style="display:none;">Nothing matches your search.</p>';
+  h+='</div>';
+  el.innerHTML=h;
+  if(_inboxFilter)filterInboxCards(_inboxFilter);
+}
+function filterInboxCards(q){
+  _inboxFilter=q||'';
+  const needle=_inboxFilter.toLowerCase().trim();
+  const cards=document.querySelectorAll('#inboxItems .inbox-card');
+  let shown=0;
+  cards.forEach(c=>{
+    const txt=(c.getAttribute('data-text')||'').toLowerCase();
+    const match=!needle||txt.includes(needle);
+    c.style.display=match?'':'none';
+    if(match)shown++;
+  });
+  const nr=document.getElementById('inboxNoResults');
+  if(nr)nr.style.display=(shown||!cards.length)?'none':'block';
+}
+function sortInbox(){_inboxSorting=true;renderInbox();}
+function cancelInboxSort(){_inboxSorting=false;renderInbox();}
+function applyInboxSort(){
+  document.querySelectorAll('#inboxItems .inbox-select').forEach(sel=>{
+    const id=parseInt(sel.getAttribute('data-id'),10);
+    const t=D.tasks.find(x=>x.id===id);
+    if(t&&sel.value)t.cat=sel.value;
+  });
+  _inboxSorting=false;_inboxFilter='';
+  save();renderInbox();
+  if(typeof renderSidebarTasks==='function')renderSidebarTasks();
+  if(typeof renderBuckets==='function')renderBuckets();
+  if(typeof renderLegend==='function')renderLegend();
+  if(typeof renderAllTasks==='function')renderAllTasks();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='✨ Sorted into buckets';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
 }
 
 // ===== WEEKLY BRAIN-DUMP INBOX (collapsible bar at top of Week view) =====
