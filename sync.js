@@ -6,6 +6,13 @@ window.SyncEngine=(function(){
   let _timer=null;
   let _state='disabled';
   let _pulling=false;
+  let _pullRetries=0;
+  let _pushRetries=0;
+  let _lastResumePull=0;
+  // iOS Safari throws generic TypeErrors when a fetch is interrupted mid-resume;
+  // those (and 5xx/429) deserve a quiet retry, not a scary sticky error.
+  function _isTransient(msg){return /Failed to fetch|Load failed|NetworkError|cancelled|(GET|PATCH) (5\d\d|429)/i.test(msg);}
+  function _isAuth(msg){return /(GET|PATCH) (401|403|404)/.test(msg);}
   let _lastSyncAt=0;
 
   function relTime(ts){
@@ -133,8 +140,18 @@ window.SyncEngine=(function(){
       } else {
         setStatus('idle','Synced ✓');
       }
+      _pullRetries=0;
     }catch(e){
-      setStatus('error','Sync pull failed: '+e.message);
+      const msg=String(e&&e.message||e);
+      if(_isTransient(msg)&&_pullRetries<3){
+        _pullRetries++;
+        setStatus('syncing','Connection hiccup — retrying...');
+        setTimeout(()=>{_pulling=false;pull();},2500*_pullRetries);
+        return;
+      }
+      if(_isAuth(msg))setStatus('error','Sync token problem ('+msg+') — tap the cloud icon to re-pair');
+      else setStatus('error','Sync pull failed: '+msg);
+      _pullRetries=0;
     }
     _pulling=false;
   }
@@ -159,8 +176,18 @@ window.SyncEngine=(function(){
       if(typeof D!=='undefined'){D._syncedAt=payload._syncedAt;delete D._localModifiedAt;}
       await gistPut(cfg,payload);
       setStatus('idle','Synced ✓ '+new Date().toLocaleTimeString());
+      _pushRetries=0;
     }catch(e){
-      setStatus('error','Cloud save failed: '+e.message);
+      const msg=String(e&&e.message||e);
+      if(_isTransient(msg)&&_pushRetries<3){
+        _pushRetries++;
+        setStatus('syncing','Connection hiccup — retrying save...');
+        setTimeout(()=>push(),3000*_pushRetries);
+        return;
+      }
+      if(_isAuth(msg))setStatus('error','Sync token problem ('+msg+') — tap the cloud icon to re-pair');
+      else setStatus('error','Cloud save failed: '+msg);
+      _pushRetries=0;
       window.addEventListener('online',()=>push(),{once:true});
     }
   }
@@ -412,15 +439,18 @@ window.SyncEngine=(function(){
     if(paired)setStatus('syncing','Connecting...');
     setTimeout(()=>pull(),800);
     setInterval(()=>{if(_state==='idle')refreshBanner();},30000);
+    // On iOS resume, visibilitychange + pageshow + focus (+ online) can all fire
+    // within moments; debounce so we pull once, not four times back-to-back.
+    const resumePull=()=>{const n=Date.now();if(n-_lastResumePull<4000)return;_lastResumePull=n;pull();};
     document.addEventListener('visibilitychange',()=>{
-      if(document.visibilityState==='visible')pull();
+      if(document.visibilityState==='visible')resumePull();
     });
     // iOS PWAs resumed from the background often fire pageshow (bfcache) instead of
     // visibilitychange, so reopening the app wasn't always pulling. Cover both, plus
     // re-pull the moment we regain a connection.
-    window.addEventListener('pageshow',e=>{if(e.persisted||document.visibilityState==='visible')pull();});
-    window.addEventListener('focus',()=>pull());
-    window.addEventListener('online',()=>pull());
+    window.addEventListener('pageshow',e=>{if(e.persisted||document.visibilityState==='visible')resumePull();});
+    window.addEventListener('focus',()=>resumePull());
+    window.addEventListener('online',()=>resumePull());
   }
 
   return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner};
