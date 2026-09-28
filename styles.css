@@ -241,10 +241,12 @@ button,input,select,textarea{font-family:inherit;}
 :root.light .rhythm-loc.office{color:#16a34a;}
 :root.light .rhythm-loc.remote{color:#6366f1;}
 :root.light .rhythm-suggestion{background:rgba(129,140,248,.06);border-color:rgba(129,140,248,.2);}
-/* OVERDUE TASKS */
+/* SLIPPED (OVERDUE) TASKS — calm amber, not alarm pink */
+.slipped-strip{background:rgba(232,213,159,.1);border:1px solid rgba(232,213,159,.4);border-radius:8px;padding:6px 7px;margin-bottom:8px;}
+.slipped-title{font-size:9px;color:var(--dim);margin:0 0 4px;letter-spacing:.02em;}
 .overdue-card{background:linear-gradient(135deg,rgba(244,114,182,.06),rgba(239,68,68,.04)),var(--card);border-color:rgba(244,114,182,.3)!important;}
-.overdue-item{display:flex;align-items:center;gap:4px;padding:4px 5px;border-radius:4px;font-size:10px;margin-bottom:2px;background:rgba(244,114,182,.04);border:1px solid transparent;transition:all .15s;}
-.overdue-item:hover{border-color:var(--pink);}
+.overdue-item{display:flex;align-items:center;gap:4px;padding:4px 5px;border-radius:4px;font-size:10px;margin-bottom:2px;background:rgba(232,213,159,.08);border:1px solid transparent;transition:all .15s;}
+.overdue-item:hover{border-color:rgba(232,213,159,.7);}
 .overdue-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .overdue-dot.high{background:var(--red);}
 .overdue-dot.med{background:var(--teal);}

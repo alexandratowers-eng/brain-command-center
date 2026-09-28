@@ -605,7 +605,31 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._bremSept27=true;
   }
+  // Dedupe tasks on every load (idempotent) — sync merges could resurrect copies,
+  // so this can't be a one-time flag migration.
+  d.tasks=dedupeTaskList(d.tasks);
   return d;}}catch(e){}return defaults();}
+// Same text + same category = same task. Open tasks collapse to one (keeping the
+// scheduled/most-detailed copy); done tasks collapse only within the same completion
+// day, so a genuinely repeated task still counts as separate wins.
+function dedupeTaskList(tasks){
+  if(!Array.isArray(tasks))return tasks;
+  const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const seen={};const keep=[];
+  tasks.forEach(t=>{
+    const n=norm(t.text);
+    if(!n){keep.push(t);return;}
+    const k=(t.done?'done:'+(t.completedDate||''):'open:')+(t.cat||'')+':'+n;
+    const prev=seen[k];
+    if(!prev){seen[k]=t;keep.push(t);return;}
+    if(t.date&&!prev.date)prev.date=t.date;
+    if(t.due&&(!prev.due||t.due<prev.due))prev.due=t.due;
+    if(t.remindAt&&!prev.remindAt)prev.remindAt=t.remindAt;
+    if(t.pri==='high')prev.pri='high';
+    if(t.note&&!prev.note)prev.note=t.note;
+  });
+  return keep;
+}
 let _st=null;
 const _undoStack=[];
 const _UNDO_MAX=30;

@@ -2569,27 +2569,30 @@ function surfaceLaterItems(){
   document.body.appendChild(modal);
 }
 
-// ===== FLEXIBLE TASK ROLL-FORWARD =====
-// A task that didn't happen on its date isn't automatically "today's problem" —
-// dumping it back onto today just clutters the day with things that already didn't
-// fit once. Instead it drops into the dateless Later bucket, where the existing daily
-// stash check-in and Sunday/Monday weekly review periodically resurface it. The only
-// exception is a task with a hard due date (t.due) still in the future: it keeps its
-// own date so the deadline-aware scheduler can still see it.
+// ===== SLIPPED TASKS =====
+// A dated task that didn't happen must come back to the user, never silently
+// unschedule itself — a date you assigned is a promise the app has to keep.
 function checkOverdueTasks(){
   const today=todayStr();
-  let rolled=false;
-  D.tasks.forEach(t=>{
-    if(t.done)return;
-    if(!t.date||t.date>=today)return;
-    if(typeof isSnoozed==='function'&&isSnoozed(t))return;
-    if(t.due&&t.due>=today)return; // deadline still in the future — leave it for the scheduler
-    t.date='';
-    rolled=true;
-  });
-  if(rolled)save();
   const card=document.getElementById('overdueCard');
-  if(card)card.style.display='none';
+  if(!card)return;
+  const slipped=D.tasks.filter(t=>!t.done&&t.date&&t.date<today&&!(typeof isSnoozed==='function'&&isSnoozed(t)));
+  if(!slipped.length){card.style.display='none';card.innerHTML='';return;}
+  const rows=slipped.map(t=>{
+    const days=Math.max(1,Math.round((new Date(today+'T12:00')-new Date(t.date+'T12:00'))/86400000));
+    const ago=days===1?'yesterday':days+'d ago';
+    return `<div class="overdue-item">
+      <span class="overdue-dot ${t.pri||'med'}"></span>
+      <span class="overdue-text">${(t.text||'').replace(/</g,'&lt;')}</span>
+      <span class="overdue-ago">${ago}</span>
+      <button class="overdue-btn" onclick="moveOverdueToToday(${t.id})" title="Pull to today">Today</button>
+      <button class="overdue-btn" style="border-color:var(--blue);color:var(--blue);" onclick="rescheduleOverdueTask(${t.id})" title="Pick a new date">📅</button>
+      <button class="overdue-btn" style="border-color:var(--dim);color:var(--dim);" onclick="dropOverdueTask(${t.id})" title="Let it go to backlog">Drop</button>
+    </div>`;
+  }).join('');
+  card.innerHTML=`<div class="slipped-title">⏳ Slipped from earlier — still yours, just late</div>${rows}`
+    +(slipped.length>1?`<button class="overdue-btn" style="margin-top:4px;" onclick="moveAllOverdueToToday()">All → today</button>`:'');
+  card.style.display='';
 }
 function moveOverdueToToday(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;

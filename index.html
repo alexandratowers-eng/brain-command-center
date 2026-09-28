@@ -19,7 +19,7 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=20260926c">
+<link rel="stylesheet" href="styles.css?v=20260928a">
 <script src="sync-config.js?v=20260623b" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
@@ -259,6 +259,7 @@ if('serviceWorker' in navigator){
         <div class="s-card" data-card="calright-tasks">
           <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--amber);">checklist</span> Today's Tasks <span class="badge" id="calRightTaskBadge">0</span><button class="s-collapse" onclick="toggleCard('calright-tasks',this)">▾</button></div>
           <div class="s-body" id="cardBody-calright-tasks">
+            <div id="overdueCard" class="slipped-strip" style="display:none;"></div>
             <div id="calRightTaskList"></div>
             <div class="add-inline" style="margin-top:4px;">
               <input type="text" placeholder="+ add task..." onkeydown="if(event.key==='Enter')addCalRightTask(this)">
@@ -295,7 +296,6 @@ if('serviceWorker' in navigator){
         <!-- Hidden containers for compat -->
         <div id="calRightCompletedList" style="display:none;"></div>
         <div id="calRightCompletedBadge" style="display:none;">0</div>
-        <div id="overdueCard" style="display:none;"><div id="overdueCount" style="display:none;">0</div><div id="overdueList"></div></div>
       </div>
     </div>
 
@@ -792,16 +792,16 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=20260928a"></script>
+<script src="data.js?v=20260928b"></script>
 <script src="core.js?v=20260926a"></script>
 <script src="calendar.js?v=20260927a"></script>
 <script src="tasks.js?v=20260926c"></script>
-<script src="features.js?v=20260922b"></script>
+<script src="features.js?v=20260928a"></script>
 <script src="studyplan-data.js?v=20260706a"></script>
 <script src="studyplan.js?v=20260706a"></script>
 <script src="pocket-data.js?v=20260922a"></script>
 <script src="pocket.js?v=20260922a"></script>
-<script src="sync.js?v=20260926c"></script>
+<script src="sync.js?v=20260928a"></script>
 <script src="breaks.js?v=20260921c"></script>
 <script src="parked.js?v=20260926a"></script>
 <script src="ical-sync.js?v=20260922a"></script>

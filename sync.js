@@ -205,6 +205,8 @@ window.SyncEngine=(function(){
         else if(t.date&&!byId[t.id].date){byId[t.id].date=t.date;}
       });
       merged.tasks=Object.values(byId);
+      // Same task created on two devices gets two ids — collapse by text too
+      if(typeof dedupeTaskList==='function')merged.tasks=dedupeTaskList(merged.tasks);
     }
     // Merge days: union blocks by _id
     if(local.days){
