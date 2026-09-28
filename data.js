@@ -574,6 +574,37 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     });
     d._swimSept23=true;
   }
+  if(!d._bremSept27){
+    // Buffer block raised anxiety instead of catching slips — gone from today forward.
+    Object.entries(d.days||{}).forEach(([key,tl])=>{
+      if(key<'2026-09-27')return;
+      d.days[key]=(tl||[]).filter(s=>!(s._daily==='buf1'&&!s.done));
+    });
+    const DAY=86400000;
+    const keyOf=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+    const addBrem=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:b._brem+'_'+key},b));
+    };
+    for(let cur=new Date(2026,8,28,12);cur<=new Date(2027,0,31,12);cur=new Date(cur.getTime()+DAY)){
+      const key=keyOf(cur);
+      const dow=cur.getDay();
+      if(dow===1||dow===3||dow===4){
+        addBrem(key,{t:'5:15 PM',end:'5:30 PM',text:'📖 15-min primer',sm:'Prime for class. Nothing heavier.',cls:'mcat',_brem:'primer'});
+        addBrem(key,{t:'5:30 PM',end:'8:30 PM',text:'📚 Brem class',sm:'Class is the studying. Nothing after. Touch 1 = class.',cls:'mcat',_brem:'class'});
+      }
+      if(dow===2){
+        addBrem(key,{t:'7:00 PM',end:'9:00 PM',text:'📚 Anchor: UWorld set + Error Log',sm:"Brem's UWorld set for the week + Error Log, then any DUE touchpoints. Touch 2 for anything rated Challenge.",cls:'mcat',_brem:'anchor'});
+      }
+      if(dow===5){
+        addBrem(key,{t:'1:00 PM',end:'5:00 PM',text:'📚 Main set',sm:"Xperiencify work → build this week's mental model drafts. From late Oct: one FL section. Touch 3 = consolidate → draft the model.",cls:'mcat',_brem:'mainset'});
+      }
+      if(dow===0){
+        addBrem(key,{t:'10:00 AM',end:'11:00 AM',text:'📚 Keeper (60 min max)',sm:'Decks in rotation; section review if Friday had one; 10-min glance at Go + Touchpoints. Light day.',cls:'mcat',_brem:'keeper'});
+      }
+    }
+    d._bremSept27=true;
+  }
   return d;}}catch(e){}return defaults();}
 let _st=null;
 const _undoStack=[];
