@@ -917,8 +917,6 @@ button,input,select,textarea{font-family:inherit;}
   .simple-task-actions{opacity:1;}
 }
 
-/* Hide legacy overdue card (overdue tasks now shown inline) */
-#cal-right-panel #overdueCard{display:none !important;}
 
 /* ====== TOPBAR DROPDOWN ====== */
 .topbar-dropdown{position:relative;}
