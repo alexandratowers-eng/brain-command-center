@@ -1039,42 +1039,6 @@ function renderDayView(){
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
-  // Location picker
-  if(!D.daySpots)D.daySpots={};
-  const _lPicked=D.daySpots[dt]||[];
-  const _allSpots=[...(typeof SPOT_SUGGESTIONS!=='undefined'?SPOT_SUGGESTIONS:[]),...(D.customSpots||[])];
-  const _spotMeta=(D.daySpotMeta&&D.daySpotMeta[dt])||{};
-  if(!D.spotRowExpanded)D.spotRowExpanded={};
-  // tri-state: undefined = auto (collapse always), true = expanded, false = explicitly collapsed
-  const _expanded=D.spotRowExpanded[dt]===true;
-  if(!_expanded){
-    // Compact summary: show selected spots inline, or a "+ Set spot" chip
-    const selSpots=_lPicked.map(k=>_allSpots.find(s=>s.key===k)).filter(Boolean);
-    html+=`<div class="spot-row-compact">
-      <button class="spot-row-toggle" onclick="toggleSpotRow('${dt}')" title="Click to change">
-        <span style="font-size:13px;">📍</span>
-        ${selSpots.length?selSpots.map(s=>`<span class="spot-chip-sm">${s.icon} ${s.label}${_spotMeta[s.key]?` · ${_spotMeta[s.key]}`:''}</span>`).join(''):'<span style="color:var(--dim);">+ Set today\'s spot</span>'}
-        <span class="mi" style="font-size:14px;color:var(--dim);margin-left:auto;">expand_more</span>
-      </button>
-    </div>`;
-  } else {
-    html+=`<div class="spot-row-expanded">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <span style="font-size:11px;color:var(--dim);font-weight:600;">📍 Where are you working today?</span>
-        <button onclick="collapseSpotRow('${dt}')" style="margin-left:auto;background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;display:inline-flex;align-items:center;gap:2px;">collapse <span class="mi" style="font-size:14px;">expand_less</span></button>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        ${_allSpots.map(s=>{
-          const sel=_lPicked.includes(s.key);
-          const dur=_spotMeta[s.key];
-          return `<button class="spot-pill${sel?' selected':''}" onclick="toggleDaySpot('${dt}','${s.key}')" oncontextmenu="openSpotDurationPop(event,'${dt}','${s.key}')" title="${(s.desc||'').replace(/"/g,'&quot;')}${sel?'\nRight-click for duration':''}" style="font-size:11px;padding:5px 10px;">${s.icon} ${s.label}${sel&&dur?` <span class="spot-dur">· ${dur}</span>`:''}</button>`;
-        }).join('')}
-        <button class="spot-pill spot-pill-add" onclick="addDaySpotCustom('${dt}')" title="Add a spot" style="font-size:11px;padding:5px 10px;">+ add</button>
-      </div>
-      ${_lPicked.length>=1?`<div style="font-size:9px;color:var(--dim);margin-top:4px;font-style:italic;">tip: right-click any spot to set "half day", "few hours", etc.</div>`:''}
-    </div>`;
-  }
-
   // Yesterday's focus nudge
   const prevDate=dateStr(new Date(dateObj(dt).getTime()-86400000));
   const prevRef=D.reflections&&D.reflections[prevDate];
@@ -1085,40 +1049,6 @@ function renderDayView(){
     </div>`;
   }
 
-
-  // Task strip — tasks dated today (active + completed)
-  const _activeTasks=D.tasks.filter(t=>t.date===dt&&!t.done).sort((a,b)=>b.id-a.id);
-  const _doneTasks=D.tasks.filter(t=>t.date===dt&&t.done).sort((a,b)=>b.id-a.id);
-  const _allTasks=[..._activeTasks,..._doneTasks];
-  if(_allTasks.length){
-    html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:6px 8px;background:var(--card);border:1px solid var(--border);border-radius:8px;">`;
-    _allTasks.forEach(t=>{
-      const cat=D.cats[t.cat];
-      const color=cat?cat.color:'var(--blue)';
-      const emoji=cat?cat.emoji:'📋';
-      const needsTrunc=t.text.length>28;
-      const short=needsTrunc?t.text.slice(0,28)+'…':t.text;
-      if(t.done){
-        html+=`<div title="${t.text.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:6px;font-size:10px;opacity:.55;">
-          <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
-          <span style="color:var(--green);font-size:10px;flex-shrink:0;">✓</span>
-          <span style="text-decoration:line-through;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${short}</span>
-        </div>`;
-      } else {
-        const urgentBadge=t.urgent?'<span style="color:var(--red);font-size:9px;flex-shrink:0;">⚡</span>':'';
-        html+=`<div draggable="true" data-task-id="${t.id}" ondragstart="event.dataTransfer.setData('text/plain','task:'+${t.id});event.dataTransfer.effectAllowed='move';this.style.opacity='.4';" ondragend="this.style.opacity='1';" title="${t.text.replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:${color}18;border:1px solid ${color}40;border-radius:6px;font-size:10px;cursor:grab;">
-          <span style="font-size:11px;flex-shrink:0;">${emoji}</span>
-          ${urgentBadge}
-          <span data-short="${short.replace(/"/g,'&quot;')}" data-full="${t.text.replace(/"/g,'&quot;')}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;${needsTrunc?'cursor:pointer;':''}" ${needsTrunc?'onclick="event.stopPropagation();expandTaskChip(this)"':''}>${short}</span>
-          <button style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 2px;color:${color};flex-shrink:0;" onclick="event.stopPropagation();taskToBlock(${t.id},'${dt}')" title="Add to calendar">+</button>
-          <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--dim);flex-shrink:0;" onclick="event.stopPropagation();deferToLater(${t.id});renderCalendar();" title="Move to later / stash">later</button>
-          <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--green);flex-shrink:0;" onclick="event.stopPropagation();togTask(${t.id});" title="Done">✓</button>
-          <button style="background:none;border:none;cursor:pointer;font-size:9px;padding:0 2px;color:var(--red);flex-shrink:0;opacity:.5;" onclick="event.stopPropagation();trashTask(${t.id});renderCalendar();renderCalTasks();renderAllTasks();updateStats();" title="Delete">✕</button>
-        </div>`;
-      }
-    });
-    html+=`</div>`;
-  }
 
   // Outlook-style hour grid — always visible, blocks overlay
   const totalH=(endHr-startHr)*ROW_H;
