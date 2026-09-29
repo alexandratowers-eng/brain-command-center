@@ -452,6 +452,12 @@ function toggleCard(id,btn){
 }
 function restoreCollapsed(){
   const collapsed=JSON.parse(localStorage.getItem('collapsedCards')||'{}');
+  // One-time: the redesigned Today's Tasks card inherited a stale collapsed
+  // state from before it was rebuilt, making it look empty. Expand it once.
+  if(!localStorage.getItem('bccTasksCardExpand1')){
+    if(collapsed.tasks){delete collapsed.tasks;localStorage.setItem('collapsedCards',JSON.stringify(collapsed));}
+    localStorage.setItem('bccTasksCardExpand1','1');
+  }
   // Utility cards start tucked away; expanding once keeps them open.
   ['calright-trash','calright-clockout'].forEach(id=>{if(!(id in collapsed))collapsed[id]=true;});
   Object.entries(collapsed).forEach(([id,val])=>{

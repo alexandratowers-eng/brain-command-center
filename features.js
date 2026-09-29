@@ -1508,7 +1508,7 @@ function importIcs(){
         const horizonEnd=dateStr(horizon);
         const inRange=events.filter(ev=>ev.date>=horizonStart&&ev.date<=horizonEnd);
         if(!inRange.length){alert('Found '+events.length+' events but none in the next 60 days.');return;}
-        if(!confirm('Import '+inRange.length+' Outlook events into the next 60 days?'))return;
+        if(!confirm('Import '+inRange.length+' calendar events into the next 60 days?'))return;
         if(!D.days)D.days={};
         if(!D._icsImported)D._icsImported={};
         let added=0,skipped=0;
@@ -1517,7 +1517,7 @@ function importIcs(){
           if(!D.days[ev.date])D.days[ev.date]=[];
           const tl=D.days[ev.date];
           if(tl.some(s=>s.text===ev.title&&s.t===ev.start)){skipped++;return;}
-          tl.push({t:ev.start,end:ev.end,text:ev.title,cls:'errands',sm:'From Outlook',loc:ev.loc||'',_ics:true,_icsUid:ev.uid});
+          tl.push({t:ev.start,end:ev.end,text:ev.title,cls:'errands',sm:'From calendar',loc:ev.loc||'',_ics:true,_icsUid:ev.uid});
           tl.sort((a,b)=>parseMin(a.t)-parseMin(b.t));
           D._icsImported[ev.uid]=ev.date;
           added++;
@@ -1538,14 +1538,17 @@ function parseIcs(text){
   for(const line of lines){
     if(line==='BEGIN:VEVENT')cur={};
     else if(line==='END:VEVENT'){if(cur&&cur.dtstart){
-      const s=icsToLocal(cur.dtstart),e=cur.dtend?icsToLocal(cur.dtend):null;
-      if(s){
-        events.push({
-          uid:cur.uid||(cur.dtstart+'_'+(cur.summary||'')),
-          title:cur.summary||'(no title)',
-          loc:cur.location||'',
-          date:s.date,start:s.time,end:e?e.time:''
-        });
+      if(cur.rrule){expandRecurringEvent(cur,events);}
+      else{
+        const s=icsToLocal(cur.dtstart),e=cur.dtend?icsToLocal(cur.dtend):null;
+        if(s){
+          events.push({
+            uid:cur.uid||(cur.dtstart+'_'+(cur.summary||'')),
+            title:cur.summary||'(no title)',
+            loc:cur.location||'',
+            date:s.date,start:s.time,end:(e&&e.date===s.date)?e.time:''
+          });
+        }
       }
     }cur=null;}
     else if(cur){
@@ -1557,9 +1560,69 @@ function parseIcs(text){
       else if(key==='LOCATION')cur.location=val.replace(/\\,/g,',').replace(/\\n/gi,' ');
       else if(key==='DTSTART')cur.dtstart=val;
       else if(key==='DTEND')cur.dtend=val;
+      else if(key==='RRULE')cur.rrule=val;
+      else if(key==='EXDATE')(cur.exdates=cur.exdates||[]).push(...val.split(','));
     }
   }
   return events;
+}
+
+// Apple Calendar (and Outlook) export repeating events as ONE VEVENT with an
+// RRULE. Without expansion, only the original (often years-old) date imports
+// and everything upcoming is missed. Expands occurrences up to 60 days out.
+function expandRecurringEvent(cur,events){
+  const s=icsToLocal(cur.dtstart);if(!s)return;
+  const rule={};cur.rrule.split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)rule[p.substring(0,i).toUpperCase()]=p.substring(i+1);});
+  const freq=(rule.FREQ||'').toUpperCase();
+  if(!['DAILY','WEEKLY','MONTHLY','YEARLY'].includes(freq))return;
+  const interval=Math.max(1,parseInt(rule.INTERVAL||'1',10)||1);
+  const count=rule.COUNT?parseInt(rule.COUNT,10):null;
+  let until=null;
+  if(rule.UNTIL){const u=icsToLocal(rule.UNTIL);if(u)until=u.date;}
+  const dowMap={SU:0,MO:1,TU:2,WE:3,TH:4,FR:5,SA:6};
+  const byday=rule.BYDAY?rule.BYDAY.split(',').map(x=>dowMap[x.slice(-2)]).filter(x=>x!==undefined):null;
+  const exSet=new Set((cur.exdates||[]).map(x=>{const d=icsToLocal(x);return d?d.date:null;}).filter(Boolean));
+  const startMin=parseMin(s.time);
+  let durMin=null;
+  if(cur.dtend){const e=icsToLocal(cur.dtend);if(e&&e.date===s.date){const em=parseMin(e.time);if(em>startMin)durMin=em-startMin;}}
+  const startD=new Date(s.date+'T12:00:00');
+  const horizon=new Date();horizon.setDate(horizon.getDate()+60);
+  const horizonEnd=dateStr(horizon);
+  const weekAnchor=new Date(startD);weekAnchor.setDate(weekAnchor.getDate()-startD.getDay());
+  const title=cur.summary||'(no title)';
+  const baseUid=cur.uid||(cur.dtstart+'_'+title);
+  let n=0;
+  const d=new Date(startD);
+  for(let i=0;i<7400;i++,d.setDate(d.getDate()+1)){
+    const ds=dateStr(d);
+    if(ds>horizonEnd)break;
+    if(until&&ds>until)break;
+    let hit=false;
+    if(freq==='DAILY')hit=(i%interval===0);
+    else if(freq==='WEEKLY'){
+      const wk=Math.floor(Math.round((d-weekAnchor)/86400000)/7);
+      const dowOk=byday?byday.includes(d.getDay()):d.getDay()===startD.getDay();
+      hit=dowOk&&(wk%interval===0);
+    }
+    else if(freq==='MONTHLY'){
+      const md=rule.BYMONTHDAY?parseInt(rule.BYMONTHDAY,10):startD.getDate();
+      const months=(d.getFullYear()-startD.getFullYear())*12+(d.getMonth()-startD.getMonth());
+      hit=d.getDate()===md&&months%interval===0;
+    }
+    else if(freq==='YEARLY'){
+      hit=d.getMonth()===startD.getMonth()&&d.getDate()===startD.getDate()&&((d.getFullYear()-startD.getFullYear())%interval===0);
+    }
+    if(!hit)continue;
+    n++;
+    if(count&&n>count)break;
+    if(exSet.has(ds))continue;
+    events.push({
+      uid:baseUid+'_'+ds,
+      title,loc:cur.location||'',
+      date:ds,start:s.time,
+      end:durMin?minToTime((startMin+durMin)%1440):''
+    });
+  }
 }
 
 function icsToLocal(v){
@@ -3219,20 +3282,7 @@ function updateNotifBtn(){
 }
 
 function playReminderSound(){
-  // One soft, low-volume ding (was a loud 3-note arpeggio)
-  try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.frequency.value=660;
-    osc.type='sine';
-    gain.gain.setValueAtTime(0.0001,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.05,ctx.currentTime+0.03);
-    gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+1.1);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime+1.15);
-  }catch(e){}
+  // Silenced by request; alerts are visual-only now.
 }
 
 function checkEventReminders(){
