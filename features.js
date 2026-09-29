@@ -705,6 +705,99 @@ function renderMcat(){
   el.innerHTML=ringHtml+stepsHtml;
   if(typeof renderStudyPlan==='function') renderStudyPlan();
   if(typeof renderPocket==='function') renderPocket();
+  if(typeof renderMcatMath==='function') renderMcatMath();
+}
+
+// ===== MCAT QUICK MATH DRILLS (no-calculator mental math) =====
+let _mmQ=null;
+function _mmState(){
+  if(!D.mcatMath)D.mcatMath={mode:'mix',streak:0,best:0,count:0,day:''};
+  const td=todayStr();
+  if(D.mcatMath.day!==td){D.mcatMath.day=td;D.mcatMath.count=0;D.mcatMath.streak=0;}
+  return D.mcatMath;
+}
+function _mmRand(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function _mmGen(mode){
+  const kinds=['add','sub','mul','div','pct','frac'];
+  const k=mode==='mix'?kinds[_mmRand(0,kinds.length-1)]:mode;
+  if(k==='add'){const a=_mmRand(17,98),b=_mmRand(17,98);return{q:a+' + '+b,a:a+b,tol:0};}
+  if(k==='sub'){const a=_mmRand(25,99),b=_mmRand(11,a-3);return{q:a+' − '+b,a:a-b,tol:0};}
+  if(k==='mul'){const a=_mmRand(6,19),b=_mmRand(4,12);return{q:a+' × '+b,a:a*b,tol:0};}
+  if(k==='div'){const b=_mmRand(3,12),ans=_mmRand(4,25);return{q:(b*ans)+' ÷ '+b,a:ans,tol:0};}
+  if(k==='pct'){const ps=[5,10,15,20,25,50,75],p=ps[_mmRand(0,ps.length-1)],n=20*_mmRand(1,12);return{q:p+'% of '+n,a:p*n/100,tol:0};}
+  // Repeating decimals get a small tolerance so 0.33 counts for 1/3
+  const fr=[[1,2,0.5,0],[1,4,0.25,0],[3,4,0.75,0],[1,5,0.2,0],[2,5,0.4,0],[3,5,0.6,0],[4,5,0.8,0],[1,8,0.125,0],[3,8,0.375,0],[5,8,0.625,0],[7,8,0.875,0],[1,3,0.333,0.01],[2,3,0.667,0.01],[1,6,0.167,0.01],[1,7,0.143,0.01],[1,9,0.111,0.01],[1,12,0.083,0.01]];
+  const f=fr[_mmRand(0,fr.length-1)];
+  return{q:f[0]+'/'+f[1]+' as a decimal',a:f[2],tol:f[3]};
+}
+function mmNext(focus){
+  const s=_mmState();
+  _mmQ=_mmGen(s.mode);
+  const q=document.getElementById('mmQuestion');if(q)q.textContent=_mmQ.q+' = ?';
+  const inp=document.getElementById('mmAnswer');if(inp){inp.value='';if(focus)inp.focus();}
+  const fb=document.getElementById('mmFeedback');if(fb)fb.innerHTML='';
+}
+function mmCheck(){
+  if(!_mmQ)return;
+  const inp=document.getElementById('mmAnswer'),fb=document.getElementById('mmFeedback');
+  const v=parseFloat((inp&&inp.value||'').trim().replace(',','.'));
+  if(isNaN(v)){if(fb)fb.innerHTML='<span style="color:var(--amber);font-size:11px;">Type a number first</span>';return;}
+  const s=_mmState();
+  if(Math.abs(v-_mmQ.a)<=(_mmQ.tol||0)+1e-9){
+    s.streak++;s.count++;if(s.streak>s.best)s.best=s.streak;
+    save();_mmStats();
+    if(fb)fb.innerHTML='<span style="color:var(--green);font-weight:700;font-size:12px;">✓ Correct</span>';
+    setTimeout(()=>mmNext(true),700);
+  }else{
+    s.streak=0;save();_mmStats();
+    if(fb)fb.innerHTML='<span style="color:var(--red);font-size:11px;">✗ Answer: <strong>'+_mmQ.a+'</strong></span> <button class="step-btn" onclick="mmNext(true)" style="margin-left:6px;">next →</button>';
+  }
+}
+function mmSetMode(m){const s=_mmState();s.mode=m;save();renderMcatMath();mmNext(true);}
+function _mmStats(){
+  const s=_mmState();
+  const a=document.getElementById('mmStreak');if(a)a.textContent=s.streak;
+  const b=document.getElementById('mmBest');if(b)b.textContent=s.best;
+  const c=document.getElementById('mmCount');if(c)c.textContent=s.count;
+}
+function renderMcatMath(){
+  const el=document.getElementById('mcatMath');if(!el)return;
+  const s=_mmState();
+  const modes=[['mix','Mixed'],['add','+'],['sub','−'],['mul','×'],['div','÷'],['pct','%'],['frac','Fractions']];
+  const chips=modes.map(m=>{
+    const on=s.mode===m[0];
+    return `<button onclick="mmSetMode('${m[0]}')" style="background:${on?'rgba(129,140,248,.18)':'none'};border:1px solid ${on?'#818cf8':'var(--border)'};color:${on?'#818cf8':'var(--dim)'};border-radius:12px;padding:2px 10px;font-size:10px;cursor:pointer;font-weight:${on?'700':'400'};">${m[1]}</button>`;
+  }).join('');
+  const trick=(t,body)=>`<details style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;margin-bottom:4px;"><summary style="font-size:11px;font-weight:600;cursor:pointer;color:var(--text);">${t}</summary><div style="font-size:10.5px;color:var(--dim);line-height:1.5;padding:5px 2px 2px;">${body}</div></details>`;
+  const tricksHtml=
+    trick('×5 → halve it, then ×10','46 × 5: half of 46 is 23 → <strong style="color:var(--text);">230</strong>')
+    +trick('×9 → ×10, then subtract the number','27 × 9 = 270 − 27 = <strong style="color:var(--text);">243</strong>')
+    +trick('×11 (2-digit) → outer digits, insert their sum','52 × 11: 5_2, 5+2=7 → <strong style="color:var(--text);">572</strong>. If the sum ≥ 10, carry: 76 × 11 → 7(13)6 → <strong style="color:var(--text);">836</strong>')
+    +trick('×25 → ÷4, then ×100','32 × 25: 32 ÷ 4 = 8 → <strong style="color:var(--text);">800</strong>')
+    +trick('Squaring a number ending in 5','n5² = n×(n+1), then append 25. 45²: 4×5=20 → <strong style="color:var(--text);">2025</strong>. 85²: 8×9=72 → <strong style="color:var(--text);">7225</strong>')
+    +trick('Percent flip: x% of y = y% of x','8% of 25 = 25% of 8 = <strong style="color:var(--text);">2</strong>. Flip whenever the reverse is easier')
+    +trick('÷5 → ×2, then ÷10','342 ÷ 5: 342 × 2 = 684 → <strong style="color:var(--text);">68.4</strong>')
+    +trick('Fraction anchors to memorize','1/8=0.125 &nbsp;1/6≈0.167 &nbsp;1/7≈0.143 &nbsp;1/9≈0.111 &nbsp;1/12≈0.083. Build the rest: 3/8 = 3×0.125 = <strong style="color:var(--text);">0.375</strong>')
+    +trick('Logs without a calculator (pH!)','log 2 ≈ 0.30, log 3 ≈ 0.48, log 5 ≈ 0.70. If [H⁺] = m×10⁻ⁿ, then pH = n − log(m). Example: [H⁺] = 5×10⁻⁴ → pH = 4 − 0.70 = <strong style="color:var(--text);">3.3</strong>')
+    +trick('Scientific notation','Multiply: multiply the fronts, ADD exponents. Divide: SUBTRACT exponents. (3×10⁴)(2×10⁻⁶) = <strong style="color:var(--text);">6×10⁻²</strong>')
+    +trick('Square roots by anchor','√2≈1.4, √3≈1.7, √5≈2.2. Pull out powers of 100: √500 = √5 × √100 ≈ 2.2 × 10 = <strong style="color:var(--text);">22.4</strong>');
+  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;">${chips}</div>
+    <div id="mmQuestion" style="font-size:22px;font-weight:700;text-align:center;padding:8px 0;letter-spacing:.5px;"></div>
+    <div style="display:flex;gap:6px;justify-content:center;align-items:center;margin-bottom:6px;">
+      <input type="text" id="mmAnswer" inputmode="decimal" placeholder="answer" onkeydown="if(event.key==='Enter')mmCheck()" style="width:110px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:14px;text-align:center;outline:none;">
+      <button class="step-btn done-btn" onclick="mmCheck()">check</button>
+      <button class="step-btn" onclick="mmNext(true)" title="Skip this one">skip</button>
+    </div>
+    <div id="mmFeedback" style="text-align:center;min-height:18px;"></div>
+    <div style="display:flex;gap:14px;justify-content:center;font-size:10px;color:var(--dim);">
+      <span>Streak: <strong id="mmStreak" style="color:var(--green);">${s.streak}</strong></span>
+      <span>Best: <strong id="mmBest" style="color:var(--text);">${s.best}</strong></span>
+      <span>Today: <strong id="mmCount" style="color:var(--text);">${s.count}</strong></span>
+    </div>
+  </div>
+  <details style="margin-bottom:4px;"><summary style="font-size:12px;font-weight:600;cursor:pointer;color:#818cf8;padding:4px 0;">Mental math tricks (tap to open one at a time)</summary><div style="padding-top:6px;">${tricksHtml}</div></details>`;
+  mmNext(false);
 }
 
 
@@ -3126,20 +3219,19 @@ function updateNotifBtn(){
 }
 
 function playReminderSound(){
+  // One soft, low-volume ding (was a loud 3-note arpeggio)
   try{
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const notes=[523.25,659.25,783.99];
-    notes.forEach((freq,i)=>{
-      const osc=ctx.createOscillator();
-      const gain=ctx.createGain();
-      osc.connect(gain);gain.connect(ctx.destination);
-      osc.frequency.value=freq;
-      osc.type='sine';
-      gain.gain.setValueAtTime(0.15,ctx.currentTime+i*0.15);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.15+0.4);
-      osc.start(ctx.currentTime+i*0.15);
-      osc.stop(ctx.currentTime+i*0.15+0.4);
-    });
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=660;
+    osc.type='sine';
+    gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.05,ctx.currentTime+0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+1.1);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+1.15);
   }catch(e){}
 }
 

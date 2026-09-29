@@ -52,9 +52,30 @@ function renderCalTasks(){
   renderCalRightStash();
   renderQuickWins();
   if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();
+  renderSidebarTodayTasks();
 }
 
-// ===== SIDEBAR TASKS (delegates to calendar panels) =====
+// ===== SIDEBAR TASKS (left sidebar "Today's Tasks" card) =====
+function renderSidebarTodayTasks(){
+  const el=document.getElementById('sidebarTasks');if(!el)return;
+  const card=el.closest('.s-card');if(card)card.style.display='';
+  const today=todayStr();
+  const pri={high:0,med:1,low:2};
+  const snoozed=typeof isSnoozed==='function'?isSnoozed:()=>false;
+  const active=D.tasks.filter(t=>!t.done&&t.cat!=='braindump'&&!snoozed(t)&&t.date&&t.date<=today)
+    .sort((a,b)=>a.date!==b.date?(a.date<b.date?-1:1):((pri[a.pri]!==undefined?pri[a.pri]:1)-(pri[b.pri]!==undefined?pri[b.pri]:1)));
+  const doneToday=D.tasks.filter(t=>t.done&&t.date===today&&t.cat!=='braindump');
+  const badge=document.getElementById('taskBadge');if(badge)badge.textContent=active.length;
+  const priColor={high:'var(--red)',med:'var(--amber)',low:'var(--dim)'};
+  const row=t=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 2px;border-bottom:1px solid rgba(128,128,128,.12);">
+      <input type="checkbox"${t.done?' checked':''} onchange="togTask(${t.id},this)" style="cursor:pointer;flex-shrink:0;">
+      <span style="flex:1;font-size:11px;line-height:1.3;${t.done?'text-decoration:line-through;color:var(--dim);':''}">${esc(t.text)}${!t.done&&t.date<today?' <span style="font-size:8px;color:var(--amber);white-space:nowrap;">&#8617; carried over</span>':''}</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:${priColor[t.pri]||priColor.med};flex-shrink:0;" title="${t.pri||'med'} priority"></span>
+      <button onclick="delTask(${t.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;flex-shrink:0;" title="Delete">&#10005;</button>
+    </div>`;
+  el.innerHTML=(active.map(row).join('')+doneToday.map(row).join(''))
+    ||'<div style="font-size:10px;color:var(--dim);padding:4px 2px;">Nothing for today yet</div>';
+}
 function renderSidebarTasks(){renderCalTasks();}
 function addSidebarTask(inp){
   const text=inp.value.trim();if(!text)return;
