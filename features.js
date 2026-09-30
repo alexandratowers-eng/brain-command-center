@@ -1832,9 +1832,10 @@ function exportICS(){
 
 // ===== STATS =====
 function updateStats(){
+  const el=document.getElementById('sDone');if(!el)return;
   const today=todayStr();
   const tt=D.tasks.filter(t=>t.date===today);
-  document.getElementById('sDone').textContent=tt.filter(t=>t.done).length;
+  el.textContent=tt.filter(t=>t.done).length;
 }
 
 // ===== TIMER MODAL =====
@@ -3984,38 +3985,38 @@ function renderDailyAnchor(){
   let html='';
 
   if(done){
-    html+=`<div style="font-size:10px;color:var(--dim);margin-bottom:6px;">Your 3 anchors for today:</div>`;
+    html+=`<div style="font-size:11px;color:var(--dim);margin-bottom:6px;">Your 3 anchors for today:</div>`;
     anchors.forEach((a,i)=>{
       html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
-        <span style="font-size:11px;color:var(--amber);flex-shrink:0;">${i+1}.</span>
-        <span style="font-size:11px;color:var(--text);flex:1;">${a.text}</span>
-        <button onclick="deleteAnchor('${dt}',${i})" style="background:none;border:none;cursor:pointer;font-size:9px;color:var(--dim);padding:0 2px;" title="Remove">✕</button>
+        <span style="font-size:12px;color:var(--amber);flex-shrink:0;">${i+1}.</span>
+        <span style="font-size:12px;color:var(--text);flex:1;">${a.text}</span>
+        <button onclick="deleteAnchor('${dt}',${i})" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--dim);padding:0 2px;" title="Remove">✕</button>
       </div>`;
     });
-    html+=`<button onclick="clearAnchors('${dt}')" style="font-size:9px;color:var(--dim);background:none;border:none;cursor:pointer;margin-top:4px;">↺ Reset</button>`;
+    html+=`<button onclick="clearAnchors('${dt}')" style="font-size:10px;color:var(--dim);background:none;border:none;cursor:pointer;margin-top:4px;">↺ Reset</button>`;
   } else {
     const idx=anchors.length;
     const prompt=prompts[idx]||'Add one more focus block.';
-    html+=`<div style="font-size:10px;color:var(--dim);margin-bottom:5px;">
+    html+=`<div style="font-size:11px;color:var(--dim);margin-bottom:5px;">
       ${meetingCount===0?'No meetings today — build your own structure.':'Light meeting day — anchor the rest.'}
     </div>`;
     if(anchors.length){
       anchors.forEach((a,i)=>{
         html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
-          <span style="font-size:10px;color:var(--green);">✓</span>
-          <span style="font-size:10px;color:var(--dim);text-decoration:line-through;flex:1;">${a.text}</span>
+          <span style="font-size:11px;color:var(--green);">✓</span>
+          <span style="font-size:11px;color:var(--dim);text-decoration:line-through;flex:1;">${a.text}</span>
         </div>`;
       });
     }
-    html+=`<div style="font-size:10px;color:var(--amber);margin:5px 0 3px;font-style:italic;">${prompt}</div>`;
+    html+=`<div style="font-size:11px;color:var(--amber);margin:5px 0 3px;font-style:italic;">${prompt}</div>`;
     html+=`<div style="display:flex;gap:4px;align-items:center;">
       <input id="anchorInput" type="text" placeholder="e.g. Resume — header section, 6–6:30pm"
-        style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:10px;color:var(--text);outline:none;"
+        style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;color:var(--text);outline:none;"
         onkeydown="if(event.key==='Enter')addAnchor('${dt}')"
       />
-      <button onclick="addAnchor('${dt}')" style="background:var(--amber);color:#000;border:none;border-radius:5px;padding:4px 8px;font-size:10px;cursor:pointer;font-weight:700;">${idx+1}/3</button>
+      <button onclick="addAnchor('${dt}')" style="background:var(--amber);color:#000;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:700;">${idx+1}/3</button>
     </div>`;
-    html+=`<div style="font-size:9px;color:var(--dim);margin-top:4px;">Name it + optionally say when (adds to calendar too)</div>`;
+    html+=`<div style="font-size:10px;color:var(--dim);margin-top:4px;">Name it + optionally say when (adds to calendar too)</div>`;
   }
 
   body.innerHTML=html;

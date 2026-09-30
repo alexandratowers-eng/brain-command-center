@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#f3f1ec">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png?v=202609292031">
+<link rel="apple-touch-icon" href="icon-192.png?v=202609292038">
 <title>Brain Command Center</title>
 <script>
 (function(){
@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=202609292031">
-<script src="sync-config.js?v=202609292031" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=202609292038">
+<script src="sync-config.js?v=202609292038" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -131,7 +131,7 @@ if('serviceWorker' in navigator){
     <div class="s-card" data-card="remind-later" style="border-color:rgba(251,191,36,.25);">
       <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--amber);">alarm</span> Remind Later Today<button class="s-collapse" onclick="toggleCard('remind-later',this)">▾</button></div>
       <div class="s-body" id="cardBody-remind-later">
-        <div style="font-size:9px;color:var(--dim);margin-bottom:3px;">Drops on your calendar at the time you pick</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:5px;">Drops on your calendar at the time you pick</div>
         <div class="rl-input-row">
           <input type="text" id="rlInput" placeholder="remind me about..." onkeydown="if(event.key==='Enter')quickRemindLater()">
         </div>
@@ -173,7 +173,7 @@ if('serviceWorker' in navigator){
     <div class="s-card" id="weeklyReviewCard" style="display:none;" data-card="weekly-review">
       <div class="s-title" style="color:var(--purple);"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;">event_repeat</span> Weekly Check-in <span class="badge" id="weeklyReviewCount" style="background:var(--purple);color:var(--bg);">0</span><button class="s-collapse" onclick="toggleCard('weekly-review',this)">▾</button></div>
       <div class="s-body" id="cardBody-weekly-review">
-        <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">These are in your stash — still need them?</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:5px;">These are in your stash — still need them?</div>
         <div id="weeklyReviewList"></div>
       </div>
     </div>
@@ -494,11 +494,6 @@ if('serviceWorker' in navigator){
     </div>
   </div>
 
-  <!-- FOOTER STATS -->
-  <div class="footer">
-    <div class="stat"><div class="stat-n" id="sDone" style="color:var(--green)">0</div><div class="stat-l">Done</div></div>
-    <div class="stat"><div class="stat-n" id="sPomo" style="color:var(--blue)">0</div><div class="stat-l">Pomos</div></div>
-  </div>
 </div>
 
 <div id="saveToast">Saved</div>
@@ -796,19 +791,19 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=202609292031"></script>
-<script src="core.js?v=202609292031"></script>
-<script src="calendar.js?v=202609292031"></script>
-<script src="tasks.js?v=202609292031"></script>
-<script src="features.js?v=202609292031"></script>
-<script src="studyplan-data.js?v=202609292031"></script>
-<script src="studyplan.js?v=202609292031"></script>
-<script src="pocket-data.js?v=202609292031"></script>
-<script src="pocket.js?v=202609292031"></script>
-<script src="sync.js?v=202609292031"></script>
-<script src="breaks.js?v=202609292031"></script>
-<script src="parked.js?v=202609292031"></script>
-<script src="ical-sync.js?v=202609292031"></script>
+<script src="data.js?v=202609292038"></script>
+<script src="core.js?v=202609292038"></script>
+<script src="calendar.js?v=202609292038"></script>
+<script src="tasks.js?v=202609292038"></script>
+<script src="features.js?v=202609292038"></script>
+<script src="studyplan-data.js?v=202609292038"></script>
+<script src="studyplan.js?v=202609292038"></script>
+<script src="pocket-data.js?v=202609292038"></script>
+<script src="pocket.js?v=202609292038"></script>
+<script src="sync.js?v=202609292038"></script>
+<script src="breaks.js?v=202609292038"></script>
+<script src="parked.js?v=202609292038"></script>
+<script src="ical-sync.js?v=202609292038"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

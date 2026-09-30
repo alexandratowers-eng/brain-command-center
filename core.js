@@ -179,7 +179,7 @@ function toggleSidebar(){
   } else {
     // Restore saved width
     const saved=localStorage.getItem('sidebarWidth');
-    if(saved&&parseInt(saved)>=180){
+    if(saved&&parseInt(saved)>=200){
       sb.style.width=saved+'px';
       app.style.gridTemplateColumns=saved+'px 1fr';
     }
@@ -251,7 +251,7 @@ function toggleRightPanel(){
   const saved=localStorage.getItem('sidebarWidth');
   if(saved){
     const w=parseInt(saved);
-    if(w>=180){
+    if(w>=200){
       document.querySelector('.app').style.gridTemplateColumns=w+'px 1fr';
       document.getElementById('sidebarEl').style.width=w+'px';
     }

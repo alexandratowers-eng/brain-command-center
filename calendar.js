@@ -2762,7 +2762,7 @@ function toggleTimer(){
   },1000);
 }
 function resetTimer(){clearInterval(tInt);tRun=false;tBrk=false;tSec=tPre*60;document.getElementById('timerStartBtn').textContent='Start';document.getElementById('timerLabel').textContent='ready';updateTimerDisp();_saveTimerState();}
-function updateTimerDisp(){const m=Math.floor(tSec/60),s=tSec%60;document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');document.getElementById('pomoCount').textContent=D.pomo+' sessions';document.getElementById('sPomo').textContent=D.pomo;
+function updateTimerDisp(){const m=Math.floor(tSec/60),s=tSec%60;document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');document.getElementById('pomoCount').textContent=D.pomo+' sessions';
   const total=tBrk?5*60:tPre*60;const pct=total>0?(total-tSec)/total:0;const circ=2*Math.PI*52;const ring=document.getElementById('timerRingProgress');if(ring)ring.style.strokeDashoffset=circ*(1-pct);
   const mini=document.getElementById('timerMiniDisp');if(mini)mini.textContent=tRun?(String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')):'';
 }
