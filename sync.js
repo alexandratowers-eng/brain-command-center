@@ -51,12 +51,42 @@ window.SyncEngine=(function(){
   }
 
   function getConfig(){
-    const gistId=window.SYNC_GIST_ID||null;
-    let token=window.SYNC_TOKEN||null;
+    // localStorage wins over the published sync-config.js so the gist can be
+    // rotated per-device without shipping the new (private) ID in the repo.
+    let gistId=null,token=window.SYNC_TOKEN||null;
+    try{const s=localStorage.getItem('bcc_sync_cfg');if(s){const c=JSON.parse(s);gistId=c.gistId||null;if(!token)token=c.token||null;}}catch(e){}
+    if(!gistId)gistId=window.SYNC_GIST_ID||null;
     if(!token){try{token=localStorage.getItem('bcc_sync_token');}catch(e){}}
-    if(!token){try{const s=localStorage.getItem('bcc_sync_cfg');if(s){const c=JSON.parse(s);token=c.token;}}catch(e){}}
     if(gistId&&token)return{gistId,token};
     return null;
+  }
+
+  async function rotateGist(){
+    const cfg=getConfig();
+    if(!cfg){alert('Connect sync first, then rotate.');return;}
+    if(!confirm('Move your data to a brand-new private gist?\n\nThe old gist (whose ID was published in the public repo) will be deleted. Your other devices will need re-pairing via the share link afterward.'))return;
+    document.getElementById('syncPairModal')?.remove();
+    setStatus('syncing','Creating new private gist...');
+    try{
+      const payload=JSON.parse(localStorage.getItem(SK)||'{}');
+      payload._syncedAt=Date.now();
+      const r=await fetch('https://api.github.com/gists',{
+        method:'POST',
+        headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+        body:JSON.stringify({description:'Brain Command Center data',public:false,files:{[FILENAME]:{content:JSON.stringify(payload)}}})
+      });
+      if(!r.ok)throw new Error('create '+r.status);
+      const d=await r.json();
+      const oldId=cfg.gistId;
+      localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId:d.id,token:cfg.token}));
+      let deleted=false;
+      try{
+        const del=await fetch('https://api.github.com/gists/'+oldId,{method:'DELETE',headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'}});
+        deleted=del.ok;
+      }catch(e){}
+      setStatus('idle','Rotated to new private gist ✓');
+      alert('Done! Your data now lives in a fresh private gist.'+(deleted?'\nThe old exposed gist was deleted.':'\n\nCould not auto-delete the old gist — please delete it manually at gist.github.com.')+'\n\nNext: use "Copy share link" and open it on your phone/other devices so they follow along.');
+    }catch(e){setStatus('error','Rotate failed: '+e.message);alert('Rotation failed ('+e.message+'). Nothing was deleted; sync is unchanged.');}
   }
 
   function setStatus(state,msg){
@@ -322,6 +352,7 @@ window.SyncEngine=(function(){
         <div style="font-size:11px;color:var(--dim);">To add another device, copy the share link below.</div>
       </div>
       <button onclick="SyncEngine.copyShareLink()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--blue);background:rgba(99,102,241,.08);color:var(--blue);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;margin-bottom:10px;">📋 Copy share link for another device</button>
+      <button onclick="SyncEngine.rotateGist()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--amber);background:rgba(245,158,11,.08);color:var(--amber);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;margin-bottom:10px;">🔒 Move data to a new private gist</button>
       <div style="border-top:1px solid var(--border);margin:14px 0;padding-top:14px;"></div>
       `:`
       <details style="margin-bottom:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
@@ -415,6 +446,16 @@ window.SyncEngine=(function(){
 
   function init(){
     const paired=autoPairFromURL();
+    // Migrate the gist ID off the published config file into per-device storage,
+    // so sync-config.js can eventually be dropped from the public repo.
+    try{
+      const s=localStorage.getItem('bcc_sync_cfg');const c=s?JSON.parse(s):{};
+      if(!c.gistId&&window.SYNC_GIST_ID){
+        c.gistId=window.SYNC_GIST_ID;
+        if(!c.token){const t=localStorage.getItem('bcc_sync_token');if(t)c.token=t;}
+        localStorage.setItem('bcc_sync_cfg',JSON.stringify(c));
+      }
+    }catch(e){}
     const cfg=getConfig();
     const el=document.getElementById('syncStatusBtn');
     if(el)el.addEventListener('click',()=>{
@@ -455,5 +496,5 @@ window.SyncEngine=(function(){
     window.addEventListener('online',()=>resumePull());
   }
 
-  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner};
+  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner,rotateGist};
 })();
