@@ -66,13 +66,27 @@ function renderSidebarTodayTasks(){
     .sort((a,b)=>a.date!==b.date?(a.date<b.date?-1:1):((pri[a.pri]!==undefined?pri[a.pri]:1)-(pri[b.pri]!==undefined?pri[b.pri]:1)));
   const doneToday=D.tasks.filter(t=>t.done&&t.date===today&&t.cat!=='braindump');
   const badge=document.getElementById('taskBadge');if(badge)badge.textContent=active.length;
-  const priColor={high:'var(--red)',med:'var(--amber)',low:'var(--dim)'};
-  const row=t=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 2px;border-bottom:1px solid rgba(128,128,128,.12);">
-      <input type="checkbox"${t.done?' checked':''} onchange="togTask(${t.id},this)" style="cursor:pointer;flex-shrink:0;">
-      <span style="flex:1;font-size:11px;line-height:1.3;${t.done?'text-decoration:line-through;color:var(--dim);':''}">${esc(t.text)}${!t.done&&t.date<today?' <span style="font-size:8px;color:var(--amber);white-space:nowrap;">&#8617; carried over</span>':''}</span>
-      <span style="width:6px;height:6px;border-radius:50%;background:${priColor[t.pri]||priColor.med};flex-shrink:0;" title="${t.pri||'med'} priority"></span>
-      <button onclick="delTask(${t.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;flex-shrink:0;" title="Delete">&#10005;</button>
+  // Same visual language as the right panel's renderBlock: colored circular check,
+  // bold label with category emoji, colored edge bar, greyed strike-through when done.
+  const row=t=>{
+    const cat=D.cats&&D.cats[t.cat];
+    const color=cat?cat.color:'var(--blue)';
+    const emoji=cat?cat.emoji+' ':'';
+    const opacity=t.done?0.4:1;
+    const strike=t.done?'text-decoration:line-through;':'';
+    const bg=t.done?'background:rgba(52,211,153,.04);':'';
+    const check=t.done?`background:${color};color:#fff;`:`background:none;color:${color};`;
+    const carried=!t.done&&t.date<today?`<div style="font-size:9px;color:var(--amber);">&#8617; carried over</div>`:'';
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;opacity:${opacity};border-bottom:1px solid var(--border);${bg}" title="${esc(t.text).replace(/"/g,'&quot;')}">
+      <button onclick="event.stopPropagation();togTask(${t.id})" style="${check}border:1.5px solid ${color};width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;padding:0;">${t.done?'&#10003;':''}</button>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:600;${strike}">${emoji}${esc(t.text)}</div>
+        ${carried}
+      </div>
+      <button onclick="delTask(${t.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'" title="Delete">&#10005;</button>
+      <div style="width:3px;height:20px;border-radius:2px;background:${color};flex-shrink:0;opacity:.6;"></div>
     </div>`;
+  };
   el.innerHTML=(active.map(row).join('')+doneToday.map(row).join(''))
     ||'<div style="font-size:10px;color:var(--dim);padding:4px 2px;">Nothing for today yet</div>';
 }
