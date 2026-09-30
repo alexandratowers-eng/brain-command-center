@@ -458,6 +458,12 @@ function restoreCollapsed(){
     if(collapsed.tasks){delete collapsed.tasks;localStorage.setItem('collapsedCards',JSON.stringify(collapsed));}
     localStorage.setItem('bccTasksCardExpand1','1');
   }
+  // Same one-time rescue for the right panel's Today's Tasks card: a stale
+  // collapsed state leaves it header-only and looking broken. Expand it once.
+  if(!localStorage.getItem('bccCalrightTasksExpand1')){
+    if(collapsed['calright-tasks']){delete collapsed['calright-tasks'];localStorage.setItem('collapsedCards',JSON.stringify(collapsed));}
+    localStorage.setItem('bccCalrightTasksExpand1','1');
+  }
   // Utility cards start tucked away; expanding once keeps them open.
   ['calright-trash','calright-clockout'].forEach(id=>{if(!(id in collapsed))collapsed[id]=true;});
   Object.entries(collapsed).forEach(([id,val])=>{
