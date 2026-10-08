@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#f3f1ec">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png?v=202609292219">
+<link rel="apple-touch-icon" href="icon-192.png?v=202610081210">
 <title>Brain Command Center</title>
 <script>
 (function(){
@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=202609292219">
-<script src="sync-config.js?v=202609292219" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=202610081210">
+<script src="sync-config.js?v=202610081210" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -147,13 +147,7 @@ if('serviceWorker' in navigator){
       </div>
     </div>
 
-    <!-- Wins & Done -->
-    <div class="s-card" data-card="calright-wins-done" style="border-color:rgba(52,211,153,.25);">
-      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--green);">emoji_events</span> Wins & Done <span class="badge" id="calRightWinsBadge" style="background:rgba(52,211,153,.15);color:var(--green);">0</span><button class="s-collapse" onclick="toggleCard('calright-wins-done',this)">▾</button></div>
-      <div class="s-body" id="cardBody-calright-wins-done">
-        <div id="calRightWinsDoneList"></div>
-      </div>
-    </div>
+    <!-- Wins & Done card removed — completed items show crossed off inline in Today's Tasks; full history lives in the Wins tab -->
     <!-- Trash -->
     <div class="s-card" data-card="calright-trash">
       <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--dim);">delete</span> Trash <span class="badge" id="calRightTrashBadge" style="background:rgba(248,113,113,.12);color:var(--red);">0</span><button class="s-collapse" onclick="toggleCard('calright-trash',this)">▾</button></div>
@@ -178,16 +172,7 @@ if('serviceWorker' in navigator){
       </div>
     </div>
 
-    <!-- Today's Tasks -->
-    <div class="s-card" data-card="tasks" style="display:none;flex:1;overflow-y:auto;">
-      <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span>Today's Tasks <span class="badge" id="taskBadge">0</span><button class="s-collapse" onclick="toggleCard('tasks',this)">▾</button></div>
-      <div class="s-body" id="cardBody-tasks">
-        <div id="sidebarTasks"></div>
-        <div class="add-inline" style="margin-top:4px;">
-          <input type="text" placeholder="+ add..." onkeydown="if(event.key==='Enter')addSidebarTask(this)">
-        </div>
-      </div>
-    </div>
+    <!-- Legacy sidebar Today's Tasks card removed — the right-panel Today's Tasks checklist is the single source -->
 
   </div>
   <button class="sidebar-show-btn" id="sidebarShowBtn" onclick="toggleSidebar()" title="Show sidebar">▶</button>
@@ -276,22 +261,7 @@ if('serviceWorker' in navigator){
             </div>
           </div>
         </div>
-        <!-- Tomorrow's Plan -->
-        <div class="s-card mode-card" data-card="mode">
-          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--indigo);">wb_sunny</span> Tomorrow<button class="s-collapse" onclick="toggleCard('mode',this)">▾</button></div>
-          <div class="s-body" id="cardBody-mode">
-            <div style="font-size:8px;color:var(--dim);margin-bottom:3px;">Tap to pick a spot</div>
-            <div class="mode-options" id="modeOptions"></div>
-            <div id="modePriorities" style="display:none;margin-top:6px;">
-              <div style="font-size:9px;color:var(--dim);margin-bottom:3px;">Top priorities for tomorrow</div>
-              <div class="mode-pri-input-row">
-                <input type="text" id="modePriInput" class="mode-note-input" placeholder="add a priority..." onkeydown="if(event.key==='Enter')addModePriority()">
-                <button class="distraction-add-btn" onclick="addModePriority()" style="border-color:var(--indigo);color:var(--indigo);">+</button>
-              </div>
-              <div id="modePriList"></div>
-            </div>
-          </div>
-        </div>
+        <!-- Tomorrow's Plan card removed -->
         <!-- Quick Wins removed from right panel — now in sidebar -->
         <!-- Hidden containers for compat -->
         <div id="calRightCompletedList" style="display:none;"></div>
@@ -791,19 +761,19 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=202609292219"></script>
-<script src="core.js?v=202609292219"></script>
-<script src="calendar.js?v=202609292219"></script>
-<script src="tasks.js?v=202609292219"></script>
-<script src="features.js?v=202609292219"></script>
-<script src="studyplan-data.js?v=202609292219"></script>
-<script src="studyplan.js?v=202609292219"></script>
-<script src="pocket-data.js?v=202609292219"></script>
-<script src="pocket.js?v=202609292219"></script>
-<script src="sync.js?v=202609292219"></script>
-<script src="breaks.js?v=202609292219"></script>
-<script src="parked.js?v=202609292219"></script>
-<script src="ical-sync.js?v=202609292219"></script>
+<script src="data.js?v=202610081210"></script>
+<script src="core.js?v=202610081210"></script>
+<script src="calendar.js?v=202610081210"></script>
+<script src="tasks.js?v=202610081210"></script>
+<script src="features.js?v=202610081210"></script>
+<script src="studyplan-data.js?v=202610081210"></script>
+<script src="studyplan.js?v=202610081210"></script>
+<script src="pocket-data.js?v=202610081210"></script>
+<script src="pocket.js?v=202610081210"></script>
+<script src="sync.js?v=202610081210"></script>
+<script src="breaks.js?v=202610081210"></script>
+<script src="parked.js?v=202610081210"></script>
+<script src="ical-sync.js?v=202610081210"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

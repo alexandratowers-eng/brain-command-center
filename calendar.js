@@ -778,6 +778,9 @@ function openWkBlockMenu(e,dt,idx){
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();dupeSlot('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">content_copy</span> Duplicate
     </button>
+    <button class="wk-ctx-btn" onclick="openRepeatMenu('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">repeat</span> Repeat${slot._recur?'ing 🔁':'…'}
+    </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToTomorrow('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">arrow_forward</span> → Tomorrow
     </button>
@@ -1367,6 +1370,9 @@ function openDvBlockMenu(e,dt,idx){
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();dupeSlot('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">content_copy</span> Duplicate
     </button>
+    <button class="wk-ctx-btn" onclick="openRepeatMenu('${dt}','${sid}');">
+      <span class="mi" style="font-size:14px;">repeat</span> Repeat${slot._recur?'ing 🔁':'…'}
+    </button>
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToTomorrow('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">arrow_forward</span> → Tomorrow
     </button>
@@ -1414,6 +1420,58 @@ function dvTitleEditSave(el){const sid=el.dataset.sid;const dt=el.dataset.dt;con
 function togSlotDone(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const wasDone=tl[i].done;tl[i].done=!tl[i].done;setTimeline(dt,tl);if(tl[i].done){celebrate();autoAddWin(tl[i].text,dt);}renderCalendar();if(typeof renderCalRightTasks==='function')renderCalRightTasks();if(typeof renderCalRightCompleted==='function')renderCalRightCompleted();}
 function removeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;tl.splice(i,1);setTimeline(dt,tl);renderCalendar();}
 function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;const orig=tl[i];const newT=parseMin(orig.t)+30;tl.splice(i+1,0,{t:minToTime(newT),text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});setTimeline(dt,tl);renderCalendar();}
+
+function winsMarkSlotDone(dt,idx){const tl=getTimeline(dt);if(!tl[idx])return;if(!tl[idx]._id){tl[idx]._id='s'+Date.now()+'_'+idx;setTimeline(dt,tl);}togSlotDone(dt,tl[idx]._id);renderWinsTab();}
+
+// ===== RECURRING BLOCKS =====
+function openRepeatMenu(dt,sid){
+  const menu=document.getElementById('wkCtxMenu');if(!menu)return;
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0){menu.remove();return;}
+  const slot=tl[i];
+  const opts=[['day','Every day (2 weeks)'],['week','Every week (12 weeks)'],['2wk','Every 2 weeks (16 weeks)'],['month','Every month (6 months)']];
+  menu.innerHTML=`<div class="wk-ctx-title">🔁 Repeat "${slot.text}"</div>`+
+    opts.map(o=>`<button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();repeatSlot('${dt}','${sid}','${o[0]}');">${o[1]}</button>`).join('')+
+    (slot._recur?`<button class="wk-ctx-btn" style="color:var(--red);" onclick="document.getElementById('wkCtxMenu').remove();removeFutureRepeats('${dt}','${sid}');"><span class="mi" style="font-size:14px;">delete</span> Remove this + future repeats</button>`:'');
+}
+function repeatSlot(dt,sid,freq){
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
+  const orig=tl[i];
+  const recurId=orig._recur||('r'+Date.now());
+  orig._recur=recurId;
+  const counts={day:14,week:12,'2wk':8,month:6};
+  const n=counts[freq]||12;
+  let added=0;
+  for(let k=1;k<=n;k++){
+    const d=dateObj(dt);
+    if(freq==='month')d.setMonth(d.getMonth()+k);
+    else d.setDate(d.getDate()+k*(freq==='day'?1:freq==='2wk'?14:7));
+    const ndt=dateStr(d);
+    const ntl=getTimeline(ndt).slice();
+    if(ntl.some(s=>s.text===orig.text&&s.t===orig.t))continue;
+    ntl.push({t:orig.t,end:orig.end,text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_isMeeting:orig._isMeeting,_id:'s'+Date.now()+'_'+k+'_'+Math.floor(Math.random()*9999),_recur:recurId});
+    ntl.sort((a,b)=>parseMin(a.t||'12:00 PM')-parseMin(b.t||'12:00 PM'));
+    setTimeline(ndt,ntl);
+    added++;
+  }
+  save();renderCalendar();
+  const toast=document.getElementById('saveToast');
+  if(toast){
+    const lbl={day:'daily',week:'weekly','2wk':'every 2 weeks',month:'monthly'}[freq]||freq;
+    toast.innerHTML=`🔁 "${orig.text}" now repeats ${lbl} — ${added} added`;
+    toast.classList.add('show');
+    clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2500);
+  }
+}
+function removeFutureRepeats(dt,sid){
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
+  const rid=tl[i]._recur;if(!rid){removeSlot(dt,sid);return;}
+  Object.keys(D.days||{}).forEach(d2=>{
+    if(d2<dt)return;
+    const t2=getTimeline(d2).filter(s=>!(s._recur===rid&&(d2>dt||s._id===sid)));
+    setTimeline(d2,t2);
+  });
+  save();renderCalendar();
+}
 
 function shrinkSlot(dt,sid){
   const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
@@ -1585,6 +1643,28 @@ function renderWinsTab(){
   const completedTasks=D.tasks.filter(t=>t.date===dt&&t.done);
   const hasCompleted=completedSlots.length||completedTasks.length;
 
+  const _wCat=c=>(D.cats&&D.cats[c])||null;
+  const _wRow=o=>{
+    const color=o.color||'#34d399';
+    const hex=/^#/.test(color);
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-left:3px solid ${color};background:${hex?color+'1c':'rgba(52,211,153,.08)'};border-radius:9px;margin-bottom:6px;${o.faded?'opacity:.65;':''}">
+      <span style="color:${color};font-weight:800;font-size:13px;flex-shrink:0;">${o.icon||'✓'}</span>
+      <span style="flex:1;font-size:12.5px;min-width:0;">${o.emoji?o.emoji+' ':''}${o.text}</span>
+      ${o.time?`<span style="font-size:10px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;">${o.time}</span>`:''}
+      ${o.chip?`<span style="font-size:9px;font-weight:700;color:${color};background:${hex?color+'26':'rgba(52,211,153,.15)'};padding:2px 7px;border-radius:999px;white-space:nowrap;">${o.chip}</span>`:''}
+      ${o.btn||''}
+    </div>`;
+  };
+  const _wSlotRow=s=>{const c=_wCat(s.cls);return _wRow({color:c?c.color:'#34d399',emoji:c?c.emoji:'',text:s.text,time:s.t?(s.t+(s.end?' – '+s.end:'')):'',chip:isMeetingBlock(s)?'meeting':''});};
+  const _wSlotSort=(a,b)=>parseMin(a.t||'12:00 PM')-parseMin(b.t||'12:00 PM');
+  const doneMeetings=completedSlots.filter(s=>isMeetingBlock(s)).sort(_wSlotSort);
+  const doneBlocks=completedSlots.filter(s=>!isMeetingBlock(s)).sort(_wSlotSort);
+  const _now=new Date();const _nowMin=_now.getHours()*60+_now.getMinutes();
+  const pastUnchecked=(getTimeline(dt)||[]).map((s,i)=>({s,i})).filter(({s})=>!s.done&&!s._locOnly&&s.t&&(dt<todayStr()||(dt===todayStr()&&parseMin(s.end||s.t)<=_nowMin)));
+  const _wSecHead=label=>`<div style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 7px;">${label}</div>`;
+  const totalDone=completedSlots.length+completedTasks.length+(ref.manualWins||[]).length;
+  const _statChip=(n,label,color)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:${color};background:${color}1a;border:1px solid ${color}40;padding:4px 11px;border-radius:999px;">${n} ${label}</span>`;
+
   const prevDate=dateStr(new Date(dateObj(dt).getTime()-86400000));
   const prevRef=D.reflections&&D.reflections[prevDate];
   let banner='';
@@ -1610,16 +1690,17 @@ function renderWinsTab(){
     <div class="reflection-section" style="max-width:none;">
       <h3 style="margin-bottom:20px;font-size:16px;">✨ Daily Wins</h3>
 
-      <div style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">What I accomplished</div>
-      <div class="ref-completed">
-        ${completedSlots.map(s=>`<div class="ref-completed-item" style="display:flex;align-items:center;gap:6px;"><span>✓</span><span class="win-txt" style="flex:1">${s.text}</span></div>`).join('')}
-        ${completedTasks.map(t=>`<div class="ref-completed-item" style="display:flex;align-items:center;gap:6px;"><span>✓</span><span class="win-txt" style="flex:1">${t.text}</span></div>`).join('')}
-        ${(ref.manualWins||[]).map((w,idx)=>`<div class="ref-completed-item" style="display:flex;align-items:center;gap:6px;">
-          <span>✓</span><span class="win-txt" style="flex:1">${w}</span>
-          <button onclick="removeManualWin('${dt}',${idx})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;" title="Remove">✕</button>
-        </div>`).join('')}
-        ${!hasCompleted&&!(ref.manualWins||[]).length ? `<div class="ref-empty">Nothing yet — add what you did!</div>` : ''}
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+        <div style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;flex:1;">What I accomplished</div>
+        ${_statChip(totalDone,totalDone===1?'win':'wins','#34d399')}
+        ${doneMeetings.length?_statChip(doneMeetings.length,doneMeetings.length===1?'meeting':'meetings','#a5c3e8'):''}
+        ${completedTasks.length?_statChip(completedTasks.length,completedTasks.length===1?'task':'tasks','#c3b2ea'):''}
       </div>
+      ${doneMeetings.length?_wSecHead('📅 Meetings & events')+doneMeetings.map(_wSlotRow).join(''):''}
+      ${(doneBlocks.length||completedTasks.length)?_wSecHead('✅ Tasks & blocks')+doneBlocks.map(_wSlotRow).join('')+completedTasks.map(t=>{const c=_wCat(t.cat);return _wRow({color:c?c.color:'#34d399',emoji:c?c.emoji:'',text:t.text});}).join(''):''}
+      ${(ref.manualWins||[]).length?_wSecHead('⭐ Added by me')+(ref.manualWins||[]).map((w,idx)=>_wRow({color:'#e8d59f',icon:'⭐',text:w,btn:`<button onclick="removeManualWin('${dt}',${idx})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;" title="Remove">✕</button>`})).join(''):''}
+      ${!totalDone?`<div class="ref-empty">Nothing yet — add what you did!</div>`:''}
+      ${pastUnchecked.length?_wSecHead('🕐 Also on your calendar — tap ✓ to count it')+pastUnchecked.map(({s,i})=>{const c=_wCat(s.cls);return _wRow({faded:true,icon:'·',color:c?c.color:'#c2c0d6',emoji:c?c.emoji:'',text:s.text,time:s.t?(s.t+(s.end?' – '+s.end:'')):'',chip:isMeetingBlock(s)?'meeting':'',btn:`<button onclick="winsMarkSlotDone('${dt}',${i})" style="background:none;border:1px solid var(--green);color:var(--green);cursor:pointer;font-size:11px;border-radius:6px;padding:2px 8px;font-weight:700;" title="Mark done">✓</button>`});}).join(''):''}
       <div style="display:flex;gap:6px;margin-top:12px;">
         <input type="text" id="manualWinInput" placeholder="Type something you accomplished..." onkeydown="if(event.key==='Enter')addManualWin('${dt}')" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:12px;outline:none;font-family:inherit;">
         <button onclick="addManualWin('${dt}')" style="background:var(--green);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;font-weight:600;">+</button>
