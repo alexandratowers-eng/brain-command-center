@@ -83,7 +83,7 @@ function renderSidebarTodayTasks(){
         <div style="font-size:11px;font-weight:600;${strike}">${emoji}${esc(t.text)}</div>
         ${carried}
       </div>
-      <button onclick="delTask(${t.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'" title="Delete">&#10005;</button>
+      <button onclick="dropTask(${t.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:0 2px;flex-shrink:0;opacity:.5;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'" title="Drop → Later bin (right-click task for Delete)">&#10005;</button>
       <div style="width:3px;height:20px;border-radius:2px;background:${color};flex-shrink:0;opacity:.6;"></div>
     </div>`;
   };
@@ -117,6 +117,14 @@ function deferToLater(id){
   t.date='';
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📌 Moved to Stash';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
+}
+function dropTask(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  if(t.done){delTask(id);return;}
+  t.date='';
+  save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
+  if(typeof renderSidebarTasks==='function')renderSidebarTasks();
+  const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📥 Dropped to Later bin — it\'s under Parked / Later, not deleted';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
 }
 const _coachSnoozed={};
 function coachSnooze(id){
