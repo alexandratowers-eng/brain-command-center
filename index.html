@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#f3f1ec">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png?v=202610081210">
+<link rel="apple-touch-icon" href="icon-192.png?v=202610090107">
 <title>Brain Command Center</title>
 <script>
 (function(){
@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=202610081210">
-<script src="sync-config.js?v=202610081210" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=202610090107">
+<script src="sync-config.js?v=202610090107" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -95,6 +95,10 @@ if('serviceWorker' in navigator){
       </div>
     </div>
     <div class="topbar-right">
+      <div class="topbar-clock" title="Current time">
+        <span id="tbClock"></span>
+        <span id="tbSynced" class="tb-synced" style="display:none;"></span>
+      </div>
       <div class="view-toggle" id="viewToggle">
         <button class="vt-btn" onclick="setCalView('day',this)"><span class="mi" style="font-size:14px;">today</span> Day</button>
         <button class="vt-btn active" onclick="setCalView('week',this)"><span class="mi" style="font-size:14px;">date_range</span> Week</button>
@@ -761,19 +765,19 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=202610081210"></script>
-<script src="core.js?v=202610081210"></script>
-<script src="calendar.js?v=202610081210"></script>
-<script src="tasks.js?v=202610081210"></script>
-<script src="features.js?v=202610081210"></script>
-<script src="studyplan-data.js?v=202610081210"></script>
-<script src="studyplan.js?v=202610081210"></script>
-<script src="pocket-data.js?v=202610081210"></script>
-<script src="pocket.js?v=202610081210"></script>
-<script src="sync.js?v=202610081210"></script>
-<script src="breaks.js?v=202610081210"></script>
-<script src="parked.js?v=202610081210"></script>
-<script src="ical-sync.js?v=202610081210"></script>
+<script src="data.js?v=202610090107"></script>
+<script src="core.js?v=202610090107"></script>
+<script src="calendar.js?v=202610090107"></script>
+<script src="tasks.js?v=202610090107"></script>
+<script src="features.js?v=202610090107"></script>
+<script src="studyplan-data.js?v=202610090107"></script>
+<script src="studyplan.js?v=202610090107"></script>
+<script src="pocket-data.js?v=202610090107"></script>
+<script src="pocket.js?v=202610090107"></script>
+<script src="sync.js?v=202610090107"></script>
+<script src="breaks.js?v=202610090107"></script>
+<script src="parked.js?v=202610090107"></script>
+<script src="ical-sync.js?v=202610090107"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

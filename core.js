@@ -80,6 +80,21 @@ function bccConfirm(message,callback){
   modal.onclick=e=>{if(e.target===modal)done(false);};
 }
 
+function updateTopbarClock(){
+  const c=document.getElementById('tbClock');
+  if(c)c.textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  const s=document.getElementById('tbSynced');
+  if(s){
+    const ts=(typeof D!=='undefined'&&D._syncedAt)?D._syncedAt:0;
+    if(ts){
+      const d=new Date(ts);
+      s.style.display='';
+      s.textContent='✓ '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      s.title='Last synced '+d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    } else s.style.display='none';
+  }
+}
+
 function init(){
   applyAutoTheme();
   // Dedupe any existing manualWins (one-time cleanup of old duplicates)
@@ -119,6 +134,8 @@ function init(){
     });
   },0);
   const _tbd=document.getElementById('topbarDate');if(_tbd)_tbd.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  updateTopbarClock();
+  setInterval(updateTopbarClock,10000);
   if(D.logoIcon) document.getElementById('logoIcon').textContent=D.logoIcon;
   if(D.logoText) document.getElementById('logoText').value=D.logoText;
   const savedHide=localStorage.getItem('sidebarHidden');
