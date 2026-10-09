@@ -138,7 +138,7 @@ function spLogAdd(){
   const subj=document.getElementById('spqSubj').value;
   const min=parseInt(document.getElementById('spqMin').value,10)||0;
   if(!D.mcatLog)D.mcatLog=[];
-  D.mcatLog.unshift({date:todayStr(),subj,what,min});
+  D.mcatLog.unshift({id:Date.now(),date:todayStr(),subj,what,min});
   save();renderStudyPlan();
   const nw=document.getElementById('spqWhat');if(nw)nw.focus();
 }
@@ -210,7 +210,7 @@ function spImportCsv(){
         const d=new Date(date);
         date=(date&&!isNaN(d))?(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')):todayStr();
         const min=parseInt(pick(row,hi.min,3).replace(/[^0-9]/g,''),10)||0;
-        D.mcatLog.push({date,subj:subjOf(pick(row,hi.subj,1)),what,min});
+        D.mcatLog.push({id:Date.now()+n,date,subj:subjOf(pick(row,hi.subj,1)),what,min});
         n++;
       });
       D.mcatLog.sort((a,b)=>String(b.date).localeCompare(String(a.date)));

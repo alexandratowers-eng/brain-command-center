@@ -199,11 +199,30 @@ window.SyncEngine=(function(){
     try{
       const raw=localStorage.getItem(SK);
       if(!raw){setStatus('idle','Nothing to sync');return;}
-      const payload=JSON.parse(raw);
+      let payload=JSON.parse(raw);
+      // Lost-update guard: if the cloud moved since our last sync (another device
+      // pushed), merge it in instead of overwriting it wholesale.
+      let mergedRemote=false;
+      try{
+        const remote=await gistGet(cfg);
+        if(remote&&(remote._syncedAt||0)>(payload._syncedAt||0)){
+          payload=mergeData(payload,remote);
+          mergedRemote=true;
+        }
+      }catch(e){/* GET failed; PATCH below will hit the normal error path */}
       payload._syncedAt=Date.now();
       delete payload._localModifiedAt;
       localStorage.setItem(SK,JSON.stringify(payload));
-      if(typeof D!=='undefined'){D._syncedAt=payload._syncedAt;delete D._localModifiedAt;}
+      if(typeof D!=='undefined'){
+        if(mergedRemote&&typeof load==='function'){
+          const restored=load();
+          Object.keys(D).forEach(k=>delete D[k]);
+          Object.assign(D,restored);
+          if(typeof renderAll==='function')renderAll();
+        } else {
+          D._syncedAt=payload._syncedAt;delete D._localModifiedAt;
+        }
+      }
       await gistPut(cfg,payload);
       setStatus('idle','Synced ✓ '+new Date().toLocaleTimeString());
       _pushRetries=0;
@@ -220,6 +239,33 @@ window.SyncEngine=(function(){
       _pushRetries=0;
       window.addEventListener('online',()=>push(),{once:true});
     }
+  }
+
+  // Union-merge two values so neither side's content is dropped.
+  // Arrays of {id|_id} objects union by id; other arrays union by value;
+  // objects merge key-by-key (missing keys filled from local); scalars prefer remote.
+  function _unionVal(l,r){
+    if(l===undefined)return r;
+    if(r===undefined)return l;
+    if(Array.isArray(l)&&Array.isArray(r)){
+      const key=o=>(o&&typeof o==='object')?(o.id!==undefined?o.id:o._id):undefined;
+      if(l.length&&r.length&&l.every(o=>key(o)!==undefined)&&r.every(o=>key(o)!==undefined)){
+        const m=new Map();
+        r.forEach(o=>m.set(key(o),o));
+        l.forEach(o=>{m.set(key(o),m.has(key(o))?_unionVal(o,m.get(key(o))):o);});
+        return Array.from(m.values());
+      }
+      const seen=new Set(r.map(x=>JSON.stringify(x)));
+      return r.concat(l.filter(x=>!seen.has(JSON.stringify(x))));
+    }
+    if(l&&r&&typeof l==='object'&&typeof r==='object'){
+      const out=Object.assign({},r);
+      Object.keys(l).forEach(k=>{
+        out[k]=(k==='done')?(l[k]||r[k]):_unionVal(l[k],out[k]);
+      });
+      return out;
+    }
+    return r;
   }
 
   function mergeData(local,remote){
@@ -297,6 +343,17 @@ window.SyncEngine=(function(){
           merged[k]=local[k];
         }
       }
+    });
+    // Generic union for everything not explicitly handled above (lists, mcatLog,
+    // meetings, journals, scores, pocket, vocab, brain dump, etc.). Before this,
+    // unhandled keys silently took the remote side wholesale — that's how one
+    // device's lists could vanish after a sync from a staler device.
+    const handled=new Set(['tasks','days','reflections','parkingItems','trash','nextId','spotRowExpanded','daySpots','daySpotMeta','customSpots']);
+    const preferLocal=new Set(['selectedDate','calView','miniMonth','miniYear']);
+    Object.keys(local).forEach(k=>{
+      if(handled.has(k)||k[0]==='_')return;
+      if(preferLocal.has(k)){merged[k]=local[k];return;}
+      merged[k]=_unionVal(local[k],merged[k]);
     });
     return merged;
   }
