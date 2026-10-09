@@ -7,6 +7,10 @@ window.SyncEngine=(function(){
   let _state='disabled';
   let _pulling=false;
   let _pullRetries=0;
+  let _firstPullAt=0;
+  // True once the first cloud pull has resolved (or sync is off/offline),
+  // so startup UI like the brain dump sweep can wait for fresh data.
+  function firstPullDone(){return !getConfig()||_firstPullAt>0;}
   let _pushRetries=0;
   let _lastResumePull=0;
   // iOS Safari throws generic TypeErrors when a fetch is interrupted mid-resume;
@@ -129,11 +133,11 @@ window.SyncEngine=(function(){
   async function pull(){
     const cfg=getConfig();if(!cfg)return;
     if(_pulling)return;_pulling=true;
-    if(!navigator.onLine){setStatus('offline','Offline — using local data');_pulling=false;return;}
+    if(!navigator.onLine){setStatus('offline','Offline — using local data');_firstPullAt=Date.now();_pulling=false;return;}
     setStatus('syncing','Pulling from cloud...');
     try{
       const remote=await gistGet(cfg);
-      if(!remote){setStatus('idle','Synced');_pulling=false;return;}
+      if(!remote){setStatus('idle','Synced');_firstPullAt=Date.now();_pulling=false;return;}
       const localRaw=localStorage.getItem(SK);
       const local=localRaw?JSON.parse(localRaw):null;
       const remoteTs=remote._syncedAt||0;
@@ -183,6 +187,7 @@ window.SyncEngine=(function(){
       else setStatus('error','Sync pull failed: '+msg);
       _pullRetries=0;
     }
+    _firstPullAt=Date.now();
     _pulling=false;
   }
 
@@ -553,5 +558,5 @@ window.SyncEngine=(function(){
     window.addEventListener('online',()=>resumePull());
   }
 
-  return{init,scheduleSync,pull,push,forcePull,forcePush,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner,rotateGist};
+  return{init,scheduleSync,pull,push,forcePull,forcePush,firstPullDone,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner,rotateGist};
 })();

@@ -3053,9 +3053,14 @@ function openWeeklyReflectManual(){
 
 // ===== DAILY BRAIN DUMP CHECK-IN =====
 // Once a day, if the Inbox has unsorted items, show a 30-second sweep modal.
-function checkDailyBrainDumpCheckin(){
+function checkDailyBrainDumpCheckin(attempt){
   const today=todayStr();
   if(localStorage.getItem('bdCheckinDone_'+today))return;
+  // Wait for the first cloud pull so items already finished on another device don't resurface
+  if(typeof SyncEngine!=='undefined'&&SyncEngine.firstPullDone&&!SyncEngine.firstPullDone()&&(attempt||0)<15){
+    setTimeout(()=>checkDailyBrainDumpCheckin((attempt||0)+1),1000);
+    return;
+  }
   const inboxItems=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
   if(!inboxItems.length){localStorage.setItem('bdCheckinDone_'+today,'1');return;}
   // If the daily motivation is up, wait
