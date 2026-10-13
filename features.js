@@ -1818,13 +1818,21 @@ function exportICS(){
   const tl=getTimeline(dt);
   const dateClean=dt.replace(/-/g,'');
   let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//BrainCmd//EN\r\nCALSCALE:GREGORIAN\r\n';
+  // Escape per RFC 5545 rather than stripping — otherwise links and notes get mangled.
+  const esc=v=>String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
   tl.forEach((s,i)=>{
     const startM=parseMin(s.t);
-    const endM=i<tl.length-1?parseMin(tl[i+1].t):startM+30;
-    if(endM<=startM)return;
+    // Prefer the block's own end. Falling back to "next block's start" stretched
+    // a 45-min task across the whole gap after it.
+    let endM=s.end?parseMin(s.end):0;
+    if(!(endM>startM))endM=i<tl.length-1?parseMin(tl[i+1].t):startM+30;
+    if(endM<=startM)endM=startM+30;
     const sh=String(Math.floor(startM/60)).padStart(2,'0'),sm=String(startM%60).padStart(2,'0');
     const eh=String(Math.floor(endM/60)).padStart(2,'0'),em=String(endM%60).padStart(2,'0');
-    ics+=`BEGIN:VEVENT\r\nUID:bc-${dateClean}-${i}\r\nDTSTART:${dateClean}T${sh}${sm}00\r\nDTEND:${dateClean}T${eh}${em}00\r\nSUMMARY:${s.text.replace(/[\\;,]/g,' ')}\r\n${s.sm?'DESCRIPTION:'+s.sm.replace(/[\\;,]/g,' ')+'\r\n':''}END:VEVENT\r\n`;
+    // A URL in loc becomes LOCATION + URL so Apple Calendar shows a Join button.
+    const isUrl=/^https?:\/\//i.test(s.loc||'');
+    const descParts=[s.sm||'',isUrl?'Join: '+s.loc:''].filter(Boolean);
+    ics+=`BEGIN:VEVENT\r\nUID:bc-${dateClean}-${i}\r\nDTSTART:${dateClean}T${sh}${sm}00\r\nDTEND:${dateClean}T${eh}${em}00\r\nSUMMARY:${esc(s.text)}\r\n${s.loc?'LOCATION:'+esc(s.loc)+'\r\n':''}${isUrl?'URL;VALUE=URI:'+s.loc+'\r\n':''}${descParts.length?'DESCRIPTION:'+esc(descParts.join('\n'))+'\r\n':''}END:VEVENT\r\n`;
   });
   ics+='END:VCALENDAR\r\n';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='schedule-'+dt+'.ics';a.click();
