@@ -396,24 +396,31 @@ function toggleRightPanel(){
     dragCard=null;placeholder=null;sourcePanel=null;currentPanel=null;
   });
 
-  panels.forEach(p=>{
-    const key=storageKeys[p.id];
-    const saved=key&&localStorage.getItem(key);
-    if(saved){
-      try{
-        const order=JSON.parse(saved);
-        const cards=getCards(p);
-        const map={};cards.forEach(c=>{map[c.dataset.card]=c;});
-        order.forEach(k=>{if(map[k])p.appendChild(map[k]);});
-        cards.forEach(c=>{if(!order.includes(c.dataset.card))p.appendChild(c);});
-        if(p.id==='cal-right-panel'&&!order.includes('calright-anchors')){
-          const a=p.querySelector('[data-card="calright-anchors"]');
-          const first=[...p.querySelectorAll('.s-card')].find(c=>c!==a);
-          if(a&&first)p.insertBefore(a,first);
-        }
-      }catch(e){}
-    }
-  });
+  // Restore saved order. Cards live in static HTML in their default panel, so
+  // look them up GLOBALLY (both panels): a card dragged across panels must be
+  // pulled back from the other side on load, not just reordered in place.
+  (function(){
+    const orders={};
+    panels.forEach(p=>{
+      try{orders[p.id]=JSON.parse(localStorage.getItem(storageKeys[p.id]))||null;}
+      catch(e){orders[p.id]=null;}
+    });
+    const globalMap={};
+    panels.forEach(p=>getCards(p).forEach(c=>{if(c.dataset.card)globalMap[c.dataset.card]=c;}));
+    const claimed=new Set();
+    panels.forEach(p=>{(orders[p.id]||[]).forEach(k=>claimed.add(k));});
+    panels.forEach(p=>{
+      const order=orders[p.id];
+      if(!order)return;
+      order.forEach(k=>{if(globalMap[k])p.appendChild(globalMap[k]);});
+      getCards(p).forEach(c=>{if(!claimed.has(c.dataset.card))p.appendChild(c);});
+      if(p.id==='cal-right-panel'&&!order.includes('calright-anchors')){
+        const a=p.querySelector('[data-card="calright-anchors"]');
+        const first=[...p.querySelectorAll('.s-card')].find(c=>c!==a);
+        if(a&&first)p.insertBefore(a,first);
+      }
+    });
+  })();
 })();
 
 // ===== RIGHT PANEL CARD TITLE EDITING =====
