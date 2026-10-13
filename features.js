@@ -3108,6 +3108,7 @@ function bdCheckinSort(id,catKey){
   if(!catKey)return;
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.cat=catKey;
+  t.updatedAt=Date.now();
   save();
   const row=document.querySelector(`.bdci-row[data-id="${id}"]`);
   if(row){row.style.transition='opacity .3s';row.style.opacity='0';setTimeout(()=>row.remove(),300);}

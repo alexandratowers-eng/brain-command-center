@@ -276,14 +276,18 @@ window.SyncEngine=(function(){
   function mergeData(local,remote){
     // Start with remote as base, merge in local additions
     const merged=JSON.parse(JSON.stringify(remote));
-    // Merge tasks: keep all unique tasks by ID, prefer done=true
+    // Merge tasks by id: the most recently edited copy wins (updatedAt/doneAt),
+    // so completing or dropping a task on one device can't be undone by an
+    // older copy of it still sitting in the cloud or on another device.
     if(local.tasks&&merged.tasks){
+      const stamp=t=>t.updatedAt||t.doneAt||0;
       const byId={};
       merged.tasks.forEach(t=>byId[t.id]=t);
       local.tasks.forEach(t=>{
-        if(!byId[t.id]){byId[t.id]=t;}
-        else if(t.done&&!byId[t.id].done){byId[t.id].done=true;}
-        else if(t.date&&!byId[t.id].date){byId[t.id].date=t.date;}
+        const prev=byId[t.id];
+        if(!prev){byId[t.id]=t;return;}
+        if(stamp(t)>stamp(prev))byId[t.id]=t;
+        else if(stamp(t)===stamp(prev)&&t.done&&!prev.done){prev.done=true;if(t.doneAt)prev.doneAt=t.doneAt;}
       });
       merged.tasks=Object.values(byId);
       // Same task created on two devices gets two ids — collapse by text too
@@ -326,6 +330,15 @@ window.SyncEngine=(function(){
         if(!prev||(t._trashedAt||0)>(prev._trashedAt||0))byId[t.id]=t;
       });
       merged.trash=Object.values(byId);
+    }
+    // Trash is a tombstone: a task deleted on any device stays deleted everywhere,
+    // unless it was edited or restored after the deletion.
+    if(Array.isArray(merged.trash)&&Array.isArray(merged.tasks)){
+      const dead={};
+      merged.trash.forEach(t=>{if(t&&t.id!=null)dead[t.id]=t._trashedAt||0;});
+      merged.tasks=merged.tasks.filter(t=>!(t.id in dead)||(t.updatedAt||0)>dead[t.id]);
+      const live=new Set(merged.tasks.map(t=>t.id));
+      merged.trash=merged.trash.filter(t=>!live.has(t.id));
     }
     // Keep higher nextId
     if(local.nextId>merged.nextId)merged.nextId=local.nextId;

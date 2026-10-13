@@ -772,6 +772,8 @@ function restoreTask(idx){
   if(!D.trash||!D.trash[idx])return;
   const task=D.trash.splice(idx,1)[0];
   delete task._trashedAt;
+  // Stamp so the restore beats the trash tombstone in the sync merge
+  task.updatedAt=Date.now();
   D.tasks.push(task);
   save();
 }

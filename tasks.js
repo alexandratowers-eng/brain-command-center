@@ -96,12 +96,13 @@ function addSidebarTask(inp){
   D.tasks.push({id:D.nextId++,text,cat:'personal',pri:'med',done:false,date:todayStr()});
   inp.value='';save();renderCalTasks();updateStats();
 }
-function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());}else{delete t.doneAt;}save();setTimeout(()=>{renderCalendar();renderCalTasks();renderAllTasks();updateStats();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderCalRightTrash==='function')renderCalRightTrash();},300);}
+function togTask(id,el){const t=D.tasks.find(x=>x.id===id);if(!t)return;if(el&&el.checked!==undefined){t.done=el.checked;}else{t.done=!t.done;}if(t.done){t.doneAt=Date.now();celebrate();autoAddWin(t.text,t.date||todayStr());}else{delete t.doneAt;}t.updatedAt=Date.now();save();setTimeout(()=>{renderCalendar();renderCalTasks();renderAllTasks();updateStats();if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();if(typeof renderCalRightTrash==='function')renderCalRightTrash();},300);}
 function moveTaskDate(id,dir){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   const d=new Date((t.date||todayStr())+'T12:00:00');
   d.setDate(d.getDate()+dir);
   t.date=d.toISOString().split('T')[0];
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
 }
 function deferToTomorrow(id){
@@ -109,12 +110,14 @@ function deferToTomorrow(id){
   const d=new Date(todayStr()+'T12:00:00');
   d.setDate(d.getDate()+1);
   t.date=d.toISOString().split('T')[0];
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='→ Moved to tomorrow';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
 }
 function deferToLater(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.date='';
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📌 Moved to Stash';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
 }
@@ -122,6 +125,7 @@ function dropTask(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   if(t.done){delTask(id);return;}
   t.date='';
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
   if(typeof renderSidebarTasks==='function')renderSidebarTasks();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📥 Dropped to Later bin — it\'s under Parked / Later, not deleted';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1800);}
@@ -135,6 +139,7 @@ function isSnoozed(t){return (_coachSnoozed[t.id]&&Date.now()<_coachSnoozed[t.id
 function laterToToday(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.date=todayStr();
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='✓ Pulled to today';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
 }
@@ -418,6 +423,7 @@ function taskDropOnCat(e,catKey){
   const t=D.tasks.find(x=>x.id===_dragTaskId);
   if(!t)return;
   t.cat=catKey;
+  t.updatedAt=Date.now();
   save();renderAllTasks();renderCalTasks();
   const toast=document.getElementById('saveToast');
   if(toast){const cat=D.cats[catKey];toast.innerHTML=`✓ Moved to ${cat?.emoji||''} ${cat?.label||catKey}`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
@@ -593,6 +599,7 @@ function openRemindPicker(e,id){
 function setReminder(id,mins){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.remindAt=new Date(Date.now()+mins*60000).toISOString();
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();updateStats();
   if(typeof renderBucketView==='function'&&_taskView==='buckets')renderBucketView();
   const label=mins<60?mins+'m':Math.round(mins/60)+'h';
@@ -604,6 +611,7 @@ function setReminderTonight(id){
   const tonight=new Date();tonight.setHours(18,0,0,0);
   if(tonight<=new Date())tonight.setDate(tonight.getDate()+1);
   t.remindAt=tonight.toISOString();
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · 6 PM';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
 }
@@ -612,6 +620,7 @@ function setReminderTomorrow9(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   const tmrw=new Date();tmrw.setDate(tmrw.getDate()+1);tmrw.setHours(9,0,0,0);
   t.remindAt=tmrw.toISOString();
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · tomorrow 9 AM';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
 }
@@ -623,6 +632,7 @@ function remindCustom(id){
     const parsed=new Date(dt.replace(' ','T'));
     if(isNaN(parsed.getTime())){alert('Invalid date/time format');return;}
     t.remindAt=parsed.toISOString();
+    t.updatedAt=Date.now();
     save();renderCalTasks();renderAllTasks();updateStats();
     const label=parsed.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
     const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='⏰ Reminder set · '+label;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2000);}
@@ -632,6 +642,7 @@ function remindCustom(id){
 function unsnooze(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   delete t.remindAt;
+  t.updatedAt=Date.now();
   save();renderCalTasks();renderAllTasks();updateStats();
   const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='✓ Task resurfaced';toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1200);}
 }
@@ -1536,6 +1547,7 @@ function stashSetDate(id){
   bccPrompt('Set date (YYYY-MM-DD):',todayStr(),(dt)=>{
     if(!dt||!/^\d{4}-\d{2}-\d{2}$/.test(dt))return;
     t.date=dt;
+    t.updatedAt=Date.now();
     save();renderCalTasks();renderAllTasks();renderCalendar();updateStats();
     if(typeof renderCalRightStash==='function')renderCalRightStash();
     const toast=document.getElementById('saveToast');if(toast){toast.innerHTML='📅 Scheduled for '+dt;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),1500);}
@@ -1765,6 +1777,7 @@ function saveModal(){const t=D.tasks.find(x=>x.id===editId);if(!t)return;t.text=
   const activeDiff=document.querySelector('#edDiff .effort-chip.active');t.diff=activeDiff?activeDiff.dataset.diff:'';
   const remVal=document.getElementById('edRemindAt')?.value;
   if(remVal){t.remindAt=new Date(remVal).toISOString();}else{delete t.remindAt;}
+  t.updatedAt=Date.now();
   save();closeModal();renderSidebarTasks();renderAllTasks();renderLegend();
   // If date was changed and has a date, offer to add to calendar
   if(newDate&&newDate!==oldDate){taskToCalBlock(t.id);}
