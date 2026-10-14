@@ -612,6 +612,13 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._bremSept27=true;
   }
+  // Beck Institute call was done long ago but sync merges kept resurrecting the
+  // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
+  (d.tasks||[]).forEach(t=>{
+    if(!t.done&&(t._w921==='beck'||/beck institute/i.test(t.text||''))){
+      t.done=true;t.doneAt=new Date(2026,8,22,17,0).getTime();t.updatedAt=Date.now();
+    }
+  });
   // Dedupe tasks on every load (idempotent) — sync merges could resurrect copies,
   // so this can't be a one-time flag migration.
   d.tasks=dedupeTaskList(d.tasks);

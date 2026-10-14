@@ -1131,7 +1131,7 @@ function renderCalRightTasks(){
           color:catColor, done:false, isPast:true, isCurrent:false,
           label:emoji+' '+t.text, fullText:t.text, subtitle:'was due '+wasDue, taskId:t.id,
           toggleAction:`togTask(${t.id})`, ctx:`oncontextmenu="event.preventDefault();openTaskCtx(event,${t.id});"`,
-          extraBtn:`<button onclick="event.stopPropagation();moveOverdueToToday(${t.id})" title="Do it today" style="font-size:8px;border:1px solid var(--green);border-radius:3px;background:none;color:var(--green);cursor:pointer;padding:1px 4px;flex-shrink:0;">today</button><button onclick="event.stopPropagation();deferToLater(${t.id})" title="Stash for later" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;margin-left:3px;">stash</button>`
+          extraBtn:`<button onclick="event.stopPropagation();moveOverdueToToday(${t.id})" title="Do it today" style="font-size:8px;border:1px solid var(--green);border-radius:3px;background:none;color:var(--green);cursor:pointer;padding:1px 4px;flex-shrink:0;">today</button><button onclick="event.stopPropagation();deferToLater(${t.id})" title="Stash for later" style="font-size:8px;border:1px solid var(--dim);border-radius:3px;background:none;color:var(--dim);cursor:pointer;padding:1px 4px;flex-shrink:0;margin-left:3px;">stash</button><button onclick="event.stopPropagation();deleteOverdueTask(${t.id})" title="Delete (recoverable from Trash)" style="font-size:8px;border:1px solid var(--rose,#f87171);border-radius:3px;background:none;color:var(--rose,#f87171);cursor:pointer;padding:1px 4px;flex-shrink:0;margin-left:3px;">✕</button>`
         });
       }).join('');
     }

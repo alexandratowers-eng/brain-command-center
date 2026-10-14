@@ -2750,9 +2750,11 @@ function checkOverdueTasks(){
       <span class="overdue-dot ${t.pri||'med'}"></span>
       <span class="overdue-text">${(t.text||'').replace(/</g,'&lt;')}</span>
       <span class="overdue-ago">${ago}</span>
+      <button class="overdue-btn" style="border-color:var(--green);color:var(--green);" onclick="completeOverdueTask(${t.id})" title="Already did it — mark done">✓ Done</button>
       <button class="overdue-btn" onclick="moveOverdueToToday(${t.id})" title="Pull to today">Today</button>
       <button class="overdue-btn" style="border-color:var(--blue);color:var(--blue);" onclick="rescheduleOverdueTask(${t.id})" title="Pick a new date">📅</button>
       <button class="overdue-btn" style="border-color:var(--dim);color:var(--dim);" onclick="dropOverdueTask(${t.id})" title="Let it go to backlog">Drop</button>
+      <button class="overdue-btn" style="border-color:var(--rose,#f87171);color:var(--rose,#f87171);" onclick="deleteOverdueTask(${t.id})" title="Delete — it's not happening and that's fine">✕</button>
     </div>`;
   }).join('');
   card.innerHTML=`<div class="slipped-title">⏳ Slipped from earlier — still yours, just late</div>${rows}`
@@ -2762,6 +2764,23 @@ function checkOverdueTasks(){
 function moveOverdueToToday(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   t.date=todayStr();save();checkOverdueTasks();renderCalTasks();renderAllTasks();updateStats();
+}
+// "I already did this" — mark done without dragging it into today first.
+function completeOverdueTask(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  t.done=true;t.doneAt=Date.now();t.updatedAt=Date.now();
+  if(typeof celebrate==='function')celebrate();
+  if(typeof autoAddWin==='function')autoAddWin(t.text,t.date||todayStr());
+  save();checkOverdueTasks();renderCalTasks();renderAllTasks();updateStats();
+  if(typeof renderCalRightWinsDone==='function')renderCalRightWinsDone();
+}
+// Delete straight from the popup — goes to Trash, so undo-able, not a guilt trip.
+function deleteOverdueTask(id){
+  trashTask(id);
+  checkOverdueTasks();renderCalTasks();renderAllTasks();updateStats();
+  if(typeof renderCalRightTrash==='function')renderCalRightTrash();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML='🗑 Deleted — it\'s in Trash if you change your mind';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2500);}
 }
 function moveAllOverdueToToday(){
   const today=todayStr();
