@@ -596,7 +596,11 @@ function showBuildCheck(){
   if(window.caches&&caches.keys){
     caches.keys().then(keys=>{
       const b=keys.filter(k=>k.indexOf('bcc-v')===0).sort().pop();
-      line.innerHTML=b?`📦 Build <b>${b.replace('bcc-','')}</b> — if this matches what I last told you, you're current.`:'📦 No cached build yet (fresh load).';
+      line.innerHTML=b?`📦 Build <b>${b.replace('bcc-','')}</b> — if this matches what I last told you, you're current.`:'📦 Build cache not ready yet (normal on a first or private load).';
+      const si=window.SyncEngine&&SyncEngine.syncInfo?SyncEngine.syncInfo():null;
+      if(si)line.innerHTML+=si.connected
+        ?`<br>☁️ Sync space <b>${si.gist}</b> · last synced ${si.lastSyncAt?new Date(si.lastSyncAt).toLocaleTimeString():'not yet'}<br><span style="color:var(--dim);">Every browser should show the same sync space code.</span>`
+        :'<br>⚠️ This browser is <b>not connected to sync</b>, so it won’t match your other devices.';
     }).catch(()=>{line.textContent='📦 Build unknown.';});
   } else line.textContent='📦 Build info unavailable in this browser.';
 }

@@ -65,6 +65,41 @@ window.SyncEngine=(function(){
     return null;
   }
 
+  // Every device must share ONE gist. A rotate on one device used to leave the
+  // others writing to the old gist forever (Safari and Chrome silently split).
+  // So each device looks up all BCC gists on the account and follows the newest;
+  // if it was on a different one, its local data is merged into the canonical one.
+  let _lastDiscover=0;
+  async function discoverCanonical(force){
+    const cfg=getConfig();if(!cfg)return cfg;
+    if(!force&&Date.now()-_lastDiscover<10*60*1000)return cfg;
+    _lastDiscover=Date.now();
+    try{
+      const r=await fetch('https://api.github.com/gists?per_page=100',{
+        headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'},cache:'no-store'
+      });
+      if(!r.ok)return cfg;
+      const list=(await r.json()).filter(g=>g.files&&g.files[FILENAME]);
+      if(!list.length)return cfg;
+      list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+      const canon=list[0].id;
+      if(canon===cfg.gistId)return cfg;
+      localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId:canon,token:cfg.token}));
+      // Force the next pull down the merge path so nothing on this device is lost.
+      try{
+        const local=JSON.parse(localStorage.getItem(SK)||'null');
+        if(local){local._syncedAt=0;local._localModifiedAt=Date.now();localStorage.setItem(SK,JSON.stringify(local));}
+        if(typeof D!=='undefined'){D._syncedAt=0;D._localModifiedAt=Date.now();}
+      }catch(e){}
+      console.log('[sync] switched from gist '+cfg.gistId+' to canonical '+canon);
+      return{gistId:canon,token:cfg.token};
+    }catch(e){return cfg;}
+  }
+  function syncInfo(){
+    const cfg=getConfig();
+    return{connected:!!cfg,gist:cfg?cfg.gistId.slice(0,6):null,lastSyncAt:_lastSyncAt,state:_state};
+  }
+
   async function rotateGist(){
     const cfg=getConfig();
     if(!cfg){alert('Connect sync first, then rotate.');return;}
@@ -110,14 +145,15 @@ window.SyncEngine=(function(){
   }
 
   async function gistGet(cfg){
+    // no-store: GitHub's API is cacheable for 60s, so a browser could read a stale copy.
     const r=await fetch('https://api.github.com/gists/'+cfg.gistId,{
-      headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'}
+      headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'},cache:'no-store'
     });
     if(!r.ok)throw new Error('GET '+r.status);
     const d=await r.json();
     const f=d.files[FILENAME];
     if(!f)return null;
-    if(f.truncated){const raw=await fetch(f.raw_url);return await raw.json();}
+    if(f.truncated){const raw=await fetch(f.raw_url,{cache:'no-store'});return await raw.json();}
     return JSON.parse(f.content);
   }
 
@@ -131,11 +167,12 @@ window.SyncEngine=(function(){
   }
 
   async function pull(){
-    const cfg=getConfig();if(!cfg)return;
+    let cfg=getConfig();if(!cfg)return;
     if(_pulling)return;_pulling=true;
     if(!navigator.onLine){setStatus('offline','Offline — using local data');_firstPullAt=Date.now();_pulling=false;return;}
     setStatus('syncing','Pulling from cloud...');
     try{
+      cfg=await discoverCanonical(false);
       const remote=await gistGet(cfg);
       if(!remote){setStatus('idle','Synced');_firstPullAt=Date.now();_pulling=false;return;}
       const localRaw=localStorage.getItem(SK);
@@ -198,10 +235,11 @@ window.SyncEngine=(function(){
   }
 
   async function push(){
-    const cfg=getConfig();if(!cfg)return;
+    let cfg=getConfig();if(!cfg)return;
     if(!navigator.onLine){setStatus('offline','Offline — will sync when back online');window.addEventListener('online',()=>push(),{once:true});return;}
     setStatus('syncing','Saving to cloud...');
     try{
+      cfg=await discoverCanonical(false);
       const raw=localStorage.getItem(SK);
       if(!raw){setStatus('idle','Nothing to sync');return;}
       let payload=JSON.parse(raw);
@@ -571,5 +609,5 @@ window.SyncEngine=(function(){
     window.addEventListener('online',()=>resumePull());
   }
 
-  return{init,scheduleSync,pull,push,forcePull,forcePush,firstPullDone,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner,rotateGist};
+  return{init,scheduleSync,pull,push,forcePull,forcePush,firstPullDone,syncInfo,showPairingModal,completePairing,copyShareLink,disconnectSync,refreshBanner,rotateGist};
 })();
