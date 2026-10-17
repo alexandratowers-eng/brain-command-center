@@ -1,4 +1,6 @@
-const CACHE='bcc-202610161649';
+const CACHE='bcc-202610171735';
+// Must list every script index.html loads, or a first load with no network
+// comes up with those features missing.
 const ASSETS=[
   './',
   './index.html',
@@ -14,6 +16,10 @@ const ASSETS=[
   './pocket.js',
   './sync.js',
   './sync-config.js',
+  './breaks.js',
+  './parked.js',
+  './ical-sync.js',
+  './class-links.js',
   './manifest.json'
 ];
 

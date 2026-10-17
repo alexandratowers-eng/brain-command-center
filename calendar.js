@@ -147,7 +147,7 @@ function parseQuickAdd(raw){
 
   // --- Category detection ---
   const lc=text.toLowerCase();
-  if(/\b(mcat|anki|qbank|uworld|kaplan|content\s*review|cars|p\/s)\b/i.test(lc))result.cat='mcat';
+  if(/\b(mcat|anki|qbank|uworld|aamc|selfprep|content\s*review|cars|p\/s)\b/i.test(lc))result.cat='mcat';
   else if(/\b(meeting|mtg|standup|huddle|touchbase|call|phone|zoom|teams)\b/i.test(lc))result.cat='chop';
   else if(/\b(chop|cold\s*call)\b/i.test(lc))result.cat='chop';
   else if(/\b(gym|pool|swim|walk|run|jog|dogs?\s*out|exercise|workout|hike|bike)\b/i.test(lc))result.cat='exercise';
@@ -158,7 +158,7 @@ function parseQuickAdd(raw){
   else if(/\b(break|rest|nap|chill|relax|free)\b/i.test(lc))result.cat='free';
   else result.cat='personal';
 
-  text=text.replace(/\b(mcat|anki|qbank|uworld|kaplan|content\s*review|cars|p\/s|chop|work|cold\s*call|meeting|standup|huddle|touchbase|gym|pool|swim|walk|run|jog|dogs?\s*out|exercise|workout|hike|bike|med\s*app|application|personal\s*statement|secondary|amcas|experience|brain\s*dump|journal|dump|reflect|gma|grandma|grandmother|errand|grocery|pharmacy|doctor|call|phone|zoom|teams|email|lunch|dinner|breakfast|eat|cook|meal|break|rest|nap|chill|relax|free)\b/gi,'');
+  text=text.replace(/\b(mcat|anki|qbank|uworld|aamc|selfprep|content\s*review|cars|p\/s|chop|work|cold\s*call|meeting|standup|huddle|touchbase|gym|pool|swim|walk|run|jog|dogs?\s*out|exercise|workout|hike|bike|med\s*app|application|personal\s*statement|secondary|amcas|experience|brain\s*dump|journal|dump|reflect|gma|grandma|grandmother|errand|grocery|pharmacy|doctor|call|phone|zoom|teams|email|lunch|dinner|breakfast|eat|cook|meal|break|rest|nap|chill|relax|free)\b/gi,'');
 
   // --- Clean up title ---
   result.title=text.replace(/\b(at|on|for|from|the)\b/gi,'').replace(/\s+/g,' ').replace(/^[\s,\-–]+|[\s,\-–]+$/g,'').trim();
