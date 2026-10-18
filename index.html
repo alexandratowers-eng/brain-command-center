@@ -19,7 +19,7 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=202610171735">
+<link rel="stylesheet" href="styles.css?v=202610172200">
 <script src="sync-config.js?v=202610171735" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
@@ -263,6 +263,21 @@ if('serviceWorker' in navigator){
             <div id="calRightStashList"></div>
             <div class="add-inline" style="margin-top:4px;">
               <input type="text" placeholder="+ park a thought or task..." onkeydown="if(event.key==='Enter')addToStash(this)">
+            </div>
+          </div>
+        </div>
+        <!-- Ideas parking lot: tweaks go here, not into the code -->
+        <div class="s-card" data-card="calright-ideas">
+          <div class="s-title"><span class="mi rp-drag-handle" style="font-size:14px;color:var(--dim);cursor:grab;" title="Drag to reorder">drag_indicator</span><span class="mi" style="font-size:14px;color:var(--teal);">lightbulb</span> Parking Lot <span class="badge" id="ideasBadge" style="background:rgba(45,212,191,.15);color:var(--teal);">0</span><button class="s-collapse" onclick="toggleCard('calright-ideas',this)">▾</button></div>
+          <div class="s-body" id="cardBody-calright-ideas">
+            <div id="ideasList"></div>
+            <div class="idea-tag-row">
+              <button class="idea-tag-pick" data-tag="bcc" onclick="pickIdeaTag('bcc')">BCC</button>
+              <button class="idea-tag-pick" data-tag="template" onclick="pickIdeaTag('template')">Template</button>
+              <button class="idea-tag-pick" data-tag="other" onclick="pickIdeaTag('other')">Other</button>
+            </div>
+            <div class="add-inline" style="margin-top:4px;">
+              <input type="text" placeholder="+ jot the tweak, don't build it..." onkeydown="if(event.key==='Enter')addIdea(this)">
             </div>
           </div>
         </div>
@@ -783,6 +798,7 @@ if('serviceWorker' in navigator){
 <script src="sync.js?v=202610171735"></script>
 <script src="breaks.js?v=202610171735"></script>
 <script src="parked.js?v=202610171735"></script>
+<script src="ideas.js?v=202610172200"></script>
 <script src="ical-sync.js?v=202610171735"></script>
 <script src="class-links.js?v=202610171735"></script>
 <script>
