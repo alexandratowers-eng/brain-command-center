@@ -2910,7 +2910,7 @@ document.addEventListener('keydown',e=>{
     const block=el.closest('.dv-block');
     if(block&&block.dataset.dt&&block.dataset.idx!=null){
       e.preventDefault();
-      removeSlot(block.dataset.dt,parseInt(block.dataset.idx));
+      removeSlot(block.dataset.dt,block.dataset.sid||block.dataset.idx);
     }
   }
 });

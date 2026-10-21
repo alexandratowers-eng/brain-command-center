@@ -13,6 +13,7 @@ const DIFF_TAGS={
   hard:{emoji:'🔴',label:'Hard',color:'var(--rose)',weight:3}
 };
 let D=load();
+let _liveSlotIds=_collectSlotIds(D.days);
 function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(!d.days)d.days={};if(!d.selectedDate)d.selectedDate=todayStr();
   // Migrate: add reflections if missing
   if(!d.reflections) d.reflections={};
@@ -655,6 +656,7 @@ function save(){
     if(prev){_undoStack.push(prev);if(_undoStack.length>_UNDO_MAX)_undoStack.shift();}
     _lastSnap=now;
   }
+  reconcileSlotTombstones();
   D._localModifiedAt=now;
   localStorage.setItem(SK,JSON.stringify(D));
   if(typeof SyncEngine!=='undefined')SyncEngine.scheduleSync();
@@ -667,11 +669,15 @@ function undo(){
   const restored=JSON.parse(snap);
   Object.keys(D).forEach(k=>delete D[k]);
   Object.assign(D,restored);
+  reconcileSlotTombstones(); // blocks brought back by undo must beat their tombstone
+  D._localModifiedAt=Date.now();
   localStorage.setItem(SK,JSON.stringify(D));
+  if(typeof SyncEngine!=='undefined')SyncEngine.scheduleSync();
   renderAll();
   const t=document.getElementById('saveToast');if(t){t.innerHTML='↩ Undone';t.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>t.classList.remove('show'),1200);}
 }
 function renderAll(){
+  _liveSlotIds=_collectSlotIds(D.days);
   buildCatSelects();renderMiniCal();renderLegend();renderEnergy();renderSidebarTasks();
   updateDynamicBlockCSS();renderCalendar();renderMcat();renderDistractions();renderTomorrowMode();checkOverdueTasks();
   if(typeof renderBacklog==='function')renderBacklog();
@@ -745,6 +751,28 @@ function minToTime(mins){if(mins>=1440)mins=1439;let hr=Math.floor(mins/60),min=
 function slotDur(tl,i){if(i>=tl.length-1)return '';const a=parseMin(tl[i].t),b=parseMin(tl[i+1].t);const d=b-a;if(d<=0||d>480)return '';if(d<60)return d+'m';const h=Math.floor(d/60),m=d%60;return h+'h'+(m?m+'m':'');}
 function dateObj(str){const [y,m,d]=str.split('-').map(Number);return new Date(y,m-1,d);}
 function dateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+// ---- Calendar block tombstones ----
+// SyncEngine.mergeData unions blocks by _id, so a block deleted on one device
+// used to come straight back from the other device's copy (the Swim / Anchor
+// resurrection). Every save() diffs live block ids against the previous save:
+// ids that vanished get a tombstone in D.deletedSlots, ids that (re)appear get
+// _restoredAt stamped so an undo / move / re-add beats an older tombstone.
+function _collectSlotIds(days){
+  const m=new Map();
+  Object.keys(days||{}).forEach(dt=>(days[dt]||[]).forEach(s=>{if(s&&s._id)m.set(String(s._id),s);}));
+  return m;
+}
+function reconcileSlotTombstones(){
+  const cur=_collectSlotIds(D.days);
+  if(_liveSlotIds){
+    const now=Date.now();
+    if(!Array.isArray(D.deletedSlots))D.deletedSlots=[];
+    _liveSlotIds.forEach((_,id)=>{if(!cur.has(id))D.deletedSlots.push({id,at:now});});
+    cur.forEach((s,id)=>{if(!_liveSlotIds.has(id))s._restoredAt=now;});
+    if(D.deletedSlots.length>800)D.deletedSlots=D.deletedSlots.slice(-500);
+  }
+  _liveSlotIds=cur;
+}
 function getTimeline(dt){return D.days[dt]||[];}
 function setTimeline(dt,tl){D.days[dt]=tl;save();}
 function autoAddWin(text,dt){

@@ -341,6 +341,28 @@ window.SyncEngine=(function(){
         });
       });
     }
+    // Calendar block tombstones (D.deletedSlots, written by save() in data.js):
+    // a block deleted on any device stays deleted everywhere, unless it was
+    // re-added / undone after the deletion (_restoredAt newer than the tombstone).
+    {
+      const dead=new Map();
+      [].concat(remote.deletedSlots||[],local.deletedSlots||[]).forEach(t=>{
+        if(!t||t.id==null)return;const id=String(t.id);
+        if(!dead.has(id)||(t.at||0)>dead.get(id))dead.set(id,t.at||0);
+      });
+      if(dead.size&&merged.days){
+        Object.keys(merged.days).forEach(dt=>{
+          const tl=merged.days[dt];if(!Array.isArray(tl))return;
+          merged.days[dt]=tl.filter(s=>{
+            if(!s||!s._id||!dead.has(String(s._id)))return true;
+            return (s._restoredAt||0)>=dead.get(String(s._id));
+          });
+        });
+        const live=new Set();
+        Object.values(merged.days).forEach(tl=>(tl||[]).forEach(s=>{if(s&&s._id)live.add(String(s._id));}));
+        merged.deletedSlots=Array.from(dead,([id,at])=>({id,at})).filter(t=>!live.has(t.id));
+      } else merged.deletedSlots=Array.from(dead,([id,at])=>({id,at}));
+    }
     // Merge reflections
     if(local.reflections){
       Object.keys(local.reflections).forEach(dt=>{
@@ -404,7 +426,7 @@ window.SyncEngine=(function(){
     // meetings, journals, scores, pocket, vocab, brain dump, etc.). Before this,
     // unhandled keys silently took the remote side wholesale — that's how one
     // device's lists could vanish after a sync from a staler device.
-    const handled=new Set(['tasks','days','reflections','parkingItems','trash','nextId','spotRowExpanded','daySpots','daySpotMeta','customSpots']);
+    const handled=new Set(['tasks','days','deletedSlots','reflections','parkingItems','trash','nextId','spotRowExpanded','daySpots','daySpotMeta','customSpots']);
     const preferLocal=new Set(['selectedDate','calView','miniMonth','miniYear']);
     Object.keys(local).forEach(k=>{
       if(handled.has(k)||k[0]==='_')return;
