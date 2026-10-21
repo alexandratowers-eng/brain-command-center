@@ -517,6 +517,23 @@ if('serviceWorker' in navigator){
     <label>Details</label>
     <input type="text" id="dpDetails" placeholder="Optional details..." onkeydown="if(event.key==='Enter')dvPopoverSave();">
   </div>
+  <div class="pop-row" id="dpRepeatRow">
+    <div class="pop-field">
+      <label>Repeat</label>
+      <select id="dpRepeat" onchange="popRepeatChanged('dp')">
+        <option value="">Does not repeat</option>
+        <option value="day">Every day</option>
+        <option value="weekday">Weekdays (Mon–Fri)</option>
+        <option value="week">Every week</option>
+        <option value="2wk">Every 2 weeks</option>
+        <option value="month">Every month</option>
+      </select>
+    </div>
+    <div class="pop-field" id="dpUntilField" style="visibility:hidden;">
+      <label>Until</label>
+      <input type="date" id="dpUntil">
+    </div>
+  </div>
   <div class="pop-row pop-check-row">
     <label class="pop-check">
       <input type="checkbox" id="dpIsMeeting"> <span class="mi" style="font-size:13px;color:var(--teal);">groups</span> Meeting
@@ -553,6 +570,23 @@ if('serviceWorker' in navigator){
   <div class="pop-field pop-full">
     <label>Details</label>
     <input type="text" id="wpDetails" placeholder="Optional details..." onkeydown="if(event.key==='Enter')wkPopoverSave();">
+  </div>
+  <div class="pop-row" id="wpRepeatRow">
+    <div class="pop-field">
+      <label>Repeat</label>
+      <select id="wpRepeat" onchange="popRepeatChanged('wp')">
+        <option value="">Does not repeat</option>
+        <option value="day">Every day</option>
+        <option value="weekday">Weekdays (Mon–Fri)</option>
+        <option value="week">Every week</option>
+        <option value="2wk">Every 2 weeks</option>
+        <option value="month">Every month</option>
+      </select>
+    </div>
+    <div class="pop-field" id="wpUntilField" style="visibility:hidden;">
+      <label>Until</label>
+      <input type="date" id="wpUntil">
+    </div>
   </div>
   <div class="pop-row pop-check-row">
     <label class="pop-check">
@@ -788,9 +822,9 @@ if('serviceWorker' in navigator){
 
 <script src="data.js?v=202610211830"></script>
 <script src="core.js?v=202610171735"></script>
-<script src="calendar.js?v=202610171735"></script>
+<script src="calendar.js?v=202610212015"></script>
 <script src="tasks.js?v=202610171735"></script>
-<script src="features.js?v=202610211830"></script>
+<script src="features.js?v=202610212015"></script>
 <script src="studyplan-data.js?v=202610211830"></script>
 <script src="studyplan.js?v=202610171735"></script>
 <script src="pocket-data.js?v=202610211830"></script>

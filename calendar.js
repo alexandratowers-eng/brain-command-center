@@ -791,7 +791,7 @@ function openWkBlockMenu(e,dt,idx){
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();D.selectedDate='${dt}';setCalView('day');renderMiniCal();">
       <span class="mi" style="font-size:14px;">open_in_full</span> Open in Day View
     </button>
-    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();removeSlot('${dt}','${sid}');" style="color:var(--red);">
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();deleteSlotSmart('${dt}','${sid}');" style="color:var(--red);">
       <span class="mi" style="font-size:14px;">delete</span> Delete block
     </button>`;
   document.body.appendChild(menu);
@@ -842,6 +842,7 @@ function openWkPopover(e, dt, hr){
   document.getElementById('wpCat').innerHTML=catOpts;
   document.getElementById('wpTitle').value='';
   document.getElementById('wpDetails').value='';
+  const wr=document.getElementById('wpRepeat');if(wr){wr.value='';document.getElementById('wpUntil').value='';document.getElementById('wpUntilField').style.visibility='hidden';}
   pop.classList.add('show');
   setTimeout(()=>document.getElementById('wpTitle').focus(), 50);
 }
@@ -866,6 +867,7 @@ function wkPopoverSave(){
   const endTime=minToTime(Math.min(24*60,newMin+30));
   tl.splice(idx,0,{t, text, cls:catKey, sm:details, _isMeeting:isMtg, end:endTime, _id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
   setTimeline(newDate, tl);
+  _applyPopRepeat('wp',newDate,text,t);
   closeWkPopover();
   renderCalendar(); renderMiniCal();
 }
@@ -1381,7 +1383,7 @@ function openDvBlockMenu(e,dt,idx){
     <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();blockToLater('${dt}','${sid}');">
       <span class="mi" style="font-size:14px;">inventory_2</span> → Later
     </button>
-    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();removeSlot('${dt}','${sid}');" style="color:var(--red);">
+    <button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();deleteSlotSmart('${dt}','${sid}');" style="color:var(--red);">
       <span class="mi" style="font-size:14px;">delete</span> Delete block
     </button>`;
   document.body.appendChild(menu);
@@ -1425,12 +1427,112 @@ function dupeSlot(dt,sid){const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i
 
 function winsMarkSlotDone(dt,idx){const tl=getTimeline(dt);if(!tl[idx])return;if(!tl[idx]._id){tl[idx]._id='s'+Date.now()+'_'+idx;setTimeline(dt,tl);}togSlotDone(dt,tl[idx]._id);renderWinsTab();}
 
+// ===== SERIES HELPERS =====
+// A block belongs to a series if it has a user repeat id (_recur) or one of the
+// seeded routine markers (_daily Swim/Arm, _brem class blocks, _wm work meetings,
+// _mcatDaily...). seriesKeyOf() gives one comparable key for all of them.
+const _SERIES_MARKERS=['_recur','_daily','_brem','_wm','_mcatDaily','_mcatBiweekly','_mcatJune','_feed'];
+function seriesKeyOf(slot){
+  if(!slot)return null;
+  for(const k of _SERIES_MARKERS){if(slot[k]!=null&&slot[k]!==false)return k+':'+slot[k];}
+  return null;
+}
+function seriesSlotsFrom(dt,slot){
+  const key=seriesKeyOf(slot);if(!key)return [];
+  const out=[];
+  Object.keys(D.days||{}).forEach(d2=>{
+    if(d2<dt)return;
+    (D.days[d2]||[]).forEach(s=>{if(seriesKeyOf(s)===key&&(d2>dt||s._id===slot._id))out.push({dt:d2,slot:s});});
+  });
+  return out;
+}
+// Default horizon when "Until" is left blank
+function defaultRepeatUntil(dt,freq){
+  const d=dateObj(dt);
+  if(freq==='day'||freq==='weekday')d.setDate(d.getDate()+28);
+  else if(freq==='month')d.setMonth(d.getMonth()+6);
+  else d.setDate(d.getDate()+7*16);
+  return dateStr(d);
+}
+function popRepeatChanged(pre){
+  const sel=document.getElementById(pre+'Repeat');const f=document.getElementById(pre+'UntilField');const u=document.getElementById(pre+'Until');
+  if(!sel||!f)return;
+  const freq=sel.value;
+  f.style.visibility=freq?'visible':'hidden';
+  const dt=document.getElementById(pre+'Date')?.value||todayStr();
+  if(freq&&u&&!u.value)u.value=defaultRepeatUntil(dt,freq);
+  if(!freq&&u)u.value='';
+}
+// Copy `orig` (already saved on `dt`) onto every matching date up to `until`.
+function generateRepeats(dt,orig,freq,until){
+  if(!freq)return 0;
+  const recurId=orig._recur||('r'+Date.now());
+  orig._recur=recurId;
+  if(!until)until=defaultRepeatUntil(dt,freq);
+  let added=0,guard=0,k=0;
+  const base=dateObj(dt);
+  const d=dateObj(dt);
+  while(guard++<400){
+    k++;
+    if(freq==='month'){
+      // Clamp to month end so Oct 30 + 4 months is Feb 28, not Mar 2
+      const y=base.getFullYear(),m=base.getMonth()+k;
+      const last=new Date(y,m+1,0).getDate();
+      d.setFullYear(y,m,Math.min(base.getDate(),last));
+    }
+    else if(freq==='2wk')d.setDate(d.getDate()+14);
+    else if(freq==='week')d.setDate(d.getDate()+7);
+    else d.setDate(d.getDate()+1);
+    if(freq==='weekday'&&(d.getDay()===0||d.getDay()===6))continue;
+    const ndt=dateStr(d);
+    if(ndt>until)break;
+    const ntl=getTimeline(ndt).slice();
+    if(ntl.some(s=>s._recur===recurId||(s.text===orig.text&&s.t===orig.t)))continue;
+    ntl.push({t:orig.t,end:orig.end,text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_isMeeting:orig._isMeeting,_id:'s'+Date.now()+'_'+added+'_'+Math.floor(Math.random()*9999),_recur:recurId});
+    ntl.sort((a,b)=>parseMin(a.t||'12:00 PM')-parseMin(b.t||'12:00 PM'));
+    setTimeline(ndt,ntl);
+    added++;
+  }
+  return added;
+}
+function repeatLabel(freq){return {day:'daily',weekday:'on weekdays',week:'weekly','2wk':'every 2 weeks',month:'monthly'}[freq]||freq;}
+// Delete flow for a block that is part of a series: ask "just this one" vs "this + future".
+function deleteSlotSmart(dt,sid,after){
+  const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
+  const slot=tl[i];
+  const series=seriesSlotsFrom(dt,slot);
+  const finish=()=>{if(typeof after==='function')after();renderCalendar();if(typeof renderMiniCal==='function')renderMiniCal();};
+  if(series.length<=1){tl.splice(i,1);setTimeline(dt,tl);finish();return;}
+  const old=document.getElementById('wkCtxMenu');if(old)old.remove();
+  const menu=document.createElement('div');
+  menu.id='wkCtxMenu';menu.className='wk-ctx-menu';
+  menu.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:3000;min-width:240px;';
+  menu.innerHTML=`<div class="wk-ctx-title">🔁 "${(slot.text||'').replace(/</g,'&lt;')}" repeats</div>
+    <button class="wk-ctx-btn" id="dsOne"><span class="mi" style="font-size:14px;">event_busy</span> Delete just this one</button>
+    <button class="wk-ctx-btn" id="dsAll" style="color:var(--red);"><span class="mi" style="font-size:14px;">delete_sweep</span> Delete this + ${series.length-1} future</button>
+    <button class="wk-ctx-btn" id="dsCancel" style="color:var(--dim);">Cancel</button>`;
+  document.body.appendChild(menu);
+  const close=()=>{menu.remove();document.removeEventListener('mousedown',dismiss);};
+  const dismiss=(ev)=>{if(!menu.contains(ev.target))close();};
+  setTimeout(()=>document.addEventListener('mousedown',dismiss),0);
+  menu.querySelector('#dsCancel').onclick=close;
+  menu.querySelector('#dsOne').onclick=()=>{close();const t2=getTimeline(dt);const j=_slotIdx(t2,sid);if(j>=0){t2.splice(j,1);setTimeline(dt,t2);}finish();};
+  menu.querySelector('#dsAll').onclick=()=>{
+    close();
+    const byDay={};series.forEach(x=>{(byDay[x.dt]=byDay[x.dt]||new Set()).add(x.slot._id);});
+    Object.keys(byDay).forEach(d2=>setTimeline(d2,getTimeline(d2).filter(s=>!byDay[d2].has(s._id))));
+    const toast=document.getElementById('saveToast');
+    if(toast){toast.innerHTML=`🗑 Removed "${slot.text}" + ${series.length-1} future`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2500);}
+    finish();
+  };
+}
+
 // ===== RECURRING BLOCKS =====
 function openRepeatMenu(dt,sid){
   const menu=document.getElementById('wkCtxMenu');if(!menu)return;
   const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0){menu.remove();return;}
   const slot=tl[i];
-  const opts=[['day','Every day (2 weeks)'],['week','Every week (12 weeks)'],['2wk','Every 2 weeks (16 weeks)'],['month','Every month (6 months)']];
+  const opts=[['day','Every day (4 weeks)'],['weekday','Weekdays Mon–Fri (4 weeks)'],['week','Every week (16 weeks)'],['2wk','Every 2 weeks (16 weeks)'],['month','Every month (6 months)']];
   menu.innerHTML=`<div class="wk-ctx-title">🔁 Repeat "${slot.text}"</div>`+
     opts.map(o=>`<button class="wk-ctx-btn" onclick="document.getElementById('wkCtxMenu').remove();repeatSlot('${dt}','${sid}','${o[0]}');">${o[1]}</button>`).join('')+
     (slot._recur?`<button class="wk-ctx-btn" style="color:var(--red);" onclick="document.getElementById('wkCtxMenu').remove();removeFutureRepeats('${dt}','${sid}');"><span class="mi" style="font-size:14px;">delete</span> Remove this + future repeats</button>`:'');
@@ -1438,28 +1540,11 @@ function openRepeatMenu(dt,sid){
 function repeatSlot(dt,sid,freq){
   const tl=getTimeline(dt);const i=_slotIdx(tl,sid);if(i<0)return;
   const orig=tl[i];
-  const recurId=orig._recur||('r'+Date.now());
-  orig._recur=recurId;
-  const counts={day:14,week:12,'2wk':8,month:6};
-  const n=counts[freq]||12;
-  let added=0;
-  for(let k=1;k<=n;k++){
-    const d=dateObj(dt);
-    if(freq==='month')d.setMonth(d.getMonth()+k);
-    else d.setDate(d.getDate()+k*(freq==='day'?1:freq==='2wk'?14:7));
-    const ndt=dateStr(d);
-    const ntl=getTimeline(ndt).slice();
-    if(ntl.some(s=>s.text===orig.text&&s.t===orig.t))continue;
-    ntl.push({t:orig.t,end:orig.end,text:orig.text,cls:orig.cls,sm:orig.sm,loc:orig.loc||'',_isMeeting:orig._isMeeting,_id:'s'+Date.now()+'_'+k+'_'+Math.floor(Math.random()*9999),_recur:recurId});
-    ntl.sort((a,b)=>parseMin(a.t||'12:00 PM')-parseMin(b.t||'12:00 PM'));
-    setTimeline(ndt,ntl);
-    added++;
-  }
+  const added=generateRepeats(dt,orig,freq,null);
   save();renderCalendar();
   const toast=document.getElementById('saveToast');
   if(toast){
-    const lbl={day:'daily',week:'weekly','2wk':'every 2 weeks',month:'monthly'}[freq]||freq;
-    toast.innerHTML=`🔁 "${orig.text}" now repeats ${lbl} — ${added} added`;
+    toast.innerHTML=`🔁 "${orig.text}" now repeats ${repeatLabel(freq)} — ${added} added`;
     toast.classList.add('show');
     clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2500);
   }
@@ -2130,6 +2215,18 @@ function openDvPopover(e,dt,hr,mins,editIdx){
     if(isEdit){const tl3=getTimeline(dt)||[];const sl2=tl3[_dvPopEditIdx];mtgCb.checked=sl2&&(sl2._isMeeting||isMeetingBlock(sl2))||false;}
     else mtgCb.checked=false;
   }
+  const rp=document.getElementById('dpRepeat');
+  if(rp){
+    rp.value='';const u=document.getElementById('dpUntil');if(u)u.value='';
+    document.getElementById('dpUntilField').style.visibility='hidden';
+    const row=document.getElementById('dpRepeatRow');
+    const sl3=isEdit?(getTimeline(dt)||[])[_dvPopEditIdx]:null;
+    const inSeries=sl3&&seriesKeyOf(sl3);
+    row.style.display=inSeries?'none':'';
+    const lbl=rp.closest('.pop-field').querySelector('label');
+    if(lbl)lbl.textContent=isEdit?'Repeat (adds future copies)':'Repeat';
+    if(delBtn)delBtn.textContent=inSeries?'Delete…':'Delete';
+  }
   pop.classList.add('show');
   setTimeout(()=>document.getElementById('dpTitle').focus(),50);
 }
@@ -2140,12 +2237,12 @@ function closeDvPopover(){
 function dvPopoverDelete(){
   if(!_dvPopDate||_dvPopEditIdx==null)return;
   const tl=getTimeline(_dvPopDate)||[];
-  if(_dvPopEditIdx<tl.length){
-    tl.splice(_dvPopEditIdx,1);
-    setTimeline(_dvPopDate,tl);
-  }
+  const slot=tl[_dvPopEditIdx];
+  const dt=_dvPopDate;
   closeDvPopover();
-  renderCalendar();renderMiniCal();
+  if(!slot)return;
+  if(!slot._id){slot._id='s'+Date.now()+'_'+_dvPopEditIdx;setTimeline(dt,tl);}
+  deleteSlotSmart(dt,slot._id);
 }
 function dvPopoverSave(){
   if(!_dvPopDate)return;
@@ -2195,8 +2292,21 @@ function dvPopoverSave(){
     destTl.splice(idx,0,{t,text,cls:catKey,sm:details,_isMeeting:isMtg,end:endTime,_id:'s'+Date.now()+'_'+Math.floor(Math.random()*9999)});
     setTimeline(newDate,destTl);
   }
+  _applyPopRepeat('dp',newDate,text,t);
   closeDvPopover();
   renderCalendar();renderMiniCal();
+}
+// After a popover save, repeat the just-saved block if the picker asked for it.
+function _applyPopRepeat(pre,dt,text,t){
+  const sel=document.getElementById(pre+'Repeat');if(!sel||!sel.value)return;
+  const until=document.getElementById(pre+'Until')?.value||null;
+  const tl=getTimeline(dt);
+  const orig=tl.find(s=>s.text===text&&s.t===t&&!s._recur)||tl.find(s=>s.text===text&&s.t===t);
+  if(!orig)return;
+  const added=generateRepeats(dt,orig,sel.value,until);
+  save();
+  const toast=document.getElementById('saveToast');
+  if(toast){toast.innerHTML=`🔁 "${text}" repeats ${repeatLabel(sel.value)} — ${added} added`;toast.classList.add('show');clearTimeout(_st);_st=setTimeout(()=>toast.classList.remove('show'),2500);}
 }
 document.addEventListener('click',function(e){
   const pop=document.getElementById('dvPopover');
