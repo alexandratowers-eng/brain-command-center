@@ -605,8 +605,16 @@ window.SyncEngine=(function(){
         <div style="font-size:9px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:4px 10px 6px;">● Synced</div>
         <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.pull();">🔄 Sync now</button>
         <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.copyShareLink();">📋 Copy share link</button>
+        <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();showBuildCheck();">✅ Check version</button>
+        <div id="syncMenuBuild" style="font-size:10px;color:var(--dim);padding:6px 10px 2px;border-top:1px solid var(--border);margin-top:4px;">Build: checking…</div>
         <button class="wk-ctx-btn" onclick="document.getElementById('syncMenu').remove();SyncEngine.showPairingModal();"><span class="mi" style="font-size:13px;vertical-align:-2px;">settings</span> Settings</button>`;
       document.body.appendChild(m);
+      // Keep the menu on screen on narrow phones
+      const mr=m.getBoundingClientRect();if(mr.right>window.innerWidth-8)m.style.left=Math.max(8,window.innerWidth-mr.width-8)+'px';
+      // Show the running build right here (the gear menu is hidden on phones)
+      const bl=document.getElementById('syncMenuBuild');
+      if(bl&&window.caches&&caches.keys)caches.keys().then(ks=>{const b=ks.filter(k=>k.indexOf('bcc-')===0).sort().pop();bl.textContent='Build: '+(b?b.replace('bcc-',''):'not cached yet');}).catch(()=>{bl.textContent='Build: unknown';});
+      else if(bl)bl.textContent='Build: unknown';
       const dismiss=ev=>{if(!m.contains(ev.target)&&ev.target!==el){m.remove();document.removeEventListener('mousedown',dismiss);}};
       setTimeout(()=>document.addEventListener('mousedown',dismiss),10);
     });
