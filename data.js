@@ -613,6 +613,54 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._bremSept27=true;
   }
+  if(!d._bremCohortOct23){
+    // Real Brem dates replace the generic M/W/Th seed:
+    //  Foundations: M/W/Th 5:30-7 PM through Oct 29 (Oct 29 is 6:30-8).
+    //  Cohort 1 (Jan 2027 testers): Mon + Thu 4:00-7:00 PM, Oct 26 -> Dec 3.
+    //  Overlap week Oct 26-29: Mon/Thu are cohort (foundations folds in), Wed 28 is foundations.
+    // Plus: this weekend's full-length, and 8-min "pocket" retrieval sessions on work seams.
+    const DAY=86400000;
+    const keyOf=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+    const COH_START='2026-10-26',COH_END='2026-12-03',FDN_END='2026-10-29';
+    // 1) drop the old generic class/primer blocks from Oct 24 forward (keep anything already done)
+    Object.entries(d.days||{}).forEach(([key,tl])=>{
+      if(key<'2026-10-24')return;
+      d.days[key]=(tl||[]).filter(s=>!((s._brem==='class'||s._brem==='primer')&&!s.done));
+    });
+    const add=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:b._brem+'_'+key},b));
+    };
+    const COHORT_TOPICS={'2026-10-26':'Cohort kickoff','2026-10-29':'Cohort wk 1 (Foundations Bio Systems Pt 2 folds in)'};
+    for(let cur=new Date(2026,9,24,12);cur<=new Date(2026,11,3,12);cur=new Date(cur.getTime()+DAY)){
+      const key=keyOf(cur);const dow=cur.getDay();
+      const inCohort=key>=COH_START&&key<=COH_END&&(dow===1||dow===4);
+      const inFdn=key<=FDN_END&&(dow===1||dow===3||dow===4);
+      if(inCohort){
+        // class eats the 4:00 swim slot -> swim moves to lunch on cohort days
+        (d.days[key]||[]).forEach(s=>{if(s._daily==='reset'&&!s.done){s.t='12:15 PM';s.end='12:55 PM';s.sm='Lunch swim on class days (4 PM is Brem). Even 10 min counts.';}});
+        add(key,{t:'3:15 PM',end:'3:30 PM',text:'📖 15-min primer',sm:'Skim last class notes. Nothing heavier. (Before the 3:30 Brian call on its weeks.)',cls:'mcat',_brem:'primer'});
+        add(key,{t:'4:00 PM',end:'7:00 PM',text:'📚 Brem Cohort 1 class',sm:(COHORT_TOPICS[key]||'Mon + Thu, Oct 26 → Dec 3')+'. Class is the studying. Touch 1 = class.',cls:'mcat',_brem:'class'});
+        if(dow===4&&key<='2026-11-26')add(key,{t:'7:15 PM',end:'8:00 PM',text:'✍️ Post-class + UWorld set',sm:'While it\'s warm. 45 min, then stop.',cls:'mcat',_brem:'post'});
+      }else if(inFdn){
+        const late=key==='2026-10-29';
+        add(key,{t:late?'6:15 PM':'5:15 PM',end:late?'6:30 PM':'5:30 PM',text:'📖 15-min primer',sm:'Prime for class. Nothing heavier.',cls:'mcat',_brem:'primer'});
+        add(key,{t:late?'6:30 PM':'5:30 PM',end:late?'8:00 PM':'7:00 PM',text:'📚 Brem Foundations',sm:key==='2026-10-26'?'Class 16: CARS 6':key==='2026-10-28'?'Class 17: Sociology Foundations':'Class 18: Bio Systems Pt 2 (6:30-8 PM)',cls:'mcat',_brem:'class'});
+      }
+      // pocket sessions on work seams (weekdays): decided the night before, 8 min, retrieval only, log it
+      if(dow>=1&&dow<=5){
+        add(key,{t:'9:35 AM',end:'9:43 AM',text:'🃏 Pocket 1 (8 min)',sm:'After the first call. Cover + recall, never read. Log it in Tracker.',cls:'mcat',_brem:'pk1'});
+        add(key,{t:'11:50 AM',end:'11:58 AM',text:'🃏 Pocket 2 (8 min)',sm:'Lunch seam. Cards only on a short-sleep day.',cls:'mcat',_brem:'pk2'});
+        add(key,{t:'2:50 PM',end:'2:58 PM',text:'🃏 Pocket 3 (8 min)',sm:'Last one. A 4th is work avoidance in a costume.',cls:'mcat',_brem:'pk3'});
+      }
+    }
+    // Full-length practice exam this weekend
+    add('2026-10-24',{t:'8:30 AM',end:'4:00 PM',text:'📝 Full-Length Practice Exam',sm:'Phone off. Real timing, real breaks (10 / 30 / 10). Snacks packed Friday night. Do NOT review today.',cls:'mcat',_brem:'fl'});
+    add('2026-10-25',{t:'10:00 AM',end:'1:00 PM',text:'📝 FL review: wrong + flagged only',sm:'Error log every miss: content gap vs. misread vs. timing. Stop at 1:00 even if unfinished.',cls:'mcat',_brem:'flrev'});
+    // Sat 24 / Sun 25: the Friday "Main set" and Sunday "Keeper" would collide with the FL. Clear them.
+    ['2026-10-24','2026-10-25'].forEach(k=>{d.days[k]=(d.days[k]||[]).filter(s=>!((s._brem==='keeper'||s._brem==='mainset')&&!s.done));});
+    d._bremCohortOct23=true;
+  }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
   (d.tasks||[]).forEach(t=>{
