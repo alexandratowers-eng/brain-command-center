@@ -627,9 +627,12 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
       if(key<'2026-10-24')return;
       d.days[key]=(tl||[]).filter(s=>!((s._brem==='class'||s._brem==='primer')&&!s.done));
     });
+    const dead=new Set((d.deletedSlots||[]).map(x=>String(x.id)));
     const add=(key,b)=>{
       if(!d.days[key])d.days[key]=[];
-      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:b._brem+'_'+key},b));
+      const id=b._brem+'_'+key;
+      if(dead.has(id))return; // you deleted this one before; stay deleted
+      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:id},b));
     };
     const COHORT_TOPICS={'2026-10-26':'Cohort kickoff','2026-10-29':'Cohort wk 1 (Foundations Bio Systems Pt 2 folds in)'};
     for(let cur=new Date(2026,9,24,12);cur<=new Date(2026,11,3,12);cur=new Date(cur.getTime()+DAY)){
@@ -660,6 +663,16 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     // Sat 24 / Sun 25: the Friday "Main set" and Sunday "Keeper" would collide with the FL. Clear them.
     ['2026-10-24','2026-10-25'].forEach(k=>{d.days[k]=(d.days[k]||[]).filter(s=>!((s._brem==='keeper'||s._brem==='mainset')&&!s.done));});
     d._bremCohortOct23=true;
+  }
+  if(!d._bremCohortOct23b){
+    // First pass re-seeded blocks that had been deleted by hand (same _id beat the
+    // tombstone). Remove any seeded Brem block from Oct 24 on that has a tombstone.
+    const dead=new Set((d.deletedSlots||[]).map(x=>String(x.id)));
+    Object.entries(d.days||{}).forEach(([key,tl])=>{
+      if(key<'2026-10-24')return;
+      d.days[key]=(tl||[]).filter(s=>!(s._brem&&!s.done&&dead.has(String(s._id))));
+    });
+    d._bremCohortOct23b=true;
   }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
