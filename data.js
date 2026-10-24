@@ -739,6 +739,7 @@ function undo(){
 }
 function renderAll(){
   _liveSlotIds=_collectSlotIds(D.days);
+  _slotSigs=_snapSlotSigs(_liveSlotIds);
   _liveItemIds=_collectItemIds();
   buildCatSelects();renderMiniCal();renderLegend();renderEnergy();renderSidebarTasks();
   updateDynamicBlockCSS();renderCalendar();renderMcat();renderDistractions();renderTomorrowMode();checkOverdueTasks();
@@ -824,31 +825,48 @@ function _collectSlotIds(days){
   Object.keys(days||{}).forEach(dt=>(days[dt]||[]).forEach(s=>{if(s&&s._id)m.set(String(s._id),s);}));
   return m;
 }
+// Content fingerprint of a block, ignoring sync bookkeeping fields.
+function _slotSig(s){
+  const o={};Object.keys(s).forEach(k=>{if(k!=='_editedAt'&&k!=='_restoredAt')o[k]=s[k];});
+  return JSON.stringify(o,Object.keys(o).sort());
+}
+let _slotSigs=null;
+function _snapSlotSigs(m){const r=new Map();m.forEach((s,id)=>r.set(id,_slotSig(s)));return r;}
+_slotSigs=_snapSlotSigs(_liveSlotIds);
 function reconcileSlotTombstones(){
   const cur=_collectSlotIds(D.days);
   if(_liveSlotIds){
     const now=Date.now();
     if(!Array.isArray(D.deletedSlots))D.deletedSlots=[];
     _liveSlotIds.forEach((_,id)=>{if(!cur.has(id))D.deletedSlots.push({id,at:now});});
-    cur.forEach((s,id)=>{if(!_liveSlotIds.has(id))s._restoredAt=now;});
+    cur.forEach((s,id)=>{
+      if(!_liveSlotIds.has(id))s._restoredAt=now;
+      else if(_slotSigs&&_slotSigs.get(id)!==_slotSig(s))s._editedAt=now; // time/title/done/category changed on this device
+    });
     if(D.deletedSlots.length>800)D.deletedSlots=D.deletedSlots.slice(-500);
   }
   _liveSlotIds=cur;
+  _slotSigs=_snapSlotSigs(cur);
   reconcileItemTombstones();
 }
-// ---- List item tombstones (Parked, Ideas, parking items, MCAT log, ...) ----
+// ---- List item tombstones (Parked, Ideas, parking items, MCAT log, Lists ...) ----
 // Same resurrection bug as calendar blocks, for every top-level array of
-// {id} objects. Tombstones live in D.deletedItems as {k:listKey,id,at}.
+// {id} objects plus the nested items inside D.lists. Tombstones live in
+// D.deletedItems as {k:listKey,id,at}; nested items use k='lists/<listId>'.
 const _ITEM_SKIP=new Set(['tasks','trash','deletedSlots','deletedItems']);
-let _liveItemIds=_collectItemIds();
 function _collectItemIds(){
   const m=new Map();
   Object.keys(D).forEach(k=>{
     if(_ITEM_SKIP.has(k)||k[0]==='_'||!Array.isArray(D[k]))return;
-    D[k].forEach(o=>{if(o&&typeof o==='object'&&o.id!=null)m.set(k+'\u0001'+o.id,o);});
+    D[k].forEach(o=>{
+      if(!o||typeof o!=='object'||o.id==null)return;
+      m.set(k+'\u0001'+o.id,o);
+      if(k==='lists'&&Array.isArray(o.items))o.items.forEach(it=>{if(it&&it.id!=null)m.set('lists/'+o.id+'\u0001'+it.id,it);});
+    });
   });
   return m;
 }
+let _liveItemIds=_collectItemIds();
 function reconcileItemTombstones(){
   const cur=_collectItemIds();
   if(_liveItemIds){
@@ -900,7 +918,9 @@ function restoreTask(idx){
   save();
 }
 function emptyTrash(){
-  D.trash=[];
+  // Keep a bare {id,_trashedAt} tombstone per task; the merge needs it so an
+  // older copy on another device can't bring the task back after emptying.
+  D.trash=(D.trash||[]).map(t=>({id:t.id,_trashedAt:t._trashedAt||Date.now(),_gone:true}));
   save();
 }
 function checkWinForScheduledEvent(text){

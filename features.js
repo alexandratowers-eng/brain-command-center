@@ -2792,6 +2792,8 @@ function dropOverdueTask(id){
   if(!D.backlog)D.backlog=[];
   D.backlog.push({id:Date.now(),text:t.text,cat:t.cat,pri:t.pri,date:t.date,droppedOn:todayStr()});
   D.tasks=D.tasks.filter(x=>x.id!==id);
+  if(!D.trash)D.trash=[];
+  if(!D.trash.some(x=>x.id===id))D.trash.push({id,_trashedAt:Date.now(),_gone:true}); // tombstone so it can't resurrect via sync
   save();checkOverdueTasks();renderCalTasks();renderAllTasks();updateStats();
   if(typeof renderBacklog==='function')renderBacklog();
   if(typeof renderCalRightBacklog==='function')renderCalRightBacklog();
@@ -2891,6 +2893,8 @@ function dropLaterTask(id){
   if(!D.backlog)D.backlog=[];
   D.backlog.push({id:Date.now(),text:t.text,cat:t.cat,pri:t.pri,date:'',droppedOn:todayStr()});
   D.tasks=D.tasks.filter(x=>x.id!==id);
+  if(!D.trash)D.trash=[];
+  if(!D.trash.some(x=>x.id===id))D.trash.push({id,_trashedAt:Date.now(),_gone:true}); // tombstone so it can't resurrect via sync
   save();renderCalTasks();renderAllTasks();updateStats();
   if(typeof renderBacklog==='function')renderBacklog();
   if(typeof renderCalRightStash==='function')renderCalRightStash();

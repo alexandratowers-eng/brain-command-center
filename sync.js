@@ -335,10 +335,36 @@ window.SyncEngine=(function(){
     if(local.days){
       Object.keys(local.days).forEach(dt=>{
         if(!merged.days[dt]){merged.days[dt]=local.days[dt];return;}
-        const remoteIds=new Set((merged.days[dt]||[]).map(s=>s._id).filter(Boolean));
-        (local.days[dt]||[]).forEach(s=>{
-          if(s._id&&!remoteIds.has(s._id))merged.days[dt].push(s);
+        const byId=new Map((merged.days[dt]||[]).map(s=>[String(s._id),s]));
+        const stamp=s=>Math.max(s._editedAt||0,s._restoredAt||0);
+        (local.days[dt]||[]).forEach((s,i)=>{
+          if(!s._id)return;
+          const r=byId.get(String(s._id));
+          if(!r){merged.days[dt].push(s);return;}
+          // Both devices have this block: the most recently edited copy wins,
+          // so a time change / rename / done-tick on one device can't be undone
+          // by the other device's stale copy.
+          if(stamp(s)>stamp(r)){const j=merged.days[dt].indexOf(r);if(j>=0)merged.days[dt][j]=s;}
+          else if(stamp(s)===stamp(r)&&s.done&&!r.done){r.done=true;}
         });
+      });
+    }
+    // A block dragged to another day keeps its _id, so after the union it can
+    // exist on two dates. Keep the most recently edited copy only.
+    {
+      const seen=new Map();const stamp=s=>Math.max(s._editedAt||0,s._restoredAt||0);
+      // Where the cloud copy (remote) puts each block. On a tie the remote's
+      // placement wins, because it is the newer state we are merging into.
+      const remoteDt=new Map();
+      Object.keys(remote.days||{}).forEach(dt=>(remote.days[dt]||[]).forEach(s=>{if(s&&s._id)remoteDt.set(String(s._id),dt);}));
+      Object.keys(merged.days||{}).forEach(dt=>(merged.days[dt]||[]).forEach(s=>{
+        if(!s._id)return;const k=String(s._id);const prev=seen.get(k);
+        if(!prev){seen.set(k,{dt,s});return;}
+        const a=stamp(s),b=stamp(prev.s);
+        if(a>b||(a===b&&remoteDt.get(k)===dt&&prev.dt!==dt))seen.set(k,{dt,s});
+      }));
+      Object.keys(merged.days||{}).forEach(dt=>{
+        merged.days[dt]=(merged.days[dt]||[]).filter(s=>!s._id||seen.get(String(s._id)).dt===dt&&seen.get(String(s._id)).s===s);
       });
     }
     // Calendar block tombstones (D.deletedSlots, written by save() in data.js):
@@ -442,6 +468,10 @@ window.SyncEngine=(function(){
         if(!dead.has(key)||t.at>dead.get(key).at)dead.set(key,{k:t.k,id:String(t.id),at:t.at||0});
       });
       if(dead.size){
+        (Array.isArray(merged.lists)?merged.lists:[]).forEach(L=>{
+          if(!L||!Array.isArray(L.items))return;
+          L.items=L.items.filter(it=>{if(!it||it.id==null)return true;const t=dead.get('lists/'+L.id+'\u0001'+it.id);return !t||(it._restoredAt||0)>t.at;});
+        });
         Object.keys(merged).forEach(k=>{
           if(k==='tasks'||k==='trash'||k==='deletedSlots'||k==='deletedItems'||k[0]==='_'||!Array.isArray(merged[k]))return;
           merged[k]=merged[k].filter(o=>{

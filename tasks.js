@@ -1278,7 +1278,7 @@ function renderCalRightBacklog(){renderCalRightStash();}
 
 function renderCalRightTrash(){
   const el=document.getElementById('calRightTrashList');if(!el)return;
-  const trash=D.trash||[];
+  const trash=(D.trash||[]).filter(t=>!t._gone);
   const badge=document.getElementById('calRightTrashBadge');
   if(badge)badge.textContent=trash.length;
   if(!trash.length){
@@ -1287,7 +1287,7 @@ function renderCalRightTrash(){
   }
   let html='';
   trash.slice().reverse().slice(0,10).forEach((t,vi)=>{
-    const ri=trash.length-1-vi;
+    const ri=(D.trash||[]).indexOf(t);
     const cat=D.cats[t.cat];
     const emoji=cat?cat.emoji:'📋';
     const ago=t._trashedAt?Math.round((Date.now()-t._trashedAt)/60000):0;
