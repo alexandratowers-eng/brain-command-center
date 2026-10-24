@@ -726,6 +726,7 @@ function undo(){
 }
 function renderAll(){
   _liveSlotIds=_collectSlotIds(D.days);
+  _liveItemIds=_collectItemIds();
   buildCatSelects();renderMiniCal();renderLegend();renderEnergy();renderSidebarTasks();
   updateDynamicBlockCSS();renderCalendar();renderMcat();renderDistractions();renderTomorrowMode();checkOverdueTasks();
   if(typeof renderBacklog==='function')renderBacklog();
@@ -820,6 +821,31 @@ function reconcileSlotTombstones(){
     if(D.deletedSlots.length>800)D.deletedSlots=D.deletedSlots.slice(-500);
   }
   _liveSlotIds=cur;
+  reconcileItemTombstones();
+}
+// ---- List item tombstones (Parked, Ideas, parking items, MCAT log, ...) ----
+// Same resurrection bug as calendar blocks, for every top-level array of
+// {id} objects. Tombstones live in D.deletedItems as {k:listKey,id,at}.
+const _ITEM_SKIP=new Set(['tasks','trash','deletedSlots','deletedItems']);
+let _liveItemIds=_collectItemIds();
+function _collectItemIds(){
+  const m=new Map();
+  Object.keys(D).forEach(k=>{
+    if(_ITEM_SKIP.has(k)||k[0]==='_'||!Array.isArray(D[k]))return;
+    D[k].forEach(o=>{if(o&&typeof o==='object'&&o.id!=null)m.set(k+'\u0001'+o.id,o);});
+  });
+  return m;
+}
+function reconcileItemTombstones(){
+  const cur=_collectItemIds();
+  if(_liveItemIds){
+    const now=Date.now();
+    if(!Array.isArray(D.deletedItems))D.deletedItems=[];
+    _liveItemIds.forEach((_,key)=>{if(!cur.has(key)){const i=key.indexOf('\u0001');D.deletedItems.push({k:key.slice(0,i),id:String(key.slice(i+1)),at:now});}});
+    cur.forEach((o,key)=>{if(!_liveItemIds.has(key))o._restoredAt=now;});
+    if(D.deletedItems.length>1500)D.deletedItems=D.deletedItems.slice(-1000);
+  }
+  _liveItemIds=cur;
 }
 function getTimeline(dt){return D.days[dt]||[];}
 function setTimeline(dt,tl){D.days[dt]=tl;save();}

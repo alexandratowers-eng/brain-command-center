@@ -426,13 +426,33 @@ window.SyncEngine=(function(){
     // meetings, journals, scores, pocket, vocab, brain dump, etc.). Before this,
     // unhandled keys silently took the remote side wholesale — that's how one
     // device's lists could vanish after a sync from a staler device.
-    const handled=new Set(['tasks','days','deletedSlots','reflections','parkingItems','trash','nextId','spotRowExpanded','daySpots','daySpotMeta','customSpots']);
+    const handled=new Set(['tasks','days','deletedSlots','deletedItems','reflections','parkingItems','trash','nextId','spotRowExpanded','daySpots','daySpotMeta','customSpots']);
     const preferLocal=new Set(['selectedDate','calView','miniMonth','miniYear']);
     Object.keys(local).forEach(k=>{
       if(handled.has(k)||k[0]==='_')return;
       if(preferLocal.has(k)){merged[k]=local[k];return;}
       merged[k]=_unionVal(local[k],merged[k]);
     });
+    // List item tombstones (D.deletedItems, written by save() in data.js):
+    // drop any item deleted on either device unless it was restored later.
+    {
+      const dead=new Map();
+      [].concat(remote.deletedItems||[],local.deletedItems||[]).forEach(t=>{
+        if(!t||t.id==null||!t.k)return;const key=t.k+'\u0001'+t.id;
+        if(!dead.has(key)||t.at>dead.get(key).at)dead.set(key,{k:t.k,id:String(t.id),at:t.at||0});
+      });
+      if(dead.size){
+        Object.keys(merged).forEach(k=>{
+          if(k==='tasks'||k==='trash'||k==='deletedSlots'||k==='deletedItems'||k[0]==='_'||!Array.isArray(merged[k]))return;
+          merged[k]=merged[k].filter(o=>{
+            if(!o||typeof o!=='object'||o.id==null)return true;
+            const t=dead.get(k+'\u0001'+o.id);
+            return !t||(o._restoredAt||0)>t.at;
+          });
+        });
+      }
+      merged.deletedItems=Array.from(dead.values());
+    }
     return merged;
   }
 
