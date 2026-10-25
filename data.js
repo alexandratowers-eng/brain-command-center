@@ -674,6 +674,36 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     });
     d._bremCohortOct23b=true;
   }
+  if(!d._wkOct25){
+    // Week of Oct 25: finish the diagnostic in sections (review only unlocks once all
+    // 4 are submitted), Eagles Mon, catch-up Foundations recordings (one Vimeo link).
+    const dead=new Set((d.deletedSlots||[]).map(x=>String(x.id)));
+    const add=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      const id=b._brem+'_'+key;
+      if(dead.has(id))return;
+      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:id},b));
+    };
+    const drop=(key,tags)=>{d.days[key]=(d.days[key]||[]).filter(s=>!(tags.includes(s._brem)&&!s.done));};
+    const REC='Vimeo link, 1.5x speed. Passive is fine. Pause + note only what feels new.';
+    add('2026-10-25',{t:'6:30 PM',end:'8:00 PM',text:'📝 Finish Chem/Phys section',sm:'Timed, one sitting. Tired still counts. Then stop: no review tonight.',cls:'mcat',_brem:'fl_cp'});
+    drop('2026-10-26',['class','primer']);
+    add('2026-10-26',{t:'6:00 PM',end:'11:00 PM',text:'🦅 Eagles game',sm:'No MCAT tonight. Kickoff is offered again Thu 29.',cls:'personal',_brem:'eagles'});
+    drop('2026-10-27',['anchor']);
+    add('2026-10-27',{t:'5:30 PM',end:'7:00 PM',text:'📝 CARS section',sm:'Shortest section, best fit for a tired weeknight. Submit and stop.',cls:'mcat',_brem:'fl_cars'});
+    drop('2026-10-30',['mainset']);
+    add('2026-10-30',{t:'1:00 PM',end:'2:00 PM',text:'🎥 Rec: Math Skills for Science',sm:REC,cls:'mcat',_brem:'rec_math'});
+    add('2026-10-30',{t:'2:15 PM',end:'3:15 PM',text:'🎥 Rec: Bio Systems Foundations Pt 1',sm:REC+' Sets up Pt 2 (Thu).',cls:'mcat',_brem:'rec_bio1'});
+    add('2026-10-30',{t:'3:30 PM',end:'4:30 PM',text:'🎥 Rec: Organic Chem Essentials',sm:REC,cls:'mcat',_brem:'rec_orgo'});
+    add('2026-10-31',{t:'9:00 AM',end:'10:35 AM',text:'📝 Bio/Biochem section',sm:'Fresh-brain slot. Real timing.',cls:'mcat',_brem:'fl_bb'});
+    add('2026-10-31',{t:'1:00 PM',end:'2:35 PM',text:'📝 Psych/Soc section',sm:'Long break + lunch first. Too much? Move to Sun AM. ✅ Exam done = review unlocks.',cls:'mcat',_brem:'fl_ps'});
+    drop('2026-11-01',['keeper']);
+    add('2026-11-01',{t:'10:00 AM',end:'11:30 AM',text:'🔍 Chem/Phys review',sm:'Wrong + guessed only. Error log: content gap vs. misread vs. timing. Doubles as Class 1 prep.',cls:'mcat',_brem:'rev_cp'});
+    add('2026-11-01',{t:'12:30 PM',end:'1:30 PM',text:'📖 Physics pre-class work',sm:'Class 1 is Nov 2.',cls:'mcat',_brem:'pre_phys'});
+    add('2026-11-01',{t:'3:00 PM',end:'4:00 PM',text:'🎥 Rec: Psychology Essentials',sm:REC+' After the Psych/Soc section on purpose.',cls:'mcat',_brem:'rec_psych'});
+    add('2026-11-01',{t:'4:15 PM',end:'5:15 PM',text:'🎥 Rec: CARS 4 (optional)',sm:REC+' First thing to cut if the week ran you down.',cls:'mcat',_brem:'rec_cars4'});
+    d._wkOct25=true;
+  }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
   (d.tasks||[]).forEach(t=>{
