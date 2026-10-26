@@ -1,4 +1,4 @@
-const CACHE='bcc-202610251803';
+const CACHE='bcc-202610252121';
 // Must list every script index.html loads, or a first load with no network
 // comes up with those features missing.
 const ASSETS=[
@@ -11,6 +11,7 @@ const ASSETS=[
   './tasks.js',
   './features.js',
   './studyplan-data.js',
+  './classes-data.js',
   './studyplan.js',
   './pocket-data.js',
   './pocket.js',

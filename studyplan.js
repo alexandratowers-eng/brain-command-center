@@ -15,12 +15,13 @@ function renderStudyPlan(){
   const SP=window.STUDY_PLAN;
   if(!SP){ el.innerHTML='<p style="font-size:11px;color:var(--dim);">Study plan data not loaded.</p>'; return; }
 
-  const tabs=[['tracker','Tracker'],['resources','Resources'],['scores','Scores'],['journal','Journal']];
+  const tabs=[['classes','Classes'],['tracker','Tracker'],['resources','Resources'],['scores','Scores'],['journal','Journal']];
   let h='<div class="sp-tabs">'+tabs.map(([k,label])=>
     `<button class="sp-tab${_spTab===k?' active':''}" onclick="setStudyTab('${k}')">${label}</button>`
   ).join('')+'</div><div class="sp-body">';
 
-  if(_spTab==='tracker')h+=spTracker();
+  if(_spTab==='classes')h+=spClasses();
+  else if(_spTab==='tracker')h+=spTracker();
   else if(_spTab==='resources')h+=spResources(SP.resources);
   else if(_spTab==='scores') h+=spScores();
   else if(_spTab==='journal')h+=spJournal();
@@ -89,6 +90,94 @@ function spJournalDel(i){
   if(!confirm('Delete this journal entry?')) return;
   D.mcatJournal.splice(i,1);
   save(); renderStudyPlan();
+}
+
+// ---- Classes (Brem course log; schedule from classes-data.js, status in D.classLog) ----
+// D.classLog[id] = {st:'done'|'missed'|'', rev:bool, pre:bool, post:bool, uw:bool, note:'', logId:number}
+// Marking a class Attended also drops one row into D.mcatLog so the Tracker's weekly hours stay honest.
+let _clCourse=localStorage.getItem('clCourse')||'';
+let _clOnlyOpen=false;
+function clSetCourse(c){_clCourse=c;localStorage.setItem('clCourse',c);renderStudyPlan();}
+function clToggleOpen(){_clOnlyOpen=!_clOnlyOpen;renderStudyPlan();}
+function clEntry(id){if(!D.classLog)D.classLog={};if(!D.classLog[id])D.classLog[id]={st:'',rev:false,pre:false,post:false,uw:false,note:''};return D.classLog[id];}
+function clMinutes(c){const m=/(\d+)(?::(\d+))?\s*[–-]\s*(\d+)(?::(\d+))?/.exec(c.time||'');if(!m)return 90;const a=(+m[1])*60+(+(m[2]||0)),b=(+m[3])*60+(+(m[4]||0));return b>a?b-a:90;}
+function clFmtDate(s){const d=new Date(s+'T12:00:00');return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});}
+function clDefaultCourse(){
+  if(_clCourse&&window.BREM_COURSES[_clCourse])return _clCourse;
+  const t=todayStr();return t<='2026-10-29'?'found':'c1';
+}
+function clSetStatus(id,st){
+  const e=clEntry(id);const c=window.BREM_CLASSES.find(x=>x.id===id);
+  e.st=(e.st===st)?'':st;
+  if(!D.mcatLog)D.mcatLog=[];
+  if(e.st==='done'&&c&&!e.logId){
+    e.logId=Date.now();
+    D.mcatLog.unshift({id:e.logId,date:c.date,subj:c.subj,what:'Brem class: '+c.topic,min:clMinutes(c)});
+  } else if(e.st!=='done'&&e.logId){
+    const i=D.mcatLog.findIndex(r=>r.id===e.logId);if(i>=0)D.mcatLog.splice(i,1);e.logId=0;
+  }
+  save();renderStudyPlan();
+}
+function clToggle(id,key){const e=clEntry(id);e[key]=!e[key];save();renderStudyPlan();}
+function clNote(id){const e=clEntry(id);bccPrompt('Note for this class (what to review, what you missed):',e.note||'',v=>{if(v==null)return;e.note=v;save();renderStudyPlan();});}
+function clMarkPastDone(course){
+  const t=todayStr();let n=0;
+  window.BREM_CLASSES.filter(c=>c.course===course&&c.date<t).forEach(c=>{const e=clEntry(c.id);if(!e.st){e.st='done';if(!e.logId){e.logId=Date.now()+n;if(!D.mcatLog)D.mcatLog=[];D.mcatLog.push({id:e.logId,date:c.date,subj:c.subj,what:'Brem class: '+c.topic,min:clMinutes(c)});}n++;}});
+  if(!n){alert('Every past class already has a status.');return;}
+  save();renderStudyPlan();
+}
+function spClasses(){
+  const ALL=window.BREM_CLASSES||[],CO=window.BREM_COURSES||{};
+  if(!ALL.length)return '<p class="sp-muted">Class schedule not loaded.</p>';
+  if(!D.classLog)D.classLog={};
+  const course=clDefaultCourse();const t=todayStr();
+  const list=ALL.filter(c=>c.course===course);
+  const done=list.filter(c=>(D.classLog[c.id]||{}).st==='done').length;
+  const missed=list.filter(c=>(D.classLog[c.id]||{}).st==='missed').length;
+  const rev=ALL.filter(c=>(D.classLog[c.id]||{}).rev).length;
+  const unmarked=list.filter(c=>c.date<t&&!(D.classLog[c.id]||{}).st).length;
+  const next=ALL.filter(c=>c.date>=t).sort((a,b)=>a.date<b.date?-1:1)[0];
+  const pct=Math.round(done/list.length*100);
+  let h='<p class="sp-note">Tap <b>✓</b> when a class is done. It logs itself to the Tracker. Flag <b>↻</b> for anything to rewatch.</p>';
+  // course switch + progress
+  h+='<div class="cl-head"><div class="cl-courses">'+Object.keys(CO).map(k=>'<button class="sp-chip'+(k===course?' active':'')+'" onclick="clSetCourse(\''+k+'\')">'+CO[k].label+'</button>').join('')+
+     '<button class="sp-chip'+(_clOnlyOpen?' active':'')+'" onclick="clToggleOpen()" title="Only unmarked, missed, or flagged">Open items'+(rev?' · ↻'+rev:'')+'</button></div>'+
+     '<div class="cl-prog"><div class="cl-bar"><i style="width:'+pct+'%"></i></div><span>'+done+' / '+list.length+' attended'+(missed?' · <b class="cl-miss">'+missed+' missed</b>':'')+'</span></div>'+
+     '<div class="sp-muted">'+(CO[course]?CO[course].sub:'')+'</div></div>';
+  if(unmarked>0)h+='<div class="cl-nudge">'+unmarked+' past class'+(unmarked>1?'es have':' has')+' no status yet. <button class="sp-add" style="margin:0 0 0 6px;padding:3px 9px;" onclick="clMarkPastDone(\''+course+'\')">Mark all past as attended</button> <span class="sp-muted">then switch the few you missed.</span></div>';
+  // next up
+  if(next){
+    const e=D.classLog[next.id]||{};const isToday=next.date===t;
+    h+='<div class="cl-next"><div class="cl-next-k">'+(isToday?'TODAY':'NEXT UP')+' · '+clFmtDate(next.date)+' · '+esc(next.time)+' ET</div><div class="cl-next-t"><span class="cl-dot s-'+next.subj+'"></span>'+esc(next.topic)+' <span class="sp-muted">('+(CO[next.course]||{}).label+(typeof next.num==='number'?' · Class '+next.num:'')+')</span></div>';
+    const due=[];if(next.pre)due.push(['pre','Pre-class: '+next.pre]);if(next.post)due.push(['post','Post-class: '+next.post]);if(next.uw)due.push(['uw','UWorld: '+next.uw]);
+    if(due.length)h+='<div class="cl-due">'+due.map(d=>'<label class="cl-chk'+(e[d[0]]?' on':'')+'"><input type="checkbox" '+(e[d[0]]?'checked':'')+' onchange="clToggle(\''+next.id+'\',\''+d[0]+'\')"> '+esc(d[1])+'</label>').join('')+'</div>';
+    else h+='<div class="sp-muted" style="margin-top:4px;">Nothing listed as due before this one.</div>';
+    h+='</div>';
+  }
+  // rows grouped by week
+  let lastWk=null;
+  const rows=list.filter(c=>{if(!_clOnlyOpen)return true;const e=D.classLog[c.id]||{};return e.rev||e.st==='missed'||(c.date<t&&!e.st);});
+  if(!rows.length)h+='<p class="sp-muted" style="padding:8px 0;">Nothing open. 🎉</p>';
+  rows.forEach(c=>{
+    const e=D.classLog[c.id]||{};
+    if(c.wk!==lastWk){lastWk=c.wk;h+='<div class="cl-wk">'+(c.wk==='Pre'?'Pre-course':'Week '+c.wk)+'</div>';}
+    const past=c.date<t,today=c.date===t;
+    const cls='cl-row'+(e.st==='done'?' done':'')+(e.st==='missed'?' missed':'')+(e.rev?' rev':'')+(today?' today':'')+(past&&!e.st?' open':'');
+    h+='<div class="'+cls+'">';
+    h+='<div class="cl-when"><b>'+clFmtDate(c.date)+'</b><span>'+esc(c.time)+'</span></div>';
+    h+='<div class="cl-main"><div class="cl-topic"><span class="cl-dot s-'+c.subj+'"></span>'+(typeof c.num==='number'?'<span class="cl-num">'+c.num+'</span>':'<span class="cl-num">'+esc(String(c.num))+'</span>')+esc(c.topic)+'</div>';
+    const chips=[];if(c.pre)chips.push(['pre','Pre',c.pre]);if(c.post)chips.push(['post','Post',c.post]);if(c.uw)chips.push(['uw','UWorld',c.uw]);
+    if(chips.length||e.note)h+='<div class="cl-chips">'+chips.map(ch=>'<span class="cl-pill'+(e[ch[0]]?' on':'')+'" title="'+esc(ch[2])+'" onclick="clToggle(\''+c.id+'\',\''+ch[0]+'\')">'+(e[ch[0]]?'✓ ':'')+ch[1]+'</span>').join('')+(e.note?'<span class="cl-notetxt" onclick="clNote(\''+c.id+'\')">📝 '+esc(e.note)+'</span>':'')+'</div>';
+    h+='</div>';
+    h+='<div class="cl-acts">'+
+      '<button class="cl-st'+(e.st==='done'?' on-done':'')+'" title="Attended" onclick="clSetStatus(\''+c.id+'\',\'done\')">✓</button>'+
+      '<button class="cl-st'+(e.st==='missed'?' on-miss':'')+'" title="Missed" onclick="clSetStatus(\''+c.id+'\',\'missed\')">✗</button>'+
+      '<button class="cl-st'+(e.rev?' on-rev':'')+'" title="Flag to review / rewatch" onclick="clToggle(\''+c.id+'\',\'rev\')">↻</button>'+
+      '<button class="cl-st" title="Note" onclick="clNote(\''+c.id+'\')">📝</button></div>';
+    h+='</div>';
+  });
+  h+='<p class="sp-muted" style="margin-top:10px;">Schedule source: Brem Fall Foundations 2026 PDF + Cohort 1 full schedule. Subject dot: <span class="cl-dot s-cp"></span>C/P <span class="cl-dot s-cars"></span>CARS <span class="cl-dot s-bb"></span>B/B <span class="cl-dot s-ps"></span>P/S</p>';
+  return h;
 }
 
 // ---- Tracker (personal, localStorage only) ----
