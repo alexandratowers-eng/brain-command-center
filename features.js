@@ -668,44 +668,29 @@ function renderVocabQuizDone(){
 // ===== MCAT =====
 function renderMcat(){
   renderVocab();
-  const el=document.getElementById('mcatSteps');
-  const steps=D.mcatSteps||[];
-  const total=steps.length;
-  const done=steps.filter(s=>s.status==='done').length;
-  const skipped=steps.filter(s=>s.status==='skip').length;
-  const pct=total?Math.round((done/total)*100):0;
-  const r=36,circ=2*Math.PI*r;
-  const offset=circ-(pct/100)*circ;
-  const timeTotal=steps.reduce((a,s)=>{const m=parseInt(s.time)||0;return a+m;},0);
-  const timeDone=steps.filter(s=>s.status==='done').reduce((a,s)=>{const m=parseInt(s.time)||0;return a+m;},0);
-
-  let ringHtml=`<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
-    <svg width="84" height="84" viewBox="0 0 84 84">
-      <circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--border)" stroke-width="6"/>
-      <circle cx="42" cy="42" r="${r}" fill="none" stroke="${pct>=100?'var(--green)':'#818cf8'}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 42 42)" style="transition:stroke-dashoffset .6s ease;"/>
-      <text x="42" y="38" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700">${pct}%</text>
-      <text x="42" y="52" text-anchor="middle" fill="var(--dim)" font-size="8">${done}/${total}</text>
-    </svg>
-    <div>
-      <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">Steps done: <strong style="color:var(--text);">${done}</strong> / ${total}</div>
-      <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">Skipped: ${skipped}</div>
-      <div style="font-size:10px;color:var(--dim);">Time: <strong style="color:var(--text);">${timeDone}</strong> / ${timeTotal} min</div>
-    </div>
-  </div>`;
-
-  let stepsHtml=steps.map((s,i)=>{
-    const isDone=s.status==='done',isSkip=s.status==='skip';
-    return `<div class="mcat-step">
-      <div class="step-n ${isDone?'completed':isSkip?'skipped':''}">${isDone?'✓':isSkip?'→':(i+1)}</div>
-      <div style="flex:1"><div class="step-t ${isDone||isSkip?'done-step':''}">${s.text}</div><div style="font-size:9px;color:var(--dim);">${s.time}</div></div>
-      <div style="display:flex;gap:3px;">${s.status==='todo'?`<button class="step-btn done-btn" onclick="D.mcatSteps[${i}].status='done';save();renderMcat();">done</button><button class="step-btn skip-btn" onclick="D.mcatSteps[${i}].status='skip';save();renderMcat();">skip</button>`:`<button class="step-btn" onclick="D.mcatSteps[${i}].status='todo';save();renderMcat();">undo</button>`}</div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML=ringHtml+stepsHtml;
+  // Study Steps block retired Oct 2026 (D.mcatSteps data kept; markup removed from index.html).
   if(typeof renderStudyPlan==='function') renderStudyPlan();
   if(typeof renderPocket==='function') renderPocket();
   if(typeof renderMcatMath==='function') renderMcatMath();
+  if(typeof mcSecInit==='function') mcSecInit();
+}
+
+// ---- MCAT tab collapsible sections (Quick Math / Vocab / Pocket). Open state persists per section. ----
+function mcSecState(){try{return JSON.parse(localStorage.getItem('bcc_mcSec')||'{}');}catch(e){return {};}}
+function mcSecApply(id,open){
+  const el=document.getElementById('mcSec_'+id);if(!el)return;
+  el.classList.toggle('open',!!open);
+}
+function mcSecToggle(id){
+  const st=mcSecState();
+  const el=document.getElementById('mcSec_'+id);
+  const open=!(el&&el.classList.contains('open'));
+  st[id]=open;localStorage.setItem('bcc_mcSec',JSON.stringify(st));
+  mcSecApply(id,open);
+}
+function mcSecInit(){
+  const st=mcSecState();
+  ['math','vocab','pocket'].forEach(id=>mcSecApply(id,st[id]===true)); // closed by default
 }
 
 // ===== MCAT QUICK MATH DRILLS (no-calculator mental math) =====

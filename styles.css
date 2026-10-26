@@ -2050,3 +2050,16 @@ button,input,select,textarea{font-family:inherit;}
 .cl-st.on-miss{background:var(--red);border-color:var(--red);color:#fff;}
 .cl-st.on-rev{background:var(--purple);border-color:var(--purple);color:#fff;}
 @media(max-width:560px){.cl-row{grid-template-columns:1fr auto;}.cl-when{grid-column:1/-1;flex-direction:row;gap:6px;}}
+
+/* ---- MCAT tab collapsible sections ---- */
+.mc-sec{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.mc-sec-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;transition:background .15s;}
+.mc-sec-head:hover{background:rgba(96,165,250,.05);}
+.mc-sec-title{font-size:13px;font-weight:700;margin:0;display:flex;align-items:center;gap:7px;}
+.mc-sec-title .mi{font-size:17px;color:var(--dim);}
+.mc-sec-chev{font-size:20px;color:var(--dim);transition:transform .2s;}
+.mc-sec.open .mc-sec-chev{transform:rotate(180deg);}
+.mc-sec-body{display:none;padding:4px 14px 14px;border-top:1px solid var(--border);}
+.mc-sec.open .mc-sec-body{display:block;}
+.mc-sec .pocket{margin-bottom:0;}
+.mc-sec .pk-title{display:none;}
