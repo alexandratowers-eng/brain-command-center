@@ -742,6 +742,18 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }
     d._bremMonThu4to7=true;
   }
+  if(!d._bremZoomWipe){
+    // Oct 27: Alex decided Brem material (Zoom room, meeting ID, slides folder) stays out
+    // of BCC. Clear the saved Class Links and strip the stamped Zoom URL / ID off every
+    // class block. Keep files in OneDrive/Notability instead.
+    if(d.classLinks){d.classLinks.zoom='';d.classLinks.zoomId='';d.classLinks.slidesFolder='';d.classLinks.lastDeck='';}
+    Object.values(d.days||{}).forEach(tl=>(tl||[]).forEach(s=>{
+      if(!s||typeof s!=='object')return;
+      if(s.loc&&/zoom\.(us|com)/i.test(s.loc))s.loc='';
+      if(s._brem==='class'&&s.sm&&/\u00b7 ID /.test(s.sm))s.sm=s.sm.replace(/\s*\u00b7 ID .*$/,'');
+    }));
+    d._bremZoomWipe=true;
+  }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
   (d.tasks||[]).forEach(t=>{

@@ -296,7 +296,6 @@ function renderWeekView(){
     </div>
     <button class="ics-btn" onclick="openWeekDump()" title="List everything for the week, get it planned into blocks" style="border-color:rgba(139,92,246,.4);">🗒️ Week Dump</button>
     <button class="ics-btn" onclick="openIcalModal()" title="Sync from Apple Calendar">🍎 Sync</button>
-    <button class="ics-btn" onclick="openClassLinksModal()" title="Zoom link + slides → Notability" style="border-color:rgba(59,130,246,.4);">🎓 Class</button>
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
@@ -1031,7 +1030,6 @@ function renderDayView(){
       ${!isToday?`<button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
     <button class="ics-btn" onclick="openIcalModal()" title="Sync from Apple Calendar">🍎 Sync</button>
-    <button class="ics-btn" onclick="openClassLinksModal()" title="Zoom link + slides → Notability" style="border-color:rgba(59,130,246,.4);">🎓 Class</button>
     <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
