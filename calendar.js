@@ -1044,6 +1044,48 @@ function renderDayView(){
   }
 
 
+  // ===== Quick hits strip: every short block (<=20 min, not a meeting) lives here, off the grid =====
+  // One row of chips, each with its own check circle. Done chips fade. The grid keeps only real blocks.
+  const qhIdxs=new Set();
+  if(!D._qhOnGrid)D._qhOnGrid={};
+  if(!D._qhOnGrid[dt]){
+    tl.forEach((slot,i)=>{
+      if(!slot||slot._isMeeting||isMeetingBlock(slot)||slot._locOnly)return;
+      const sM=parseMin(slot.t);
+      const eM=slot.end?parseMin(slot.end):sM+60;
+      const dur=eM-sM;
+      if(slot._reminder===true||slot.cls==='reminder'||(dur>0&&dur<=20))qhIdxs.add(i);
+    });
+  }
+  if(qhIdxs.size){
+    const order=[...qhIdxs].sort((a,b)=>parseMin(tl[a].t)-parseMin(tl[b].t));
+    const doneN=order.filter(i=>tl[i].done).length;
+    let chips='';
+    order.forEach(i=>{
+      const s=tl[i];
+      if(!s._id)s._id='s'+Date.now()+'_'+i;
+      const col=getBlockColor(s);
+      const txt=(s.text||'').replace(/^⏰\s*/,'').replace(/</g,'&lt;');
+      const past=isToday&&!s.done&&parseMin(s.t)<nowMin-30;
+      chips+=`<div class="qh-chip${s.done?' done':''}${past?' past':''}" style="--qh:${col};" data-sid="${s._id}" data-dt="${dt}" data-idx="${i}" title="${txt.replace(/"/g,'&quot;')} · ${s.t}${s.sm?' · '+String(s.sm).replace(/"/g,'&quot;'):''}" oncontextmenu="event.preventDefault();event.stopPropagation();openDvBlockMenu(event,'${dt}',${i});">
+        <button class="qh-check" onclick="event.stopPropagation();togSlotDone('${dt}','${s._id}')" title="${s.done?'Mark not done':'Mark done'}">${s.done?'✓':''}</button>
+        <span class="qh-time">${s.t.replace(/\s?[AP]M/i,m=>m.trim().toLowerCase())}</span>
+        <span class="qh-text">${txt}</span>
+      </div>`;
+    });
+    html+=`<div class="qh-strip">
+      <div class="qh-head">
+        <span class="mi" style="font-size:14px;">bolt</span>
+        <span class="qh-title">Quick hits</span>
+        <span class="qh-count">${doneN}/${order.length}</span>
+        <button class="qh-toggle" onclick="D._qhOnGrid['${dt}']=true;save();renderCalendar();" title="Put these back on the timeline">show on grid</button>
+      </div>
+      <div class="qh-row">${chips}</div>
+    </div>`;
+  }else if(D._qhOnGrid[dt]){
+    html+=`<div class="qh-strip qh-strip-mini"><button class="qh-toggle" onclick="delete D._qhOnGrid['${dt}'];save();renderCalendar();"><span class="mi" style="font-size:13px;">bolt</span> collapse quick hits</button></div>`;
+  }
+
   // Outlook-style hour grid — always visible, blocks overlay
   const totalH=(endHr-startHr)*ROW_H;
   html+=`<div class="dv-grid-wrap" data-dt="${dt}" data-starthr="${startHr}" data-rowh="${ROW_H}" style="position:relative;min-height:${totalH}px;border:1px solid var(--border);border-radius:10px;overflow:visible;background:var(--card);">`;
@@ -1073,6 +1115,7 @@ function renderDayView(){
   // Day-view reminder collapsing — bundle reminders that share a 2-hour window
   const dvStackable=[];
   tl.forEach((slot,i)=>{
+    if(qhIdxs.has(i))return; // already in the quick-hits strip
     if(!slot||slot._isMeeting||isMeetingBlock(slot)||slot._locOnly)return;
     const sM=parseMin(slot.t);
     const eM=slot.end?parseMin(slot.end):sM+60;
@@ -1117,7 +1160,7 @@ function renderDayView(){
   // Render blocks on top of the grid with overlap detection
   const overlaps=computeOverlaps(tl);
   tl.forEach((s,i)=>{
-    if(dvStackedIdxs.has(i))return; // bundled into the reminder pill
+    if(dvStackedIdxs.has(i)||qhIdxs.has(i))return; // bundled into the reminder pill / quick-hits strip
     if(!s._id)s._id='s'+Date.now()+'_'+i;
     const sid=s._id;
     const startM=parseMin(s.t);

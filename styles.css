@@ -2064,3 +2064,27 @@ button,input,select,textarea{font-family:inherit;}
 .mc-sec.open .mc-sec-body{display:block;}
 .mc-sec .pocket{margin-bottom:0;}
 .mc-sec .pk-title{display:none;}
+
+/* ===== Day view: Quick hits strip (short blocks live here, off the grid) ===== */
+.qh-strip{margin:0 0 10px;padding:8px 10px 9px;background:var(--card);border:1px solid var(--border);border-radius:10px;}
+.qh-strip-mini{padding:4px 8px;display:flex;justify-content:flex-end;background:none;border:none;margin-bottom:4px;}
+.qh-head{display:flex;align-items:center;gap:6px;margin-bottom:7px;color:var(--dim);font-size:10px;letter-spacing:.04em;text-transform:uppercase;}
+.qh-title{font-weight:700;}
+.qh-count{font-variant-numeric:tabular-nums;opacity:.8;}
+.qh-toggle{margin-left:auto;background:none;border:1px solid transparent;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;cursor:pointer;padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:3px;}
+.qh-toggle:hover{border-color:var(--border);color:var(--text);}
+.qh-row{display:flex;flex-wrap:wrap;gap:6px;}
+.qh-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;border-radius:999px;font-size:11px;line-height:1.2;
+  background:color-mix(in srgb,var(--qh) 14%,transparent);border:1px solid color-mix(in srgb,var(--qh) 45%,transparent);color:var(--text);
+  transition:opacity .35s ease,background .35s ease,border-color .35s ease,transform .15s ease;max-width:100%;cursor:default;}
+.qh-chip:hover{transform:translateY(-1px);}
+.qh-chip .qh-check{width:15px;height:15px;min-width:15px;border-radius:50%;border:2px solid var(--qh);background:none;color:#fff;font-size:8px;line-height:1;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .25s,transform .15s;}
+.qh-chip .qh-check:hover{transform:scale(1.12);}
+.qh-chip .qh-time{font-size:9.5px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.qh-chip .qh-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;font-weight:600;}
+.qh-chip.past{border-style:dashed;}
+.qh-chip.done{opacity:.38;background:color-mix(in srgb,var(--qh) 5%,transparent);border-color:color-mix(in srgb,var(--qh) 20%,transparent);}
+.qh-chip.done .qh-check{background:var(--qh);border-color:var(--qh);}
+.qh-chip.done .qh-text{text-decoration:line-through;font-weight:500;}
+.qh-chip.done:hover{opacity:.6;}
+@media(max-width:900px){.qh-chip .qh-text{max-width:150px;}.qh-strip{padding:7px 8px;}}
