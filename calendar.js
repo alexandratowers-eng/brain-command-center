@@ -2747,26 +2747,19 @@ function renderMonthView(){
 }
 
 function renderMonthDots(dt){
+  // Simplified month view (Oct 2026): one colored dot per block, no text, no inline buttons.
+  // Hover for the list; click the day to open it. Done blocks fade.
   const tl=getTimeline(dt);
-  const mtgNotes=(D.meetings||[]).filter(m=>m.date===dt);
-  if(!tl.length&&!mtgNotes.length)return '';
-  const blocks=tl.slice(0,4).map((s,i)=>{
-    if(!s._id){s._id='s'+Date.now()+'_'+i+'_'+Math.floor(Math.random()*9999);}
-    const sid=s._id;
-    const cat=D.cats[s.cls];
-    const color=cat?cat.color:'var(--dim)';
-    const startM=parseMin(s.t);
-    const nextM=i<tl.length-1?parseMin(tl[i+1].t):startM+60;
-    const endM=s.end?parseMin(s.end):Math.min(startM+60,nextM);
-    const dur=endM-startM;
-    const isLong=dur>=60;
-    const pad=isLong?'3px 4px':'1px 3px';
-    const fs=isLong?9:8;
-    const hasNote=mtgNotes.some(m=>m.title&&s.text&&(m.title.toLowerCase().includes(s.text.toLowerCase().slice(0,10))||s.text.toLowerCase().includes(m.title.toLowerCase().slice(0,10))));
-    const doneBtn=`<span class="mo-done-btn" onclick="event.stopPropagation();togSlotDone('${dt}','${sid}');" title="${s.done?'Mark not done':'Mark done'}" style="display:inline-flex;align-items:center;justify-content:center;width:6px;height:6px;min-width:6px;border-radius:50%;border:1px solid ${color};background:${s.done?color:'none'};cursor:pointer;font-size:4px;color:${s.done?'#fff':color};margin-right:2px;flex-shrink:0;vertical-align:middle;">${s.done?'✓':''}</span>`;
-    return `<div class="mo-block${s.done?' done':''}" data-dt="${dt}" data-idx="${i}" onclick="event.stopPropagation();toggleBlockSelect(this)" oncontextmenu="event.preventDefault();event.stopPropagation();openWkBlockMenu(event,'${dt}',${i});" style="background:${color}22;color:${color};border-left:2px solid ${color};cursor:pointer;display:flex;align-items:center;padding:${pad};font-size:${fs}px;${s.done?'opacity:.5;text-decoration:line-through;':''}">${doneBtn}${hasNote?'<span class="mi" style="font-size:9px;vertical-align:middle;">description</span> ':''}${s.text}</div>`;
+  if(!tl.length)return '';
+  const MAX=8;
+  const dots=tl.slice(0,MAX).map(s=>{
+    const color=getBlockColor(s);
+    return `<span class="mo-dot${s.done?' done':''}" style="background:${color};"></span>`;
   }).join('');
-  return `<div class="mo-blocks">${blocks}</div>`;
+  const more=tl.length>MAX?`<span class="mo-dot-more">+${tl.length-MAX}</span>`:'';
+  const tip=tl.map(s=>(s.done?'✓ ':'')+(s.t||'')+' '+(s.text||'')).join('\n').replace(/"/g,'&quot;');
+  const open=tl.filter(s=>!s.done).length;
+  return `<div class="mo-dots" title="${tip}">${dots}${more}</div>${open?`<div class="mo-count">${open}</div>`:''}`;
 }
 
 function openMonthPopover(e,dt){

@@ -22,18 +22,17 @@ window.BREM_CLASSES=[
   {id:'f16',course:'found',wk:6,num:16,date:'2026-10-26',time:'5:30–7 PM',topic:'CARS 6',subj:'cars',pre:'CARS 6',post:'Cell Reproduction + Evolution Foundations',uw:'Cell Reproduction + Evolution Foundations Practice Set'},
   {id:'f17',course:'found',wk:6,num:17,date:'2026-10-28',time:'5:30–7 PM',topic:'Sociology Foundations',subj:'ps',pre:'Sociology Foundations',post:'CARS 6',uw:'CARS 6 Practice Set'},
   {id:'f18',course:'found',wk:6,num:18,date:'2026-10-29',time:'6:30–8 PM',topic:'Biological Systems Foundations Part 2',subj:'bb',pre:'Biological Systems Foundations Part 2',post:'Sociology Foundations',uw:'Sociology Foundations Practice Set'},
-  // ---- Cohort 1 main course (Oct 26 – Dec 10) ----
-  {id:'c0', course:'c1',wk:1,num:'Welcome',date:'2026-10-27',time:'5:00–6:30 PM',topic:'Welcome Session',subj:'other',pre:'',post:'',uw:''},
-  {id:'c1', course:'c1',wk:1,num:'Kickoff',date:'2026-10-29',time:'5:00–6:30 PM',topic:'Kickoff Session',subj:'other',pre:'',post:'',uw:''},
-  {id:'c2', course:'c1',wk:2,num:1, date:'2026-11-03',time:'5–8 PM',topic:'Physics and Building Study Habits',subj:'cp',pre:'',post:'',uw:''},
-  {id:'c3', course:'c1',wk:2,num:2, date:'2026-11-05',time:'5–8 PM',topic:'CARS Skills, MCAT Timing, and Mental Fitness Training Level 1',subj:'cars',pre:'',post:'',uw:''},
-  {id:'c4', course:'c1',wk:3,num:3, date:'2026-11-10',time:'5–8 PM',topic:'Organic Chemistry and Research Techniques Part 1',subj:'cp',pre:'',post:'',uw:''},
-  {id:'c5', course:'c1',wk:3,num:4, date:'2026-11-12',time:'5–8 PM',topic:'Biochemistry and Research Techniques Part 2',subj:'bb',pre:'',post:'',uw:''},
-  {id:'c6', course:'c1',wk:4,num:5, date:'2026-11-17',time:'5–8 PM',topic:'General Chemistry and Math Skills',subj:'cp',pre:'',post:'',uw:''},
-  {id:'c7', course:'c1',wk:4,num:6, date:'2026-11-19',time:'5–8 PM',topic:'Psych/Soc and Mental Fitness Training Level 2',subj:'ps',pre:'',post:'',uw:''},
-  {id:'c8', course:'c1',wk:6,num:7, date:'2026-12-01',time:'5–8 PM',topic:'Biology and Advanced CARS Skills',subj:'bb',pre:'',post:'',uw:''},
-  {id:'c9', course:'c1',wk:6,num:8, date:'2026-12-03',time:'5–8 PM',topic:'Science Passage Strategies and Test Day Game Plan',subj:'other',pre:'',post:'',uw:''},
-  {id:'c10',course:'c1',wk:7,num:9, date:'2026-12-08',time:'5–8 PM',topic:'Challenging Science Topics and Mental Fitness Training Level 3',subj:'cp',pre:'',post:'',uw:''},
-  {id:'c11',course:'c1',wk:7,num:10,date:'2026-12-10',time:'5–8 PM',topic:'Final Topics, CARS Active Practice, and Preparing for Test Day',subj:'cars',pre:'',post:'',uw:''}
+  // ---- Cohort 1 (Mon + Thu 4–7 PM, Oct 29 – Dec 10; confirmed by Alex Oct 27) ----
+  {id:'c0', course:'c1',wk:1,num:'Kickoff',date:'2026-10-29',time:'4–7 PM',topic:'Kickoff Session',subj:'other',pre:'',post:'',uw:''},
+  {id:'c1', course:'c1',wk:2,num:1,date:'2026-11-02',time:'4–7 PM',topic:'Physics and Building Study Habits',subj:'cp',pre:'',post:'',uw:''},
+  {id:'c2', course:'c1',wk:2,num:2,date:'2026-11-05',time:'4–7 PM',topic:'CARS Skills, MCAT Timing, and Mental Fitness Training Level 1',subj:'cars',pre:'',post:'',uw:''},
+  {id:'c3', course:'c1',wk:3,num:3,date:'2026-11-09',time:'4–7 PM',topic:'Organic Chemistry and Research Techniques Part 1',subj:'cp',pre:'',post:'',uw:''},
+  {id:'c4', course:'c1',wk:3,num:4,date:'2026-11-12',time:'4–7 PM',topic:'Biochemistry and Research Techniques Part 2',subj:'bb',pre:'',post:'',uw:''},
+  {id:'c5', course:'c1',wk:4,num:5,date:'2026-11-16',time:'4–7 PM',topic:'General Chemistry and Math Skills',subj:'cp',pre:'',post:'',uw:''},
+  {id:'c6', course:'c1',wk:4,num:6,date:'2026-11-19',time:'4–7 PM',topic:'Psych/Soc and Mental Fitness Training Level 2',subj:'ps',pre:'',post:'',uw:''},
+  {id:'c7', course:'c1',wk:6,num:7,date:'2026-11-30',time:'4–7 PM',topic:'Biology and Advanced CARS Skills',subj:'bb',pre:'',post:'',uw:''},
+  {id:'c8', course:'c1',wk:6,num:8,date:'2026-12-03',time:'4–7 PM',topic:'Science Passage Strategies and Test Day Game Plan',subj:'other',pre:'',post:'',uw:''},
+  {id:'c9', course:'c1',wk:7,num:9,date:'2026-12-07',time:'4–7 PM',topic:'Challenging Science Topics and Mental Fitness Training Level 3',subj:'cp',pre:'',post:'',uw:''},
+  {id:'c10', course:'c1',wk:7,num:10,date:'2026-12-10',time:'4–7 PM',topic:'Final Topics, CARS Active Practice, and Preparing for Test Day',subj:'cars',pre:'',post:'',uw:''},
 ];
-window.BREM_COURSES={found:{label:'Foundations',sub:'Sep 17 – Oct 29 · Mon/Wed/Thu 5:30–7 PM ET'},c1:{label:'Cohort 1',sub:'Oct 27 – Dec 10 · Tue/Thu 5–8 PM ET (Welcome + Kickoff 5–6:30)'}};
+window.BREM_COURSES={found:{label:'Foundations',sub:'Sep 17 – Oct 29 · Mon/Wed/Thu 5:30–7 PM ET'},c1:{label:'Cohort 1',sub:'Oct 29 – Dec 10 · Mon/Thu 4–7 PM ET'}};

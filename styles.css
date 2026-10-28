@@ -544,18 +544,19 @@ button,input,select,textarea{font-family:inherit;}
 /* ====== MONTH VIEW ====== */
 .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;}
 .mo-hdr{background:var(--bg2);padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;}
-.mo-cell{background:var(--card);padding:6px;min-height:80px;cursor:pointer;transition:background .15s;position:relative;}
+.mo-cell{background:var(--card);padding:7px 8px;min-height:64px;cursor:pointer;transition:background .15s;position:relative;display:flex;flex-direction:column;}
 .mo-cell:hover{background:var(--bg2);}
 .mo-cell.today{background:rgba(96,165,250,.06);}
 .mo-cell.selected{background:rgba(96,165,250,.1);}
 .mo-cell.other{opacity:.3;}
-.mo-cell .mo-num{font-size:11px;font-weight:600;margin-bottom:4px;}
+.mo-cell .mo-num{font-size:11px;font-weight:600;margin-bottom:6px;color:var(--dim);}
 .mo-cell.today .mo-num{color:var(--blue);font-weight:700;}
-.mo-cell .mo-blocks{display:flex;flex-direction:column;gap:1px;}
-.mo-cell .mo-block{font-size:8px;padding:1px 3px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.mo-done-btn{transition:opacity .15s,transform .15s;opacity:.6;}
-.mo-block:hover .mo-done-btn{opacity:1!important;}
-.mo-done-btn:hover{transform:scale(1.3);}
+.mo-cell.today .mo-num::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--blue);margin-left:5px;vertical-align:middle;}
+.mo-dots{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+.mo-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;}
+.mo-dot.done{opacity:.3;}
+.mo-dot-more{font-size:8px;color:var(--dim);line-height:1;}
+.mo-count{margin-top:auto;align-self:flex-end;font-size:9px;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;}
 
 /* TASKS PANEL */
 .task-item{display:flex;align-items:center;gap:6px;padding:4px 6px;margin-bottom:2px;border-radius:6px;background:rgba(255,255,255,.02);transition:all .15s;position:relative;min-height:0;}

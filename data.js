@@ -704,6 +704,27 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     add('2026-11-01',{t:'4:15 PM',end:'5:15 PM',text:'🎥 Rec: CARS 4 (optional)',sm:REC+' First thing to cut if the week ran you down.',cls:'mcat',_brem:'rec_cars4'});
     d._wkOct25=true;
   }
+  if(!d._bremMonThu4to7){
+    // Oct 27: Alex confirmed Cohort 1 meets Mon + Thu 4:00-7:00 PM. Full steam ahead:
+    // make sure every Mon/Thu from Oct 29 through Dec 10 has the class block, even if an
+    // earlier seed's copy was deleted (explicit re-add beats the old tombstone; sync stamps
+    // _restoredAt on load). Done copies are left alone.
+    if(!d.days)d.days={};
+    const DAY=86400000;
+    const keyOf=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+    for(let cur=new Date(2026,9,29,12);cur<=new Date(2026,11,10,12);cur=new Date(cur.getTime()+DAY)){
+      const dow=cur.getDay();if(dow!==1&&dow!==4)continue;
+      const key=keyOf(cur);
+      if(!d.days[key])d.days[key]=[];
+      const tl=d.days[key];
+      const have=tl.find(s=>s._brem==='class');
+      if(have){ if(!have.done){have.t='4:00 PM';have.end='7:00 PM';} }
+      else tl.push({t:'4:00 PM',end:'7:00 PM',text:'📚 Brem Cohort 1 class',sm:'Mon + Thu 4–7 PM through Dec 10. Class is the studying. Touch 1 = class.',cls:'mcat',loc:'',_brem:'class',_id:'class_'+key,_restoredAt:Date.now()});
+      // class eats the 4 PM swim slot on class days
+      tl.forEach(s=>{if(s._daily==='reset'&&!s.done&&parseMin(s.t)>=15*60&&parseMin(s.t)<19*60){s.t='12:15 PM';s.end='12:55 PM';s.sm='Lunch swim on class days (4 PM is Brem). Even 10 min counts.';}});
+    }
+    d._bremMonThu4to7=true;
+  }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
   (d.tasks||[]).forEach(t=>{
