@@ -834,6 +834,8 @@ function renderAll(){
   if(typeof renderRemindLaterPending==='function')renderRemindLaterPending();
   if(typeof autoParkingReview==='function')autoParkingReview();
   if(typeof renderDailyAnchor==='function')renderDailyAnchor();
+  if(typeof renderParked==='function')renderParked();
+  if(typeof renderIdeas==='function')renderIdeas();
   document.getElementById('brainDump').value=D.brainDump||'';
   updateStats();updateTimerDisp();initMeetingNotes();
   if(D.logoIcon)document.getElementById('logoIcon').textContent=D.logoIcon;
