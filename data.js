@@ -674,6 +674,23 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     });
     d._bremCohortOct23b=true;
   }
+  if(!d._pocketOnePerDayOct27){
+    // Three daily 8-min "Pocket" card slots cluttered the week and read as misses.
+    // Keep ONE per weekday at the lunch seam, renamed so it is obvious what it is.
+    // Done ones stay as history; only unfinished pk1/pk3 go, from today on.
+    const today=new Date();const tk=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    Object.entries(d.days||{}).forEach(([key,tl])=>{
+      if(key<tk)return;
+      d.days[key]=(tl||[]).filter(s=>!((s._brem==='pk1'||s._brem==='pk3')&&!s.done));
+      d.days[key].forEach(s=>{
+        if(s._brem==='pk2'&&!s.done){
+          s.text='🃏 8-min flashcards';
+          s.sm='Lunch seam. Cover + recall, never read. Skip it on a short-sleep day, no guilt. Log in Tracker.';
+        }
+      });
+    });
+    d._pocketOnePerDayOct27=true;
+  }
   if(!d._wkOct25){
     // Week of Oct 25: finish the diagnostic in sections (review only unlocks once all
     // 4 are submitted), Eagles Mon, catch-up Foundations recordings (one Vimeo link).
