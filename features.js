@@ -675,7 +675,7 @@ function renderMcat(){
   if(typeof mcSecInit==='function') mcSecInit();
 }
 
-// ---- MCAT tab collapsible sections (Quick Math / Vocab / Pocket). Open state persists per section. ----
+// ---- MCAT tab collapsible sections (Quick Math / Vocab / Quick Reference, formerly Pocket). Open state persists per section. ----
 function mcSecState(){try{return JSON.parse(localStorage.getItem('bcc_mcSec')||'{}');}catch(e){return {};}}
 function mcSecApply(id,open){
   const el=document.getElementById('mcSec_'+id);if(!el)return;

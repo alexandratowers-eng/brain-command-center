@@ -52,7 +52,7 @@ function renderPocket(){
   const tabs=[['sheets','menu_book','Sheets'],['drill','bolt','Drill'],['terms','edit_note','My Terms']];
   root.innerHTML=`
     <div class="pk-head">
-      <div class="pk-title"><span class="mi">bookmark</span> Pocket</div>
+      <div class="pk-title"><span class="mi">bookmark</span> Quick Reference</div>
       <div class="pk-tabs">
         ${tabs.map(([m,i,l])=>`<button class="pk-tab${p.mode===m?' on':''}" onclick="pocketMode('${m}')"><span class="mi">${i}</span>${l}</button>`).join('')}
       </div>
