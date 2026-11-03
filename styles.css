@@ -2088,3 +2088,9 @@ button,input,select,textarea{font-family:inherit;}
 .qh-chip.done .qh-text{text-decoration:line-through;font-weight:500;}
 .qh-chip.done:hover{opacity:.6;}
 @media(max-width:900px){.qh-chip .qh-text{max-width:150px;}.qh-strip{padding:7px 8px;}}
+
+/* ===== Hidden cards (declutter) ===== */
+.s-card.card-hidden{display:none !important;}
+.s-card .s-hide{float:right;background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:3px 6px;border-radius:6px;opacity:0;transition:opacity .15s;}
+.s-card .s-title:hover .s-hide{opacity:.7;}
+.s-card .s-hide:hover{opacity:1;color:var(--red);}

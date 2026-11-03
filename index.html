@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#f3f1ec">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png?v=202611022245">
+<link rel="apple-touch-icon" href="icon-192.png?v=202611022320">
 <title>Brain Command Center</title>
 <script>
 (function(){
@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=202611022245">
-<script src="sync-config.js?v=202611022245" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=202611022320">
+<script src="sync-config.js?v=202611022320" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -69,11 +69,13 @@ if('serviceWorker' in navigator){
         </div>
         <button id="syncStatusBtn" class="tb-icon-btn" data-state="disabled" title="Sync status"><span class="mi">cloud</span></button>
         <button id="notifToggleBtn" class="tb-icon-btn" onclick="showNotifSetup()" title="Click to enable event reminders"><span class="mi">notifications</span></button>
-        <button id="breakBtn" class="tb-icon-btn" onclick="openBreaks()" title="Take a break"><span class="mi" style="color:var(--green);">self_improvement</span></button>
-        <button id="themeBtn" class="tb-icon-btn" onclick="toggleTheme()" title="Toggle theme"><span class="mi">light_mode</span></button>
         <div class="topbar-dropdown" id="dataDropdown">
           <button class="tb-icon-btn" onclick="toggleDataMenu()" title="Data management"><span class="mi">settings</span></button>
           <div class="topbar-dropdown-menu" id="dataMenu">
+            <button onclick="openBreaks();toggleDataMenu();">🧘 Take a break</button>
+            <button id="themeBtn" onclick="toggleTheme();"><span class="mi" style="font-size:14px;vertical-align:-2px;">light_mode</span> Day / night mode</button>
+            <button id="hiddenCardsMenuItem" onclick="showHiddenCardsMenu();toggleDataMenu();">👁 Show hidden cards</button>
+            <div style="height:1px;background:var(--border);margin:4px 0;"></div>
             <button onclick="exportData();toggleDataMenu();">⬇ Download Backup</button>
             <button onclick="importData();toggleDataMenu();">⬆ Restore from File</button>
             <button onclick="importIcs();toggleDataMenu();">📅 Import calendar .ics (Apple/Outlook)</button>
@@ -827,22 +829,22 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=202611022245"></script>
-<script src="core.js?v=202611022245"></script>
-<script src="calendar.js?v=202611022245"></script>
-<script src="tasks.js?v=202611022245"></script>
-<script src="features.js?v=202611022245"></script>
-<script src="studyplan-data.js?v=202611022245"></script>
-<script src="classes-data.js?v=202611022245"></script>
-<script src="studyplan.js?v=202611022245"></script>
-<script src="pocket-data.js?v=202611022245"></script>
-<script src="pocket.js?v=202611022245"></script>
-<script src="sync.js?v=202611022245"></script>
-<script src="breaks.js?v=202611022245"></script>
-<script src="parked.js?v=202611022245"></script>
-<script src="ideas.js?v=202611022245"></script>
-<script src="ical-sync.js?v=202611022245"></script>
-<script src="class-links.js?v=202611022245"></script>
+<script src="data.js?v=202611022320"></script>
+<script src="core.js?v=202611022320"></script>
+<script src="calendar.js?v=202611022320"></script>
+<script src="tasks.js?v=202611022320"></script>
+<script src="features.js?v=202611022320"></script>
+<script src="studyplan-data.js?v=202611022320"></script>
+<script src="classes-data.js?v=202611022320"></script>
+<script src="studyplan.js?v=202611022320"></script>
+<script src="pocket-data.js?v=202611022320"></script>
+<script src="pocket.js?v=202611022320"></script>
+<script src="sync.js?v=202611022320"></script>
+<script src="breaks.js?v=202611022320"></script>
+<script src="parked.js?v=202611022320"></script>
+<script src="ideas.js?v=202611022320"></script>
+<script src="ical-sync.js?v=202611022320"></script>
+<script src="class-links.js?v=202611022320"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

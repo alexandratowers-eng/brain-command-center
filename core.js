@@ -161,7 +161,10 @@ function init(){
   if(typeof checkDailyMotivation==='function')setTimeout(checkDailyMotivation,1200);
   if(typeof checkReminders==='function')checkReminders();
   if(typeof checkDailyBrainDumpCheckin==='function')setTimeout(checkDailyBrainDumpCheckin,2500);
-  if(typeof checkWeeklyReflect==='function')setTimeout(checkWeeklyReflect,3500);
+  // Weekly Reflection no longer pops up on its own (Nov 2026 declutter). It is
+  // one click away: Wins tab → "Weekly reflection". checkWeeklyReflect stays
+  // defined so nothing else breaks; re-add the line below to bring it back.
+  // if(typeof checkWeeklyReflect==='function')setTimeout(checkWeeklyReflect,3500);
   setInterval(()=>{renderCalendar();applyAutoTheme();generateCoachSuggestions();if(typeof checkReminders==='function')checkReminders();},60000);
   setInterval(()=>{if(document.visibilityState==='visible'&&typeof SyncEngine!=='undefined')SyncEngine.pull();},45000);
 }
@@ -490,6 +493,8 @@ function restoreCollapsed(){
   }
   // Utility cards start tucked away; expanding once keeps them open.
   ['calright-trash','calright-clockout'].forEach(id=>{if(!(id in collapsed))collapsed[id]=true;});
+  // Parking Lot starts as one header line when it's empty; opening it once keeps it open.
+  if(!(('calright-ideas') in collapsed)&&!(D.ideas||[]).length)collapsed['calright-ideas']=true;
   Object.entries(collapsed).forEach(([id,val])=>{
     if(val){
       const body=document.getElementById('cardBody-'+id);
@@ -498,6 +503,44 @@ function restoreCollapsed(){
       if(card){const btn=card.querySelector('.s-collapse');if(btn)btn.textContent='▸';}
     }
   });
+  applyHiddenCards();
+}
+
+// ===== HIDDEN CARDS (declutter, Nov 2026) =====
+// Utility cards you don't look at daily stay off-screen until you ask for them.
+// Hidden set lives in localStorage so it's per device, like collapse state.
+// Every hidden card is listed under ⚙ Data → "Show hidden cards" so nothing is lost.
+const HIDE_DEFAULT=['calright-clockout','calright-trash'];
+const CARD_LABELS={'calright-clockout':'Clock-Out Calculator','calright-trash':'Trash','calright-ideas':'Parking Lot','weekly-review':'Weekly Check-in','calright-stash':'On Deck','remind-later':'Remind Later Today','daily-anchor':'Daily Anchor'};
+function hiddenCards(){
+  let h=null;try{h=JSON.parse(localStorage.getItem('hiddenCards')||'null');}catch(e){}
+  if(!Array.isArray(h)){h=HIDE_DEFAULT.slice();localStorage.setItem('hiddenCards',JSON.stringify(h));}
+  return h;
+}
+function hideCard(id){const h=hiddenCards();if(!h.includes(id))h.push(id);localStorage.setItem('hiddenCards',JSON.stringify(h));applyHiddenCards();}
+function unhideCard(id){const h=hiddenCards().filter(x=>x!==id);localStorage.setItem('hiddenCards',JSON.stringify(h));applyHiddenCards();}
+function applyHiddenCards(){
+  const h=new Set(hiddenCards());
+  document.querySelectorAll('[data-card]').forEach(card=>{
+    const id=card.dataset.card;
+    const hid=h.has(id);
+    card.classList.toggle('card-hidden',hid);
+    // one small ✕ on every card title so hiding is self-service
+    if(!card.querySelector('.s-hide')){
+      const t=card.querySelector('.s-title');
+      if(t){const b=document.createElement('button');b.className='s-hide';b.title='Hide this card (⚙ Data → Show hidden cards brings it back)';b.textContent='✕';b.onclick=e=>{e.stopPropagation();hideCard(id);};t.appendChild(b);}
+    }
+  });
+  const n=h.size;const mi=document.getElementById('hiddenCardsMenuItem');
+  if(mi)mi.textContent='👁 Show hidden cards ('+n+')';
+}
+function showHiddenCardsMenu(){
+  const h=hiddenCards();
+  if(!h.length){alert('No hidden cards. Every card has a ✕ in its title if you want to tuck one away.');return;}
+  const pick=prompt('Hidden cards:\n'+h.map((id,i)=>(i+1)+'. '+(CARD_LABELS[id]||id)).join('\n')+'\n\nType a number to bring it back, or "all":');
+  if(!pick)return;
+  if(pick.trim().toLowerCase()==='all'){localStorage.setItem('hiddenCards','[]');applyHiddenCards();return;}
+  const i=parseInt(pick,10)-1;if(h[i])unhideCard(h[i]);
 }
 
 // ===== TABS =====
