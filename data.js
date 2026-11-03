@@ -754,6 +754,30 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     }));
     d._bremZoomWipe=true;
   }
+  if(!d._wkNov2){
+    // Nov 2: no recruitment calls Tue Nov 3, so the weekday is free for MCAT.
+    // Three things to fit: (1) finish the FL review that stalled after Chem/Phys,
+    // (2) catch the Physics Foundations recording (Fdn #14, Oct 21) before the
+    // Cohort builds on it, (3) catch tonight's Cohort class 1 if it slipped.
+    // Nothing starts before 10 AM and nothing runs past 8 PM — short-sleep safe.
+    const dead=new Set((d.deletedSlots||[]).map(x=>String(x.id)));
+    const add=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      const id=b._brem+'_'+key;
+      if(dead.has(id))return;
+      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:id},b));
+    };
+    const REC='Vimeo link, 1.5x speed. Passive is fine. Pause + note only what feels new.';
+    // Tue Nov 3 — the free day. Recordings in the morning, FL review after lunch.
+    add('2026-11-03',{t:'10:00 AM',end:'11:30 AM',text:'🎥 Rec: Physics Foundations',sm:REC+' This is the one Cohort class 1 builds on — do it first, before anything else today.',cls:'mcat',_brem:'rec_phys'});
+    add('2026-11-03',{t:'11:45 AM',end:'12:30 PM',text:'✍️ Physics: one page of equations',sm:'From the recording, by hand, closed-notes after. Kinematics + forces only. Stop at 12:30 even if it feels incomplete.',cls:'mcat',_brem:'phys_eq'});
+    add('2026-11-03',{t:'2:00 PM',end:'3:30 PM',text:'🔍 FL review: CARS + Bio/Biochem',sm:'Wrong + guessed only. Error log each miss: content gap vs. misread vs. timing. Two sections, 45 min each. Hard stop at 3:30.',cls:'mcat',_brem:'rev_cars_bb'});
+    add('2026-11-03',{t:'4:00 PM',end:'5:00 PM',text:'🔍 FL review: Psych/Soc',sm:'Last section. Then the FL is CLOSED — score it, log it, done.',cls:'mcat',_brem:'rev_ps'});
+    add('2026-11-03',{t:'5:15 PM',end:'6:00 PM',text:'📊 FL debrief: 3 patterns, 1 change',sm:'Read back the error log. Name the 3 patterns that repeat and ONE thing you do differently next FL. Write it in the Tracker. This is the part that makes the FL worth it.',cls:'mcat',_brem:'fl_debrief'});
+    // Wed Nov 4 — Cohort class 1 catch-up if last night slipped, else free.
+    add('2026-11-04',{t:'6:00 PM',end:'8:00 PM',text:'🎥 Rec: Cohort class 1 (only if you missed Mon)',sm:'Physics and Building Study Habits. Skip this block entirely if you were at class Monday — delete it, no guilt.',cls:'mcat',_brem:'rec_c1'});
+    d._wkNov2=true;
+  }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
   (d.tasks||[]).forEach(t=>{
