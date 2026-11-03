@@ -179,7 +179,9 @@ window.SyncEngine=(function(){
       const local=localRaw?JSON.parse(localRaw):null;
       const remoteTs=remote._syncedAt||0;
       const localTs=(local&&local._syncedAt)?local._syncedAt:0;
-      const localModified=(local&&local._localModifiedAt)?local._localModifiedAt:0;
+      let localModified=(local&&local._localModifiedAt)?local._localModifiedAt:0;
+      // First pull on a just-paired device: the cloud is the truth, never merge.
+      if(localStorage.getItem('bcc_fresh_pair')){localModified=0;localStorage.removeItem('bcc_fresh_pair');}
       if(remoteTs>localTs){
         if(localModified>localTs){
           // Both sides changed — merge tasks and days rather than losing one side
@@ -540,20 +542,23 @@ window.SyncEngine=(function(){
       <button onclick="SyncEngine.rotateGist()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--amber);background:rgba(245,158,11,.08);color:var(--amber);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;margin-bottom:10px;">🔒 Move data to a new private gist</button>
       <div style="border-top:1px solid var(--border);margin:14px 0;padding-top:14px;"></div>
       `:`
+      <div style="margin-bottom:14px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;">Easiest: use the share link</div>
+        <div style="font-size:11px;color:var(--dim);line-height:1.6;">On a device that already syncs, tap the cloud icon → <b>Copy share link</b>. Open that link here (or paste it below). Done — no GitHub visit needed.</div>
+      </div>
       <details style="margin-bottom:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
-        <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text);outline:none;">How does this work? (one-time setup)</summary>
+        <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text);outline:none;">No other device handy? Use a GitHub token</summary>
         <ol style="font-size:11px;color:var(--dim);line-height:1.7;margin:10px 0 4px 18px;padding:0;">
           <li>Go to <a href="https://github.com/settings/tokens/new?scopes=gist&description=BCC%20Sync" target="_blank" style="color:var(--blue);text-decoration:underline;">github.com/settings/tokens/new</a> (opens in a new tab)</li>
-          <li>Make sure "gist" is the only checkbox ticked</li>
-          <li>Click "Generate token" at the bottom</li>
-          <li>Copy the token (starts with <code style="background:var(--card);padding:1px 4px;border-radius:3px;">ghp_</code>) and paste below</li>
-          <li>That's it — your data lives in a private gist on your GitHub account</li>
+          <li>Make sure "gist" is the only checkbox ticked, then "Generate token"</li>
+          <li>Copy the token (starts with <code style="background:var(--card);padding:1px 4px;border-radius:3px;">ghp_</code>) and paste below. It's shown once, so copy before closing the tab.</li>
+          <li>Connect finds your existing data on that account automatically.</li>
         </ol>
       </details>
       `}
 
       <label style="font-size:11px;color:var(--dim);font-weight:600;display:block;margin-bottom:6px;">${isConnected?'Replace token':'Paste your GitHub token or share link'}</label>
-      <input type="password" id="syncPairInput" placeholder="ghp_xxxxxxxxxxxxxxxx" style="width:100%;padding:12px 14px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none;font-family:monospace;box-sizing:border-box;">
+      <input type="password" id="syncPairInput" placeholder="Paste share link (https://...#BCC:...) or ghp_ token" style="width:100%;padding:12px 14px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none;font-family:monospace;box-sizing:border-box;">
       <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between;align-items:center;">
         ${isConnected?`<button onclick="SyncEngine.disconnectSync()" style="padding:8px 14px;border-radius:8px;border:1px solid var(--red);background:none;color:var(--red);cursor:pointer;font-family:inherit;font-size:11px;">Disconnect</button>`:'<span></span>'}
         <div style="display:flex;gap:8px;">
@@ -592,24 +597,66 @@ window.SyncEngine=(function(){
     setStatus('disabled','Tap to connect sync');
   }
 
-  function completePairing(){
+  // A device that has never synced must take the cloud copy wholesale. Merging
+  // instead used to pour the fresh device's seeded sample tasks and blocks into
+  // the real data ("Grocery run", "Check on Gma" ... on every new laptop).
+  function _markFreshDevice(){
+    try{
+      const local=JSON.parse(localStorage.getItem(SK)||'null');
+      if(local&&!local._syncedAt){delete local._localModifiedAt;localStorage.setItem(SK,JSON.stringify(local));}
+      if(typeof D!=='undefined'&&!D._syncedAt)delete D._localModifiedAt;
+      if(!local||!local._syncedAt)localStorage.setItem('bcc_fresh_pair','1');
+    }catch(e){}
+  }
+
+  async function completePairing(){
     const inp=document.getElementById('syncPairInput');
     let val=(inp?inp.value:'').trim();
-    if(!val){alert('Please paste your token.');return;}
-    let token=val;
+    if(!val){alert('Paste the share link or your token first.');return;}
+    // A whole share URL pasted in: pull the #BCC:... part out of it.
+    const hashAt=val.indexOf('#BCC:');if(hashAt>=0)val=decodeURIComponent(val.slice(hashAt+1));
+    let token=val,gistId=null;
     if(val.startsWith('BCC:')){
       const parts=val.split(':');
-      if(parts.length>=3){
-        localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId:parts[1],token:parts.slice(2).join(':')}));
-        token=parts.slice(2).join(':');
-      }
+      if(parts.length>=3){gistId=parts[1];token=parts.slice(2).join(':');}
     }
+    const btn=document.querySelector('#syncPairModal button[onclick*="completePairing"]');
+    if(btn){btn.disabled=true;btn.textContent='Checking token…';}
+    // Verify the token and find the real gist BEFORE saving anything, so a bad
+    // paste gets a plain-English reason instead of a dead "GET 404" later.
+    let list=null,why='';
+    try{
+      const r=await fetch('https://api.github.com/gists?per_page=100',{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'},cache:'no-store'});
+      if(r.status===401)why='GitHub rejected this token. Copy it again from github.com/settings/tokens (it starts with ghp_ and is shown only once).';
+      else if(r.status===403)why='This token can\'t read gists. Make a new one with ONLY the "gist" box ticked.';
+      else if(!r.ok)why='GitHub answered '+r.status+'. Try again in a minute.';
+      else list=(await r.json()).filter(g=>g.files&&g.files[FILENAME]);
+    }catch(e){why='Couldn\'t reach GitHub (offline?). Try again when you\'re online.';}
+    if(why){if(btn){btn.disabled=false;btn.textContent='Connect';}alert(why);return;}
+    if(!gistId){
+      if(list.length){list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));gistId=list[0].id;}
+      else if(window.SYNC_GIST_ID)gistId=window.SYNC_GIST_ID;
+    }
+    if(!gistId){
+      if(!confirm('Token works, but there is no Brain Command Center data on this GitHub account yet.\n\nStart the cloud copy from THIS device\'s data?'))
+        {if(btn){btn.disabled=false;btn.textContent='Connect';}return;}
+      try{
+        const payload=JSON.parse(localStorage.getItem(SK)||'{}');payload._syncedAt=Date.now();
+        const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+          body:JSON.stringify({description:'Brain Command Center data',public:false,files:{[FILENAME]:{content:JSON.stringify(payload)}}})});
+        if(!r.ok)throw new Error('create '+r.status);
+        gistId=(await r.json()).id;
+        localStorage.setItem(SK,JSON.stringify(payload));
+      }catch(e){if(btn){btn.disabled=false;btn.textContent='Connect';}alert('Could not create the cloud copy ('+e.message+').');return;}
+    }
+    localStorage.setItem('bcc_sync_cfg',JSON.stringify({gistId,token}));
     localStorage.setItem('bcc_sync_token',token);
+    _markFreshDevice();
     document.getElementById('syncPairModal')?.remove();
     setStatus('syncing','Connecting...');
     pull().then(()=>{
       const toast=document.getElementById('saveToast');
-      if(toast){toast.innerHTML='☁️ Sync connected!';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000);}
+      if(toast){toast.innerHTML='☁️ Sync connected — showing your cloud data';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2500);}
     });
   }
 
@@ -624,6 +671,7 @@ window.SyncEngine=(function(){
     } else if(val.startsWith('ghp_')){
       localStorage.setItem('bcc_sync_token',val);
     } else {return false;}
+    _markFreshDevice();
     window.location.hash='';
     history.replaceState(null,'',window.location.pathname+window.location.search);
     return true;
