@@ -2104,7 +2104,8 @@ function renderWeekDump(){
   if(!bar)return;
   const items=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
   // Empty inbox = header only. One tap opens it; it stays open once you've chosen that.
-  const collapsed=(D._wkDumpCollapsed===undefined)?!items.length:!!D._wkDumpCollapsed;
+  // Empty inbox is header-only unless you opened it (tap resets per render cycle via _wkDumpOpened).
+  const collapsed=items.length?!!D._wkDumpCollapsed:!window._wkDumpOpened;
   let h='<div class="wkdump'+(collapsed?' collapsed':'')+'">';
   h+='<div class="wkdump-head" onclick="toggleWeekDump()">'
     +'<span class="wkdump-title">🧠 Brain Dump'
@@ -2151,6 +2152,8 @@ function renderWeekDump(){
   bar.innerHTML=h;
 }
 function toggleWeekDump(){
+  const items=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
+  if(!items.length){window._wkDumpOpened=!window._wkDumpOpened;_wkSorting=false;renderWeekDump();return;}
   D._wkDumpCollapsed=!D._wkDumpCollapsed;
   if(D._wkDumpCollapsed)_wkSorting=false;
   save();renderWeekDump();
