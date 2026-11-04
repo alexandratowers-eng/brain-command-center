@@ -778,6 +778,36 @@ function load(){try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s)
     add('2026-11-04',{t:'6:00 PM',end:'8:00 PM',text:'🎥 Rec: Cohort class 1 (only if you missed Mon)',sm:'Physics and Building Study Habits. Skip this block entirely if you were at class Monday — delete it, no guilt.',cls:'mcat',_brem:'rec_c1'});
     d._wkNov2=true;
   }
+  if(!d._flRevNov4){
+    // Nov 3 (late): a real full-length review is 6-9 hours, not the 3.5 that fit on
+    // Tuesday. Spread it over Wed evening, Friday's Main set window, and Sat morning:
+    //   Wed 6-8 PM        Chem/Phys                      2h
+    //   Fri 1-4:45 PM     CARS, then Bio/Biochem         3.5h
+    //   Sat 10-12:30 PM   Psych/Soc + debrief            2.25h   = 7.75h
+    // Nothing before 10 AM on the weekend, nothing past 8 PM. Any section already
+    // closed out: delete its block, it stays deleted. Catch-up recordings move to
+    // Sat afternoon so they stop competing with the review.
+    const dead=new Set((d.deletedSlots||[]).map(x=>String(x.id)));
+    const add=(key,b)=>{
+      if(!d.days[key])d.days[key]=[];
+      const id=b._brem+'_'+key;
+      if(dead.has(id))return;
+      if(!d.days[key].some(s=>s._brem===b._brem))d.days[key].push(Object.assign({loc:'',_id:id},b));
+    };
+    const drop=(key,brem)=>{if(d.days[key])d.days[key]=d.days[key].filter(s=>!(s._brem===brem&&!s.done));};
+    const LOG='Wrong + guessed only. Error log every miss: content gap vs. misread vs. timing.';
+    drop('2026-11-04','rec_c1');
+    drop('2026-11-06','mainset');
+    // Friday swim slides to 5 so it doesn't sit on top of the review block
+    (d.days['2026-11-06']||[]).forEach(s=>{if(/Swim/.test(s.text||'')&&s.t==='4:00 PM'&&!s.done){s.t='5:00 PM';s.end='5:45 PM';}});
+    add('2026-11-04',{t:'6:00 PM',end:'8:00 PM',text:'🔍 FL review 1/4: Chem/Phys',sm:LOG+' Hard stop at 8. If you already closed out C/P on Sunday, delete this and do CARS here instead.',cls:'mcat',_brem:'flr_cp'});
+    add('2026-11-06',{t:'1:00 PM',end:'2:30 PM',text:'🔍 FL review 2/4: CARS',sm:LOG+' For CARS the pattern is almost always misread or timing, not content. 90 min, then stand up.',cls:'mcat',_brem:'flr_cars'});
+    add('2026-11-06',{t:'2:45 PM',end:'4:45 PM',text:'🔍 FL review 3/4: Bio/Biochem',sm:LOG+' This is Friday\'s Main set this week. Stop at 4:45 even if unfinished; swim at 4 can slide to 5.',cls:'mcat',_brem:'flr_bb'});
+    add('2026-11-07',{t:'10:00 AM',end:'11:30 AM',text:'🔍 FL review 4/4: Psych/Soc',sm:LOG+' Last section. Then the FL is CLOSED.',cls:'mcat',_brem:'flr_ps'});
+    add('2026-11-07',{t:'11:45 AM',end:'12:30 PM',text:'📊 FL debrief: 3 patterns, 1 change',sm:'Read the whole error log back. Name the 3 patterns that repeat and ONE thing you do differently on the next FL. Write it in the Tracker. This is what makes the 8 hours worth it.',cls:'mcat',_brem:'fl_debrief2'});
+    add('2026-11-07',{t:'1:30 PM',end:'3:00 PM',text:'🎥 Catch-up recordings (only if Tue slipped)',sm:'Physics Foundations first, then Cohort class 1 if you missed Mon. 1.5x speed. Delete this if Tuesday happened.',cls:'mcat',_brem:'rec_catchup'});
+    d._flRevNov4=true;
+  }
   // Beck Institute call was done long ago but sync merges kept resurrecting the
   // open copy. Runs on every load (not a flag) so a stale device can't re-open it.
   (d.tasks||[]).forEach(t=>{

@@ -41,6 +41,8 @@ window.SyncEngine=(function(){
     b.style.display='flex';
     b.dataset.state=_state;
     if(!connected){
+      const snooze=+(localStorage.getItem('syncBannerSnooze')||0);
+      if(snooze>Date.now()){b.style.display='none';return;}
       if(txt)txt.textContent='This device is not synced — your phone and laptop won’t match.';
       if(btn)btn.style.display='inline-block';
       return;

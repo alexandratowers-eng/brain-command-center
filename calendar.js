@@ -295,8 +295,6 @@ function renderWeekView(){
       <button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>
     </div>
     <button class="ics-btn" onclick="openWeekDump()" title="List everything for the week, get it planned into blocks" style="border-color:rgba(139,92,246,.4);">🗒️ Week Dump</button>
-    <button class="ics-btn" onclick="openIcalModal()" title="Sync from Apple Calendar">🍎 Sync</button>
-    <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
   // Weekly brain-dump inbox (collapsible, sits above the grid)
@@ -1029,8 +1027,6 @@ function renderDayView(){
       <button class="cal-nav-btn" onclick="navDay(1)" title="Next day">›</button>
       ${!isToday?`<button class="cal-today-btn" onclick="D.selectedDate=todayStr();save();renderCalendar();renderMiniCal();">Today</button>`:''}
     </div>
-    <button class="ics-btn" onclick="openIcalModal()" title="Sync from Apple Calendar">🍎 Sync</button>
-    <button class="ics-btn" onclick="exportICS()">Export .ics</button>
   </div>`;
 
   // Yesterday's focus nudge

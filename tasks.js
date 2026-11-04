@@ -2103,7 +2103,8 @@ function renderWeekDump(){
   const bar=document.getElementById('wkDumpBar');
   if(!bar)return;
   const items=D.tasks.filter(t=>t.cat==='braindump'&&!t.done);
-  const collapsed=!!D._wkDumpCollapsed;
+  // Empty inbox = header only. One tap opens it; it stays open once you've chosen that.
+  const collapsed=(D._wkDumpCollapsed===undefined)?!items.length:!!D._wkDumpCollapsed;
   let h='<div class="wkdump'+(collapsed?' collapsed':'')+'">';
   h+='<div class="wkdump-head" onclick="toggleWeekDump()">'
     +'<span class="wkdump-title">🧠 Brain Dump'
