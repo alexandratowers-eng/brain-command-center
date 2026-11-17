@@ -1,4 +1,4 @@
-const CACHE='bcc-202611032358';
+const CACHE='bcc-202611171520';
 // Must list every script index.html loads, or a first load with no network
 // comes up with those features missing.
 const ASSETS=[

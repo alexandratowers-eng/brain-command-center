@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="BCC">
 <meta name="theme-color" content="#f3f1ec">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png?v=202611032358">
+<link rel="apple-touch-icon" href="icon-192.png?v=202611171520">
 <title>Brain Command Center</title>
 <script>
 (function(){
@@ -19,8 +19,8 @@
   }catch(e){document.documentElement.classList.add('light');}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=202611032358">
-<script src="sync-config.js?v=202611032358" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
+<link rel="stylesheet" href="styles.css?v=202611171520">
+<script src="sync-config.js?v=202611171520" onerror="window.SYNC_GIST_ID=null;window.SYNC_TOKEN=null;"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
@@ -128,6 +128,13 @@ if('serviceWorker' in navigator){
       <div class="s-title"><span class="mi" style="font-size:14px;color:var(--amber);">anchor</span> Daily Anchor<button class="s-collapse" onclick="toggleCard('daily-anchor',this)">▾</button></div>
       <div class="s-body" id="cardBody-daily-anchor">
         <div id="dailyAnchorBody"></div>
+      </div>
+    </div>
+    <!-- MCAT Progress (Nov 2026) — mini view of the Tracker log; hides itself until something is logged -->
+    <div class="s-card" data-card="mcat-progress" id="mcatProgressCard" style="display:none;border-color:rgba(129,140,248,.35);">
+      <div class="s-title"><span class="mi" style="font-size:14px;color:var(--indigo);">trending_up</span> MCAT Progress<button class="s-collapse" onclick="toggleCard('mcat-progress',this)">▾</button></div>
+      <div class="s-body" id="cardBody-mcat-progress">
+        <div id="mcatProgressBody"></div>
       </div>
     </div>
     <!-- This Week Strip (hidden compat) -->
@@ -832,22 +839,22 @@ if('serviceWorker' in navigator){
   <button onclick="closeMobileMore()"><span class="mi" style="color:var(--dim);">close</span> Close</button>
 </div>
 
-<script src="data.js?v=202611032358"></script>
-<script src="core.js?v=202611032358"></script>
-<script src="calendar.js?v=202611032358"></script>
-<script src="tasks.js?v=202611032358"></script>
-<script src="features.js?v=202611032358"></script>
-<script src="studyplan-data.js?v=202611032358"></script>
-<script src="classes-data.js?v=202611032358"></script>
-<script src="studyplan.js?v=202611032358"></script>
-<script src="pocket-data.js?v=202611032358"></script>
-<script src="pocket.js?v=202611032358"></script>
-<script src="sync.js?v=202611032358"></script>
-<script src="breaks.js?v=202611032358"></script>
-<script src="parked.js?v=202611032358"></script>
-<script src="ideas.js?v=202611032358"></script>
-<script src="ical-sync.js?v=202611032358"></script>
-<script src="class-links.js?v=202611032358"></script>
+<script src="data.js?v=202611171520"></script>
+<script src="core.js?v=202611171520"></script>
+<script src="calendar.js?v=202611171520"></script>
+<script src="tasks.js?v=202611171520"></script>
+<script src="features.js?v=202611171520"></script>
+<script src="studyplan-data.js?v=202611171520"></script>
+<script src="classes-data.js?v=202611171520"></script>
+<script src="studyplan.js?v=202611171520"></script>
+<script src="pocket-data.js?v=202611171520"></script>
+<script src="pocket.js?v=202611171520"></script>
+<script src="sync.js?v=202611171520"></script>
+<script src="breaks.js?v=202611171520"></script>
+<script src="parked.js?v=202611171520"></script>
+<script src="ideas.js?v=202611171520"></script>
+<script src="ical-sync.js?v=202611171520"></script>
+<script src="class-links.js?v=202611171520"></script>
 <script>
 // SW disabled — cloud sync handles persistence now
 function mobNav(tab,btn){

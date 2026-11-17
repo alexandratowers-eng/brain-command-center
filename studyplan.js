@@ -15,12 +15,13 @@ function renderStudyPlan(){
   const SP=window.STUDY_PLAN;
   if(!SP){ el.innerHTML='<p style="font-size:11px;color:var(--dim);">Study plan data not loaded.</p>'; return; }
 
-  const tabs=[['classes','Classes'],['tracker','Tracker'],['resources','Resources'],['scores','Scores'],['journal','Journal']];
+  const tabs=[['progress','Progress'],['classes','Classes'],['tracker','Tracker'],['resources','Resources'],['scores','Scores'],['journal','Journal']];
   let h='<div class="sp-tabs">'+tabs.map(([k,label])=>
     `<button class="sp-tab${_spTab===k?' active':''}" onclick="setStudyTab('${k}')">${label}</button>`
   ).join('')+'</div><div class="sp-body">';
 
-  if(_spTab==='classes')h+=spClasses();
+  if(_spTab==='progress')h+=spProgress();
+  else if(_spTab==='classes')h+=spClasses();
   else if(_spTab==='tracker')h+=spTracker();
   else if(_spTab==='resources')h+=spResources(SP.resources);
   else if(_spTab==='scores') h+=spScores();
@@ -28,6 +29,7 @@ function renderStudyPlan(){
 
   h+='</div>';
   el.innerHTML=h;
+  if(typeof renderMcatProgressCard==='function')renderMcatProgressCard();
 }
 
 function spResources(res){
@@ -220,6 +222,160 @@ function spTracker(){
     '<span class="sp-note" style="display:inline;margin-left:6px;">Export your sheet as CSV — date / section / what / minutes columns are picked up automatically.</span></div>';
   return h;
 }
+// ---- Progress (Nov 2026): makes D.mcatLog visible again. Everything derives from the Tracker rows;
+// nothing new to maintain. Subject colours are shared by the chart, heatmap, balance bars and sidebar card.
+const SP_COL={cp:'var(--blue)',cars:'var(--amber)',bb:'var(--green)',ps:'var(--purple)',other:'var(--dim)'};
+const MCAT_TEST_DATE='2027-02-12';
+function spD(str){return new Date(str+'T12:00:00');}
+function spKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function spMonday(d){const m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));m.setHours(0,0,0,0);return m;}
+function spHrs(min){const h=min/60;return (h>=10?Math.round(h):Math.round(h*10)/10)+'h';}
+function spGoal(){return +D.mcatWeekGoal||10;}
+function spSetGoal(v){const n=parseFloat(v);if(!isNaN(n)&&n>0){D.mcatWeekGoal=n;save();renderStudyPlan();}}
+// Aggregate once: minutes per day, per ISO week (Monday key), per subject.
+function spStats(){
+  const log=(D.mcatLog||[]).filter(e=>e&&e.date&&/^\d{4}-\d{2}-\d{2}$/.test(e.date));
+  const byDay={},byWeek={},bySubj={};
+  log.forEach(e=>{
+    const m=+e.min||0;
+    byDay[e.date]=(byDay[e.date]||0)+m;
+    const wk=spKey(spMonday(spD(e.date)));
+    byWeek[wk]=byWeek[wk]||{total:0,cp:0,cars:0,bb:0,ps:0,other:0,n:0};
+    byWeek[wk].total+=m;byWeek[wk][SP_COL[e.subj]?e.subj:'other']+=m;byWeek[wk].n++;
+    const sk=SP_COL[e.subj]?e.subj:'other';bySubj[sk]=(bySubj[sk]||0)+m;
+  });
+  // Streak: consecutive days ending today or yesterday with at least one logged row.
+  const today=todayStr();let streak=0;const cur=new Date();cur.setHours(12,0,0,0);
+  if(!byDay[today])cur.setDate(cur.getDate()-1);
+  while(byDay[spKey(cur)]){streak++;cur.setDate(cur.getDate()-1);}
+  const total=log.reduce((a,e)=>a+(+e.min||0),0);
+  const thisWk=spKey(spMonday(new Date()));
+  const lastMon=spMonday(new Date());lastMon.setDate(lastMon.getDate()-7);const lastWk=spKey(lastMon);
+  const daysLeft=Math.ceil((spD(MCAT_TEST_DATE)-new Date())/86400000);
+  return {log,byDay,byWeek,bySubj,streak,total,thisWk,lastWk,daysLeft,sessions:log.length};
+}
+function spProgress(){
+  const S=spStats();
+  if(!S.log.length)return '<p class="sp-note">Nothing logged yet. Add a line in the Tracker tab (or mark a Brem class Attended) and this page fills in on its own.</p>';
+  const goal=spGoal();const goalMin=goal*60;
+  const tw=S.byWeek[S.thisWk]||{total:0,n:0};const lw=S.byWeek[S.lastWk]||{total:0,n:0};
+  const pct=Math.min(100,Math.round(tw.total/goalMin*100));
+  const delta=tw.total-lw.total;
+  const dow=(new Date().getDay()+6)%7; // 0=Mon
+  const pace=dow>0?Math.round(tw.total/(dow+1)*7):tw.total*7;
+  let h='<p class="sp-note">🔒 Private. Built from your Tracker rows: log a session there and this page updates.</p>';
+
+  // Headline tiles
+  h+='<div class="spp-tiles">';
+  h+=`<div class="spp-tile spp-main"><div class="spp-k">This week</div><div class="spp-v">${spHrs(tw.total)}<span class="spp-of"> / <input class="spp-goal" type="number" min="1" step="1" value="${goal}" onchange="spSetGoal(this.value)" title="Weekly goal (hours)">h</span></div>
+    <div class="spp-bar"><i style="width:${pct}%"></i></div>
+    <div class="spp-sub">${tw.n||0} session${tw.n===1?'':'s'} · ${delta>=0?'▲':'▼'} ${spHrs(Math.abs(delta))} vs last week${dow<6?' · on pace for '+spHrs(pace):''}</div></div>`;
+  h+=`<div class="spp-tile"><div class="spp-k">Streak</div><div class="spp-v">${S.streak}<span class="spp-of"> day${S.streak===1?'':'s'}</span></div><div class="spp-sub">${S.byDay[todayStr()]?'Logged today ✓':'Nothing logged today yet'}</div></div>`;
+  h+=`<div class="spp-tile"><div class="spp-k">All time</div><div class="spp-v">${spHrs(S.total)}</div><div class="spp-sub">${S.sessions} sessions logged</div></div>`;
+  h+=`<div class="spp-tile"><div class="spp-k">Test day</div><div class="spp-v">${S.daysLeft>0?S.daysLeft:0}<span class="spp-of"> days</span></div><div class="spp-sub">Feb 12, 2027 · ${Math.max(0,Math.floor(S.daysLeft/7))} weeks</div></div>`;
+  h+='</div>';
+
+  // 12-week stacked bar chart
+  const weeks=[];const m0=spMonday(new Date());
+  for(let i=11;i>=0;i--){const d=new Date(m0);d.setDate(m0.getDate()-7*i);weeks.push(spKey(d));}
+  const maxMin=Math.max(goalMin,...weeks.map(k=>(S.byWeek[k]||{total:0}).total));
+  h+='<div class="spp-sec"><div class="spp-h">Hours per week <span>last 12 weeks · dashed line = goal</span></div>';
+  h+='<div class="spp-chart"><div class="spp-goal-line" style="bottom:calc(18px + (100% - 32px) * '+(goalMin/maxMin).toFixed(3)+')"><b>goal '+goal+'h</b></div>';
+  weeks.forEach(k=>{
+    const w=S.byWeek[k];const t=w?w.total:0;const d=spD(k);
+    const lbl=(d.getMonth()+1)+'/'+d.getDate();
+    let stack='';
+    if(w)Object.keys(SP_COL).forEach(s=>{if(w[s])stack+=`<i style="height:${w[s]/maxMin*100}%;background:${SP_COL[s]}" title="${spSubjName(s)}: ${spHrs(w[s])}"></i>`;});
+    h+=`<div class="spp-col${k===S.thisWk?' now':''}" title="Week of ${lbl}: ${spHrs(t)}"><div class="spp-colval">${t?spHrs(t):''}</div><div class="spp-stack">${stack}</div><div class="spp-collbl">${lbl}</div></div>`;
+  });
+  h+='</div></div>';
+
+  // 8-week daily heatmap (rows = weeks, columns Mon..Sun)
+  h+='<div class="spp-sec"><div class="spp-h">Daily heatmap <span>last 8 weeks · darker = more minutes</span></div><div class="spp-heat">';
+  h+='<div class="spp-heatrow spp-heathead"><span></span>'+['M','T','W','T','F','S','S'].map(x=>'<b>'+x+'</b>').join('')+'</div>';
+  const dayMax=Math.max(60,...Object.values(S.byDay));
+  for(let i=7;i>=0;i--){
+    const mon=new Date(m0);mon.setDate(m0.getDate()-7*i);
+    h+='<div class="spp-heatrow"><span>'+(mon.getMonth()+1)+'/'+mon.getDate()+'</span>';
+    for(let j=0;j<7;j++){
+      const d=new Date(mon);d.setDate(mon.getDate()+j);const k=spKey(d);const v=S.byDay[k]||0;
+      const fut=k>todayStr();const a=v?0.2+0.8*Math.min(1,v/dayMax):0;
+      h+=`<div class="spp-cell${k===todayStr()?' today':''}${fut?' fut':''}" style="${v?'background:rgba(129,140,248,'+a.toFixed(2)+');':''}" title="${k}: ${v?v+' min':'—'}"></div>`;
+    }
+    h+='</div>';
+  }
+  h+='</div></div>';
+
+  // Subject balance, last 4 weeks
+  const since=new Date(m0);since.setDate(m0.getDate()-21);const sinceK=spKey(since);
+  const rec={};let recTot=0;S.log.forEach(e=>{if(e.date>=sinceK){const k=SP_COL[e.subj]?e.subj:'other';rec[k]=(rec[k]||0)+(+e.min||0);recTot+=(+e.min||0);}});
+  h+='<div class="spp-sec"><div class="spp-h">Section balance <span>last 4 weeks</span></div>';
+  if(!recTot)h+='<p class="sp-note">No sessions in the last 4 weeks.</p>';
+  else{
+    h+='<div class="spp-balbar">'+Object.keys(SP_COL).filter(s=>rec[s]).map(s=>`<i style="width:${rec[s]/recTot*100}%;background:${SP_COL[s]}" title="${spSubjName(s)} ${Math.round(rec[s]/recTot*100)}%"></i>`).join('')+'</div>';
+    h+='<div class="spp-legend">'+Object.keys(SP_COL).filter(s=>s!=='other'||rec[s]).map(s=>`<span><i style="background:${SP_COL[s]}"></i>${spSubjName(s)} <b>${Math.round((rec[s]||0)/recTot*100)}%</b> · ${spHrs(rec[s]||0)}</span>`).join('')+'</div>';
+    const low=Object.keys(SP_COL).filter(s=>s!=='other').sort((a,b)=>(rec[a]||0)-(rec[b]||0))[0];
+    if(low&&(rec[low]||0)/recTot<0.15)h+=`<p class="sp-note" style="margin-top:6px;">👀 ${spSubjName(low)} is getting the least time (${Math.round((rec[low]||0)/recTot*100)}%). Worth a slot this week?</p>`;
+  }
+  h+='</div>';
+
+  // Last 7 days recap: the actual words you wrote
+  h+='<div class="spp-sec"><div class="spp-h">What you did this week <span>last 7 days, your own notes</span></div>';
+  const cut=new Date();cut.setDate(cut.getDate()-6);const cutK=spKey(cut);
+  const recent=S.log.filter(e=>e.date>=cutK).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!recent.length)h+='<p class="sp-note">Nothing in the last 7 days.</p>';
+  else{
+    let lastD='';
+    h+='<div class="spp-recap">';
+    recent.forEach(e=>{
+      if(e.date!==lastD){lastD=e.date;const d=spD(e.date);const name=e.date===todayStr()?'Today':d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+        h+=`<div class="spp-day">${name} <span>${spHrs(S.byDay[e.date]||0)}</span></div>`;}
+      h+=`<div class="spp-row"><i style="background:${SP_COL[e.subj]||SP_COL.other}"></i><span class="spp-what">${esc(e.what||'')}</span><span class="spp-min">${e.min?e.min+'m':''}</span></div>`;
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // Look back: resurface older rows so writing them down was not the last time you saw them
+  const older=S.log.filter(e=>e.date<cutK);
+  if(older.length){
+    const seed=parseInt(todayStr().replace(/-/g,''),10);
+    const picks=[];const used=new Set();
+    for(let i=0;i<Math.min(3,older.length);i++){let idx=(seed*(i+7)*31+i*101)%older.length;while(used.has(idx))idx=(idx+1)%older.length;used.add(idx);picks.push(older[idx]);}
+    h+='<div class="spp-sec"><div class="spp-h">Look back <span>3 older entries, rotates daily</span></div><div class="spp-recap">';
+    picks.sort((a,b)=>b.date.localeCompare(a.date)).forEach(e=>{
+      const d=spD(e.date);const ago=Math.round((new Date()-d)/86400000);
+      h+=`<div class="spp-row"><i style="background:${SP_COL[e.subj]||SP_COL.other}"></i><span class="spp-what">${esc(e.what||'')}</span><span class="spp-min">${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${ago}d ago</span></div>`;
+    });
+    h+='</div></div>';
+  }
+  return h;
+}
+// Sidebar card (dashboard). Tiny version of the above so progress is visible without opening the MCAT tab.
+function renderMcatProgressCard(){
+  const card=document.getElementById('mcatProgressCard');const body=document.getElementById('mcatProgressBody');
+  if(!card||!body)return;
+  const S=spStats();
+  if(!S.log.length){card.style.display='none';return;}
+  card.style.display='';
+  const goalMin=spGoal()*60;const tw=S.byWeek[S.thisWk]||{total:0,n:0};
+  const pct=Math.min(100,Math.round(tw.total/goalMin*100));
+  const m0=spMonday(new Date());let dots='';
+  for(let j=0;j<7;j++){const d=new Date(m0);d.setDate(m0.getDate()+j);const k=spKey(d);const v=S.byDay[k]||0;
+    dots+=`<i class="${v?'on':''}${k===todayStr()?' today':''}${k>todayStr()?' fut':''}" title="${k}: ${v?v+' min':'—'}" style="${v?'opacity:'+(0.35+0.65*Math.min(1,v/120)).toFixed(2):''}"></i>`;}
+  // One line from the log: today's latest, else yesterday's, else a rotating older one
+  const sorted=S.log.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const seed=parseInt(todayStr().replace(/-/g,''),10);
+  const pick=sorted.find(e=>e.date===todayStr())||sorted[seed%sorted.length];
+  const pd=pick?spD(pick.date):null;const ago=pd?Math.round((new Date()-pd)/86400000):0;
+  let h=`<div class="mpc-top"><div class="mpc-big">${spHrs(tw.total)}<span> / ${spGoal()}h this week</span></div><div class="mpc-streak" title="Consecutive days with a logged session">🔥 ${S.streak}</div></div>`;
+  h+=`<div class="spp-bar"><i style="width:${pct}%"></i></div>`;
+  h+=`<div class="mpc-dots">${dots}<span>${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][(new Date().getDay()+6)%7]}</span></div>`;
+  if(pick)h+=`<div class="mpc-line"><i style="background:${SP_COL[pick.subj]||SP_COL.other}"></i><span>${esc(pick.what||'')}</span><em>${ago===0?'today':ago+'d ago'}</em></div>`;
+  h+=`<div class="mpc-foot"><span>${S.daysLeft>0?S.daysLeft+' days to test':'Test day!'}</span><a href="#" onclick="event.preventDefault();_spTab='progress';localStorage.setItem('spTab','progress');switchTab('mcat',document.querySelector('.tab-btn[onclick*=\\'mcat\\']'));">Open progress →</a></div>`;
+  body.innerHTML=h;
+}
+
 function spLogAdd(){
   const w=document.getElementById('spqWhat');
   const what=w.value.trim();

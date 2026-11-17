@@ -99,3 +99,6 @@ After mutating the `D` object in code, **always call `save()` then the relevant 
 - **Add content to the MCAT tab:** the panel is `#p-mcat` in `index.html`; render logic is `renderMcat()` in `features.js` (it calls `renderVocab()`). The vocab word bank is the `VOCAB_BANK` array.
 - **Change colors/spacing:** edit `styles.css`; reuse the CSS vars above.
 - **Don't forget** to bump `?v=` in `index.html` if a JS/CSS change must reach already-open browsers.
+
+## MCAT Progress (Nov 2026)
+- MCAT tab > **Progress** (`spProgress()` in `studyplan.js`) and the sidebar card **MCAT Progress** (`renderMcatProgressCard()`, markup `data-card="mcat-progress"` in `index.html`) are both derived from `D.mcatLog`. No new data to maintain; weekly goal hours live in `D.mcatWeekGoal` (default 10). Styles: `.spp-*` and `.mpc-*` at the end of `styles.css`. Test date constant `MCAT_TEST_DATE` in `studyplan.js`.

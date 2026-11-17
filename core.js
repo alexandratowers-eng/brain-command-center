@@ -511,7 +511,7 @@ function restoreCollapsed(){
 // Hidden set lives in localStorage so it's per device, like collapse state.
 // Every hidden card is listed under ⚙ Data → "Show hidden cards" so nothing is lost.
 const HIDE_DEFAULT=['calright-clockout','calright-trash'];
-const CARD_LABELS={'calright-clockout':'Clock-Out Calculator','calright-trash':'Trash','calright-ideas':'Parking Lot','weekly-review':'Weekly Check-in','calright-stash':'On Deck','remind-later':'Remind Later Today','daily-anchor':'Daily Anchor'};
+const CARD_LABELS={'calright-clockout':'Clock-Out Calculator','calright-trash':'Trash','calright-ideas':'Parking Lot','weekly-review':'Weekly Check-in','calright-stash':'On Deck','remind-later':'Remind Later Today','daily-anchor':'Daily Anchor','mcat-progress':'MCAT Progress'};
 function hiddenCards(){
   let h=null;try{h=JSON.parse(localStorage.getItem('hiddenCards')||'null');}catch(e){}
   if(!Array.isArray(h)){h=HIDE_DEFAULT.slice();localStorage.setItem('hiddenCards',JSON.stringify(h));}
