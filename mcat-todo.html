@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>MCAT prep</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MCAT To Do">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500&family=Geist+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+
+<!--
+  ONE-TIME SETUP (Supabase)
+
+  1. Create a project at supabase.com. Put its URL and anon key in the CONFIG block below
+     (Project Settings > API). The anon key is safe to put in this file. Never use service_role.
+
+  2. In the SQL editor, run:
+
+     create table todos (
+       id          bigint generated always as identity primary key,
+       text        text not null,
+       section     text not null default 'General',
+       questions   integer check (questions > 0),
+       done        boolean not null default false,
+       created_by  text default (auth.jwt() ->> 'email'),
+       created_at  timestamptz not null default now()
+     );
+
+     (If you already made the table, add the new column with:
+      alter table todos add column questions integer check (questions > 0); )
+
+     alter table todos enable row level security;
+
+     create policy "signed-in users can do everything"
+       on todos for all to authenticated
+       using (true) with check (true);
+
+  2b. Daily checklist (CARS and Flashcards). Run this too:
+
+     create table daily (
+       day         date not null,
+       item        text not null,
+       user_email  text not null default (auth.jwt() ->> 'email'),
+       primary key (day, item, user_email)
+     );
+
+     alter table daily enable row level security;
+
+     create policy "see everyone's daily checks"
+       on daily for select to authenticated using (true);
+
+     create policy "add your own daily checks"
+       on daily for insert to authenticated
+       with check (user_email = (auth.jwt() ->> 'email'));
+
+     create policy "remove your own daily checks"
+       on daily for delete to authenticated
+       using (user_email = (auth.jwt() ->> 'email'));
+
+  3. Authentication > Sign In / Providers: turn OFF "Allow new users to sign up".
+     Authentication > Users: add the two email addresses by hand.
+
+  4. After you deploy, set Authentication > URL Configuration > Site URL to your site's address,
+     so the magic link brings you back here.
+-->
+
+<style>
+  :root {
+    --bg: #F6F4F0;
+    --ink: #0F3323;
+    --muted: rgba(15, 51, 35, .62);
+    --line: rgba(15, 51, 35, .14);
+    --glass: rgba(255, 255, 255, .5);
+    --glass-edge: rgba(255, 255, 255, .75);
+    --field: rgba(255, 255, 255, .55);
+    --shadow: 0 10px 28px -16px rgba(15, 51, 35, .28);
+    --tint: 8%;
+    --sec-mix: #000;
+
+    --sans: 'Karla', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+    --serif: 'Instrument Serif', Georgia, serif;
+
+    /* section colors */
+    --c-general: #6F7A73;
+    --c-bio: #2F8A5B;
+    --c-chem: #3566A8;
+    --c-psych: #C27A2C;
+    --c-cars: #8A4A8F;
+    --c-flash: #2A8C8C;
+
+    /* sky */
+    --sky: linear-gradient(180deg, #A9CCDF 0%, #C6DCE5 22%, #E8E8E2 54%, #F5E8D6 100%);
+    --wisps:
+      radial-gradient(42% 13% at 18% 20%, rgba(255, 255, 255, .6), transparent 70%),
+      radial-gradient(36% 12% at 80% 28%, rgba(255, 255, 255, .5), transparent 70%),
+      radial-gradient(52% 15% at 38% 60%, rgba(255, 252, 245, .6), transparent 70%),
+      radial-gradient(46% 14% at 86% 82%, rgba(255, 238, 218, .7), transparent 70%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0C1322;
+      --ink: #F3ECD8;
+      --muted: rgba(243, 236, 216, .62);
+      --line: rgba(243, 236, 216, .14);
+      --glass: rgba(255, 255, 255, .05);
+      --glass-edge: rgba(255, 255, 255, .10);
+      --field: rgba(255, 255, 255, .07);
+      --shadow: 0 10px 28px -16px rgba(0, 0, 0, .7);
+      --tint: 11%;
+      --sec-mix: #fff;
+      --c-general: #9AA39D; --c-bio: #6FB58A; --c-chem: #7FA6E0; --c-psych: #E0A063; --c-cars: #C58BCB; --c-flash: #6CC3C0;
+      --sky: linear-gradient(180deg, #0A1020 0%, #111D34 45%, #1A293C 78%, #2A2F3A 100%);
+      --wisps:
+        radial-gradient(42% 13% at 18% 20%, rgba(130, 160, 210, .10), transparent 70%),
+        radial-gradient(36% 12% at 80% 28%, rgba(130, 160, 210, .08), transparent 70%),
+        radial-gradient(52% 15% at 38% 60%, rgba(150, 170, 210, .08), transparent 70%),
+        radial-gradient(46% 14% at 86% 84%, rgba(240, 190, 130, .12), transparent 70%);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    font: 400 17px/1.5 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* page background: sky gradient plus soft cloud wisps, fixed behind everything */
+  body::before, body::after { content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+  body::before { background: var(--sky); }
+  body::after  { inset: -10%; z-index: -1; background: var(--wisps); filter: blur(26px); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 72px 24px 96px; }
+  #login { max-width: 640px; }
+
+  .eyebrow {
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    font: 400 clamp(46px, 9vw, 68px)/1 var(--serif);
+    letter-spacing: -.01em;
+    margin: 20px 0 14px;
+  }
+  .sub { margin: 0; color: var(--muted); max-width: 46ch; }
+  #count { margin-bottom: 36px; }
+
+  /* section -> --c */
+  [data-s="general"] { --c: var(--c-general); }
+  [data-s="bio-biochem"] { --c: var(--c-bio); }
+  [data-s="chem-phys"] { --c: var(--c-chem); }
+  [data-s="psych-soc"] { --c: var(--c-psych); }
+  [data-s="cars"] { --c: var(--c-cars); }
+  [data-s="flashcards"] { --c: var(--c-flash); }
+
+  button, input, select { font: inherit; color: inherit; }
+  button:focus-visible, .chip:focus-visible, .item input:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  /* frosted glass surfaces */
+  .add, .login-form, .chip, .item {
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+
+  .btn {
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: 0;
+    border-radius: 999px;
+    padding: 14px 22px;
+    cursor: pointer;
+  }
+  .btn:hover { opacity: .88; }
+
+  .field {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 10px 0;
+    outline: none;
+    min-width: 0;
+  }
+  .field::placeholder { color: var(--muted); }
+
+  /* Login */
+  .login-form, .add {
+    display: flex; gap: 12px; align-items: center;
+    padding: 8px 8px 8px 22px;
+    border-radius: 999px;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--shadow);
+  }
+  .login-form:focus-within, .add:focus-within { border-color: var(--ink); }
+  .login-form { margin-top: 36px; }
+  .login-form .field { flex: 1; }
+  .msg { min-height: 1.5em; margin: 16px 0 0 22px; color: var(--muted); font-size: 14px; }
+
+  /* Top bar */
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .who { display: flex; gap: 14px; align-items: center; font: 400 11px/1 var(--mono); color: var(--muted); }
+  .link {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  /* Add form */
+  .add { margin: 0 0 22px; }
+  .add input[type="text"] { flex: 1; }
+  .add .num {
+    width: 52px; flex: none; text-align: center;
+    font: 400 12px/1 var(--mono);
+    -moz-appearance: textfield;
+  }
+  .add .num::-webkit-outer-spin-button, .add .num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .add select.field {
+    font: 400 12px/1 var(--mono);
+    padding: 10px 4px;
+    cursor: pointer;
+    color: var(--c, inherit);
+  }
+  @media (max-width: 520px) {
+    .add { flex-wrap: wrap; border-radius: 24px; padding: 8px 8px 8px 18px; }
+    .add input[type="text"] { flex-basis: 100%; }
+    .add select.field { flex: 1; }
+    .login-form { flex-wrap: wrap; border-radius: 24px; }
+    .login-form .field { flex-basis: 100%; }
+  }
+
+  /* Filters */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .chip {
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    background: var(--glass);
+    color: var(--muted);
+    border: 1px solid var(--glass-edge);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .chip:hover { color: var(--ink); }
+  .chip[aria-pressed="true"] {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--c, var(--ink)) 14%, var(--glass));
+    border-color: color-mix(in srgb, var(--c, var(--ink)) 55%, transparent);
+  }
+  .chip[data-s]::before {
+    content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--c); margin-right: 7px; vertical-align: 1px;
+  }
+
+  /* List: each row is a frosted card, softly tinted by section */
+  .list { list-style: none; margin: 0; padding: 0; }
+  .item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: start;
+    padding: 16px 14px 16px 20px;
+    margin-bottom: 10px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--c, transparent) var(--tint), var(--glass));
+    border: 1px solid color-mix(in srgb, var(--c, #fff) 24%, var(--glass-edge));
+    box-shadow: inset 3px 0 0 var(--c, transparent), var(--shadow);
+  }
+  .item.done { opacity: .68; }
+  .item input {
+    appearance: none; -webkit-appearance: none;
+    margin: 3px 0 0; width: 18px; height: 18px;
+    border: 1.5px solid var(--c, var(--ink)); border-radius: 6px;
+    background: var(--field); cursor: pointer;
+  }
+  .item input:checked {
+    background: var(--c) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.4 2.4 4.6-5' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+  }
+  .body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .text { overflow-wrap: anywhere; }
+  .meta { font: 400 11px/1.4 var(--mono); color: var(--muted); }
+  .sec { color: color-mix(in srgb, var(--c) 75%, var(--sec-mix)); font-weight: 500; }
+  .item.done .text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+  .del {
+    background: none; border: 0; cursor: pointer;
+    font-size: 22px; line-height: 1; color: var(--muted); padding: 0 4px;
+  }
+  .del:hover { color: var(--ink); }
+  @media (hover: hover) {
+    .del { opacity: 0; }
+    .item:hover .del, .del:focus-visible { opacity: 1; }
+  }
+
+  .empty { color: var(--muted); margin: 24px 0 0; }
+  .status { min-height: 1.5em; margin: 20px 0 0; font: 400 11px/1.5 var(--mono); color: var(--muted); }
+
+  /* Two columns: list on the left, Daily panel on the right */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 36px; align-items: start; }
+  .daily { position: sticky; top: 28px; }
+  .daily h2 { font: 400 34px/1 var(--serif); letter-spacing: -.01em; margin: 16px 0 8px; }
+  .daily-count { margin: 0 0 16px; color: var(--muted); font-size: 15px; }
+  .daily-setup { color: var(--muted); font-size: 14px; }
+  .daily-item .text { font-weight: 500; }
+  .daily-item .meta.is-done { color: var(--ink); font-weight: 500; }
+  .daily-item.done { opacity: 1; background: color-mix(in srgb, var(--c) 22%, var(--glass)); }
+  .daily-item.done .text { text-decoration: none; color: var(--ink); }
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; gap: 28px; }
+    .daily { order: -1; position: static; }
+  }
+
+  /* ---------- Alex's additions: password sign-in, undo, Touch Board ---------- */
+  .login-form + .login-form { margin-top: 12px; }
+  .login-form.stack { flex-wrap: wrap; border-radius: 24px; padding: 10px 10px 10px 22px; }
+  .login-form.stack .field { flex: 1 1 200px; }
+  .msg.err { color: #B4232A; }
+  @media (prefers-color-scheme: dark) { .msg.err { color: #FF8C8C; } }
+  .help { margin: 34px 0 0; padding: 18px 22px; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-edge); font-size: 15px; }
+  .help summary { cursor: pointer; font-weight: 500; }
+  .help ol { margin: 12px 0 0; padding-left: 20px; color: var(--muted); }
+  .help li { margin-bottom: 8px; }
+  .help li b { color: var(--ink); font-weight: 500; }
+  .help .login-form { margin-top: 10px; }
+
+  .banner {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    margin: 18px 0 0; padding: 12px 14px 12px 20px; border-radius: 18px;
+    background: color-mix(in srgb, #C27A2C 14%, var(--glass)); border: 1px solid color-mix(in srgb, #C27A2C 45%, transparent);
+    font-size: 14px;
+  }
+  .banner span { flex: 1 1 220px; }
+  .pw-panel { margin: 14px 0 0; }
+  .pw-panel .login-form { margin-top: 0; }
+
+  /* view switch */
+  .views { display: inline-flex; gap: 4px; padding: 4px; margin: 6px 0 30px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--shadow); }
+  .views button {
+    font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+    background: none; border: 0; border-radius: 999px; padding: 11px 18px; cursor: pointer; color: var(--muted);
+  }
+  .views button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+  /* undo */
+  .undo-top { display: inline-flex; align-items: center; gap: 6px; }
+  .undo-top[disabled] { opacity: .35; cursor: default; text-decoration: none; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    display: flex; gap: 18px; align-items: center; z-index: 10;
+    padding: 10px 10px 10px 20px; border-radius: 999px; max-width: calc(100vw - 32px);
+    background: var(--ink); color: var(--bg); box-shadow: 0 14px 34px -14px rgba(0,0,0,.5);
+    font-size: 15px; transition: opacity .18s, transform .18s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast .msgtxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .toast button {
+    flex: none; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+    background: var(--bg); color: var(--ink); border: 0; border-radius: 999px; padding: 11px 16px; cursor: pointer;
+  }
+  .kbd { font: 400 10px/1 var(--mono); opacity: .6; }
+
+  /* ---------- Touch Board ---------- */
+  #board-view { --map: #0e7490; --drill: #b45309; --quiz: #dc2626; --fig: #8a91a3; }
+  @media (prefers-color-scheme: dark) { #board-view { --map: #4fb3c9; --drill: #e0954a; --quiz: #ff6b6b; --fig: #a3a9b8; } }
+  .board-tools { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0 0 18px; }
+  .board-tools label { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .board-tools input[type="date"] {
+    font: 400 13px/1 var(--mono); padding: 9px 12px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--glass-edge); color: var(--ink);
+  }
+  .board-tools .spacer { flex: 1; }
+  .coldest { margin: 0 0 18px; font-size: 15px; color: var(--muted); }
+  .coldest b { color: var(--ink); font-weight: 500; }
+
+  .tb { width: 100%; border-collapse: separate; border-spacing: 6px; margin: 0 -6px; table-layout: fixed; }
+  .tb th { font: 500 11px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 4px 2px 8px; text-align: center; }
+  .tb th.subj-h { text-align: left; width: 150px; color: var(--muted); }
+  .tb th .bar { display: block; width: 34px; height: 3px; border-radius: 2px; margin: 6px auto 0; background: var(--s); }
+  .tb th .sub2 { display: block; margin-top: 5px; font-weight: 400; letter-spacing: .04em; text-transform: none; color: var(--muted); }
+  .tb th[data-st] { color: var(--s); }
+  .tb td.subj { padding: 8px 10px 8px 14px; border-radius: 14px; background: var(--glass); box-shadow: inset 4px 0 0 var(--c); }
+  .tb td.subj b { display: block; color: var(--c); font-weight: 500; font-size: 16px; line-height: 1.2; }
+  @media (prefers-color-scheme: dark) { .tb td.subj b { color: color-mix(in srgb, var(--c) 55%, #fff); } }
+  .tb td.subj small { display: block; font: 400 10.5px/1.3 var(--mono); color: var(--muted); margin-top: 3px; }
+
+  .cell {
+    width: 100%; min-height: 64px; display: flex; flex-direction: column; justify-content: center; gap: 3px;
+    padding: 9px 12px; border-radius: 14px; cursor: pointer; text-align: left;
+    background: var(--glass); border: 1.5px dashed color-mix(in srgb, var(--s) 70%, transparent);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  }
+  .cell:hover { border-style: solid; }
+  .cell .d { font: 500 15px/1.1 var(--sans); color: var(--ink); }
+  .cell .a { font: 400 10.5px/1.2 var(--mono); color: var(--muted); letter-spacing: .03em; }
+  .cell.blank .d { color: var(--muted); font: 500 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  .cell.fresh { border-style: solid; background: color-mix(in srgb, var(--s) 11%, var(--glass)); }
+  .cell.ok    { border-style: solid; }
+  .cell.cold  { position: relative; border: 2.5px solid #dc2626; background: color-mix(in srgb, #dc2626 6%, var(--glass)); }
+  .cell.cold .a { color: #dc2626; font-weight: 500; }
+  .cell.cold::after {
+    content: 'COLD'; position: absolute; top: -9px; right: 10px; padding: 3px 7px; border-radius: 999px;
+    font: 500 9px/1 var(--mono); letter-spacing: .12em; background: #dc2626; color: #fff;
+  }
+  .cell.today { box-shadow: 0 0 0 3px color-mix(in srgb, var(--s) 35%, transparent); }
+  .cell.hatch {
+    cursor: default; border: 1.5px solid var(--line); align-items: center;
+    background: repeating-linear-gradient(135deg, transparent 0 7px, var(--line) 7px 8px), var(--glass);
+  }
+  .cell.hatch .d { font: 500 10.5px/1 var(--mono); letter-spacing: .14em; color: var(--muted); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 18px 0 0; font: 400 11px/1.4 var(--mono); color: var(--muted); }
+  .legend i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; border: 1.5px solid #6F7A73; }
+  .legend .l-blank { border-style: dashed; }
+  .legend .l-fresh { background: color-mix(in srgb, #6F7A73 25%, transparent); }
+  .legend .l-cold { border-color: #dc2626; border-width: 2.5px; }
+  .legend .l-cold + b { font: 500 9px/1 var(--mono); letter-spacing: .1em; background: #dc2626; color: #fff; padding: 2px 5px; border-radius: 999px; margin-right: 6px; }
+  .board-rules { margin: 20px 0 0; padding: 0 0 0 18px; color: var(--muted); font-size: 14px; }
+  .board-rules li { margin-bottom: 6px; }
+  .board-rules b { color: var(--ink); font-weight: 500; }
+
+  @media (max-width: 640px) {
+    .tb { border-spacing: 4px; margin: 0 -4px; }
+    .tb th.subj-h { width: 84px; }
+    .tb th .sub2, .tb td.subj small { display: none; }
+    .tb td.subj { padding: 8px 6px 8px 10px; }
+    .tb td.subj b { font-size: 13px; }
+    .cell { min-height: 54px; padding: 7px 7px; }
+    .cell .d { font-size: 12.5px; white-space: nowrap; }
+    .cell .a { white-space: nowrap; }
+    .who #who { display: none; }
+    .who { gap: 16px; }
+    .board-tools .spacer { display: none; }
+    .cell.blank .d, .cell.hatch .d { font-size: 9px; letter-spacing: .08em; }
+    .cell .a { font-size: 9.5px; }
+  }
+
+  /* print: just the Touch Board, on white, one landscape page */
+  @media print {
+    @page { size: letter landscape; margin: 0.5in; }
+    body::before, body::after, .top, #count, .views, #todo-view, .board-tools, .board-rules, .toast, .banner, .pw-panel, #status { display: none !important; }
+    body { background: #fff; color: #1f2433; }
+    main { padding: 0; max-width: none; }
+    #app h1 { font-size: 30px; margin: 0 0 8px; }
+    #board-view { display: block !important; }
+    .cell, .tb td.subj { -webkit-backdrop-filter: none; backdrop-filter: none; background: #fff; }
+    .cell.fresh { background: color-mix(in srgb, var(--s) 14%, #fff); }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+
+<body>
+<main>
+
+  <!-- Signed out -->
+  <section id="login" hidden>
+    <div class="eyebrow">Private &middot; Two people</div>
+    <h1>MCAT prep</h1>
+    <p class="sub">Sign in with your email and password. Works on every device, no email needed.</p>
+    <form id="pw-login-form" class="login-form stack">
+      <input id="email" class="field" type="email" placeholder="you@example.com" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+      <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+    <p id="login-msg" class="msg" role="status"></p>
+
+    <details class="help" id="first-time">
+      <summary>No password yet? Set one up once (2 minutes)</summary>
+      <ol>
+        <li><b>Send yourself a sign-in email</b> using the address above.
+          <form id="login-form" style="margin-top:10px"><button class="btn" type="submit">Send email</button></form>
+        </li>
+        <li><b>Don't tap the link in the email.</b> Press and hold it (right-click on a computer), choose <b>Copy Link</b>, and paste it here:
+          <form id="paste-form" class="login-form">
+            <input id="paste-link" class="field" type="url" placeholder="Paste the link from the email" autocomplete="off" required>
+            <button class="btn" type="submit">Use link</button>
+          </form>
+        </li>
+        <li><b>Pick a password</b> on the next screen. After that, every phone, iPad and laptop just uses email + password.</li>
+      </ol>
+      <p class="msg" id="paste-msg" role="status"></p>
+    </details>
+  </section>
+
+  <!-- Signed in -->
+  <section id="app" hidden>
+    <div class="top">
+      <span class="eyebrow">Shared &middot; MCAT prep</span>
+      <span class="who">
+        <button id="undo-top" class="link undo-top" type="button" disabled title="Undo (Cmd or Ctrl + Z)">↶ Undo</button>
+        <span id="who"></span>
+        <button id="pw-open" class="link" type="button">Password</button>
+        <button id="signout" class="link" type="button">Sign out</button>
+      </span>
+    </div>
+
+    <div id="pw-banner" class="banner" hidden>
+      <span>Set a password so your phone and iPad can sign in without waiting on an email.</span>
+      <button id="pw-banner-go" class="btn" type="button">Set password</button>
+      <button id="pw-banner-x" class="link" type="button">Later</button>
+    </div>
+    <div id="pw-panel" class="pw-panel" hidden>
+      <form id="pw-form" class="login-form stack">
+        <input id="new-pw" class="field" type="password" placeholder="New password (8+ characters)" autocomplete="new-password" minlength="8" required>
+        <button class="btn" type="submit">Save password</button>
+        <button id="pw-cancel" class="link" type="button" style="margin-right:12px">Cancel</button>
+      </form>
+      <p id="pw-msg" class="msg" role="status"></p>
+    </div>
+
+    <h1 id="view-title">To do</h1>
+    <p id="count" class="sub"></p>
+    <div class="views" role="group" aria-label="View">
+      <button type="button" data-view="todo" aria-pressed="true">To do</button>
+      <button type="button" data-view="board" aria-pressed="false">Touch Board</button>
+    </div>
+
+    <div id="todo-view">
+    <div class="layout">
+    <div class="col-main">
+    <form id="add-form" class="add" autocomplete="off">
+      <input id="new-text" class="field" type="text" placeholder="Add a task" maxlength="300" aria-label="New task" required>
+      <input id="new-questions" class="field num" type="number" min="1" max="9999" inputmode="numeric" placeholder="Qs" aria-label="Number of questions (optional)">
+      <select id="new-section" class="field" aria-label="Section"></select>
+      <button class="btn" type="submit">Add</button>
+    </form>
+
+    <div id="filters" class="filters"></div>
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty" hidden>Nothing here yet.</p>
+    <p id="status" class="status" role="status"></p>
+    </div>
+
+    <aside class="daily" aria-label="Daily checklist">
+      <div class="eyebrow">Today &middot; <span id="daily-date"></span></div>
+      <h2>Daily</h2>
+      <p id="daily-count" class="daily-count"></p>
+      <ul id="daily-list" class="list"></ul>
+      <p id="daily-setup" class="daily-setup" hidden>One-time setup needed: run the "daily" SQL in Supabase, then refresh.</p>
+    </aside>
+    </div>
+    </div>
+
+    <div id="board-view" hidden>
+      <div class="board-tools">
+        <label for="touch-date">Logging for</label>
+        <input id="touch-date" type="date">
+        <button id="touch-today" class="link" type="button">Today</button>
+        <span class="spacer"></span>
+        <button id="board-print" class="link" type="button">Print / save PDF</button>
+      </div>
+      <p id="coldest" class="coldest"></p>
+      <table class="tb" id="tb"></table>
+      <div class="legend">
+        <span><i class="l-blank"></i>No date yet: go touch it</span>
+        <span><i class="l-fresh"></i>Touched this week</span>
+        <span><i></i>1 to 3 weeks ago</span>
+        <span><i class="l-cold"></i><b>COLD</b>Over 3 weeks: study next</span>
+      </div>
+      <ul class="board-rules">
+        <li><b>Tap a box</b> to date it for the day above. Tap a box dated that same day to clear it. Every tap can be undone.</li>
+        <li><b>The Error Log picks the subject, not this board.</b> Blanks are information, not a backlog.</li>
+        <li><b>15 minutes counts.</b> On a 4 hour sleep night, do the DRILL half size and date that one box.</li>
+        <li><b>Figures do not count as a touch.</b> If the only dated box in a row is FIGURE, that subject is untested.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span class="msgtxt" id="toast-msg"></span>
+    <button id="toast-undo" type="button">Undo</button>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ---------- CONFIG ----------
+  const SUPABASE_URL = 'https://pdhvwkinexzlcjedbscu.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_wyUBsiW_LCnAJSmRdSQHHg_zjL6uT8S';
+  const SECTIONS = ['General', 'Bio/Biochem', 'Chem/Phys', 'Psych/Soc', 'CARS'];
+  const POLL_MS = 5000;
+  // ----------------------------
+
+  // Preview mode: open the page with ?demo on the end (index.html?demo) to try the layout
+  // with sample tasks and no Supabase. Nothing is saved; a refresh resets it.
+  const DEMO = new URLSearchParams(window.location.search).has('demo');
+
+  function makeDemoClient() {
+    let nextId = 5;
+    const DEMO_EMAIL = 'you@demo';
+    const tables = {
+      todos: [
+        { id: 1, text: 'Full-length practice exam (AAMC FL1)', section: 'General', questions: 230, done: false, created_by: 'you@demo', created_at: '1' },
+        { id: 2, text: 'Review amino acid properties and pKa values', section: 'Bio/Biochem', questions: null, done: true, created_by: 'you@demo', created_at: '2' },
+        { id: 3, text: 'Timed passage set', section: 'CARS', questions: 9, done: false, created_by: 'her@demo', created_at: '3' },
+        { id: 4, text: 'Thermodynamics problem set', section: 'Chem/Phys', questions: 40, done: false, created_by: 'her@demo', created_at: '4' },
+      ],
+      daily: [{ day: todayStr(), item: 'Flashcards', user_email: 'her@demo' },
+        { day: '2026-11-20', item: 'touch|orgo|quiz', user_email: 'you@demo' },
+        { day: '2026-10-28', item: 'touch|physics|drill', user_email: 'you@demo' },
+        { day: todayStr(), item: 'touch|bio|map', user_email: 'you@demo' }],
+    };
+    const table = (name) => {
+      const data = tables[name];
+      const filters = [];
+      let action = 'select';
+      let patch = null;
+      const run = () => {
+        const hit = (r) => filters.every(([c, v]) => (v && v.like) ? String(r[c]).startsWith(v.like.replace(/%$/, '')) : r[c] === v);
+        if (action === 'update') { data.filter(hit).forEach((r) => Object.assign(r, patch)); return { error: null }; }
+        if (action === 'delete') { for (let i = data.length - 1; i >= 0; i--) if (hit(data[i])) data.splice(i, 1); return { error: null }; }
+        return { data: data.filter(hit).map((r) => ({ ...r })), error: null };
+      };
+      const q = {
+        select: () => { action = 'select'; return q; },
+        update: (p) => { action = 'update'; patch = p; return q; },
+        delete: () => { action = 'delete'; return q; },
+        insert: (r) => {
+          const row = name === 'todos'
+            ? { id: nextId++, done: false, created_by: DEMO_EMAIL, created_at: String(Date.now()), ...r }
+            : { user_email: DEMO_EMAIL, ...r };
+          data.push(row);
+          const res = { error: null };
+          return { select: () => Promise.resolve({ data: [{ ...row }], error: null }), then: (ok, fail) => Promise.resolve(res).then(ok, fail) };
+        },
+        eq: (c, v) => { filters.push([c, v]); return q; },
+        like: (c, v) => { filters.push([c, { like: v }]); return q; },
+        order: () => q,
+        then: (ok, fail) => Promise.resolve(run()).then(ok, fail),
+      };
+      return q;
+    };
+    return {
+      auth: {
+        getSession: async () => ({ data: { session: { user: { email: DEMO_EMAIL } } } }),
+        onAuthStateChange: () => {},
+        signInWithOtp: async () => ({ error: null }),
+        signInWithPassword: async () => ({ error: null }),
+        updateUser: async () => ({ error: null }),
+        verifyOtp: async () => ({ error: null }),
+        setSession: async () => ({ error: null }),
+        signOut: async () => {},
+      },
+      from: table,
+    };
+  }
+
+  const sb = DEMO ? makeDemoClient() : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = (id) => document.getElementById(id);
+
+  let todos = [];
+  let filter = 'All';
+  let pending = 0;          // in-flight changes; polling waits while this is > 0
+  let pollTimer = null;
+  let lastSnapshot = '';
+  let dailyRows = [];       // today's daily checks from both people
+  let dailyOk = true;       // false until the daily table exists in Supabase
+  let myEmail = '';
+  const knownOthers = new Set();   // the other person's email, once the page has seen it
+  let touchRows = [];       // Touch Board dates, stored as daily rows with item "touch|<subject>|<stage>"
+
+  // ---------- Auth ----------
+  async function init() {
+    buildSectionControls();
+
+    if (!DEMO && SUPABASE_URL.includes('YOUR-PROJECT')) {
+      showFor(null);
+      $('login-msg').textContent = 'Add your Supabase URL and anon key at the top of this file. To preview the layout first, add ?demo to the address.';
+      return;
+    }
+
+    // If the emailed link was rejected, Supabase puts the reason in the address after the #
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const linkFailed = !!hashParams.get('error_code');
+
+    const { data } = await sb.auth.getSession();
+    showFor(data.session);
+    if (linkFailed) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      if (!data.session) {
+        $('login-msg').textContent =
+          'That sign-in link expired or was already used. Send a new email, then click the link once.';
+      }
+    }
+    sb.auth.onAuthStateChange((_event, session) => showFor(session));
+  }
+
+  function showFor(session) {
+    const signedIn = !!session;
+    $('login').hidden = signedIn;
+    $('app').hidden = !signedIn;
+    if (signedIn) {
+      $('who').textContent = DEMO ? 'demo mode, nothing is saved' : session.user.email;
+      myEmail = session.user.email;
+      syncBanner();
+      startPolling();
+    } else {
+      stopPolling();
+      todos = [];
+      dailyRows = [];
+      knownOthers.clear();
+      touchRows = [];
+      undoStack.length = 0;
+      syncUndo();
+      lastSnapshot = '';
+    }
+  }
+
+  function say(id, text, isErr) {
+    $(id).textContent = text;
+    $(id).classList.toggle('err', !!isErr);
+  }
+
+  $('pw-login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('email').value.trim().toLowerCase();
+    const password = $('password').value;
+    say('login-msg', 'Signing in...');
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      const bad = /invalid/i.test(error.message || '') || error.status === 400;
+      say('login-msg', bad
+        ? "That email and password don't match. No password yet? Open the setup steps below."
+        : 'Could not sign in: ' + (error.message || 'unknown error'), true);
+      if (bad) $('first-time').open = true;
+      return;
+    }
+    localStorage.setItem('pwSet', '1');
+    say('login-msg', '');
+  });
+
+  // A copied magic link (from the email) signs this device in without leaving the page,
+  // so it works even though the link itself is set to open the coach's site.
+  $('paste-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const raw = $('paste-link').value.trim();
+    let url;
+    try { url = new URL(raw); } catch { say('paste-msg', "That doesn't look like a link. Copy the whole link from the email.", true); return; }
+    const hash = new URLSearchParams(url.hash.slice(1));
+    say('paste-msg', 'Checking the link...');
+    let error;
+    if (hash.get('access_token') && hash.get('refresh_token')) {
+      ({ error } = await sb.auth.setSession({ access_token: hash.get('access_token'), refresh_token: hash.get('refresh_token') }));
+    } else {
+      const token = url.searchParams.get('token') || url.searchParams.get('token_hash');
+      if (!token) { say('paste-msg', "That link has no sign-in code in it. Copy the link from the newest email.", true); return; }
+      const type = url.searchParams.get('type') || 'magiclink';
+      ({ error } = await sb.auth.verifyOtp({ token_hash: token, type }));
+      if (error && type !== 'email') ({ error } = await sb.auth.verifyOtp({ token_hash: token, type: 'email' }));
+    }
+    if (error) {
+      say('paste-msg', /expired|invalid/i.test(error.message || '')
+        ? 'That link was already used or expired (tapping it uses it up). Send a new email and copy the link without tapping it.'
+        : 'Could not use that link: ' + error.message, true);
+      return;
+    }
+    say('paste-msg', '');
+    $('paste-link').value = '';
+    localStorage.removeItem('pwSet');
+    openPw(true);
+  });
+
+  $('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('email').value.trim().toLowerCase();
+    if (!email) { say('login-msg', 'Type your email at the top first.', true); $('email').focus(); return; }
+    $('login-msg').textContent = 'Sending...';
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: window.location.origin + window.location.pathname,
+      },
+    });
+    if (error) {
+      const limited = error.status === 429 || /rate limit|after \d+ seconds/i.test(error.message || '');
+      say('login-msg', limited
+        ? 'The free email service only sends a few sign-in emails an hour, shared by you and your coach. Try again in about an hour, or sign in with your password.'
+        : /signups not allowed|not allowed/i.test(error.message || '')
+          ? "That email isn't on the list. Use the exact address your coach invited (check for typos)."
+          : "Couldn't send the email: " + (error.message || 'unknown error'), true);
+      return;
+    }
+    say('login-msg', 'Sent. Now copy the link from the email (press and hold it) and paste it in step 2.');
+  });
+
+  // ---------- Password ----------
+  function openPw(show) {
+    $('pw-panel').hidden = !show;
+    $('pw-banner').hidden = true;
+    if (show) { say('pw-msg', ''); setTimeout(() => $('new-pw').focus(), 50); }
+    else syncBanner();
+  }
+  function syncBanner() {
+    $('pw-banner').hidden = !$('pw-panel').hidden || !!localStorage.getItem('pwSet') || !!sessionStorage.getItem('pwLater') || DEMO;
+  }
+  $('pw-open').addEventListener('click', () => openPw($('pw-panel').hidden));
+  $('pw-banner-go').addEventListener('click', () => openPw(true));
+  $('pw-banner-x').addEventListener('click', () => { sessionStorage.setItem('pwLater', '1'); syncBanner(); });
+  $('pw-cancel').addEventListener('click', () => openPw(false));
+  $('pw-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = $('new-pw').value;
+    if (password.length < 8) { say('pw-msg', 'Use at least 8 characters.', true); return; }
+    say('pw-msg', 'Saving...');
+    const { error } = await sb.auth.updateUser({ password });
+    if (error) { say('pw-msg', 'Could not save it: ' + error.message, true); return; }
+    $('new-pw').value = '';
+    localStorage.setItem('pwSet', '1');
+    openPw(false);
+    showToast('Password saved. Other devices: email + this password.', null);
+  });
+
+  $('signout').addEventListener('click', () => sb.auth.signOut());
+
+  // ---------- Polling ----------
+  function startPolling() {
+    stopPolling();
+    load();
+    pollTimer = setInterval(() => { if (!document.hidden) load(); }, POLL_MS);
+  }
+  function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && pollTimer) load();
+  });
+
+  async function load() {
+    if (pending > 0) return;
+    const day = todayStr();
+    const [t, d, tb] = await Promise.all([
+      sb.from('todos').select('*').order('created_at', { ascending: true }),
+      sb.from('daily').select('item,user_email').eq('day', day),
+      sb.from('daily').select('day,item,user_email').like('item', 'touch|%'),
+    ]);
+    if (t.error) { setStatus('Offline. Retrying...'); return; }
+    if (pending > 0) return;              // a change started while this fetch was running
+    setStatus('');
+    const snap = JSON.stringify([t.data, d.error ? null : d.data, tb.error ? null : tb.data, day]);
+    if (snap === lastSnapshot) return;    // nothing changed, so don't redraw
+    lastSnapshot = snap;
+    todos = t.data;
+    dailyOk = !d.error;                   // a missing daily table must not break the list
+    dailyRows = d.error ? [] : d.data.filter((r) => !r.item.startsWith('touch|'));
+    touchRows = tb.error ? [] : tb.data.filter((r) => r.user_email === myEmail);
+    [...todos.map((x) => x.created_by), ...dailyRows.map((r) => r.user_email)]
+      .forEach((e) => { if (e && e !== myEmail) knownOthers.add(e); });
+    render();
+  }
+
+  // ---------- Changes ----------
+  async function mutate(fn) {
+    pending++;
+    let res = { error: null };
+    try { res = (await fn()) || res; } catch (e) { res = { error: e }; }
+    pending--;
+    if (res.error) setStatus('Something went wrong. Refreshing...');
+    lastSnapshot = '';                    // force a redraw from the server's version
+    await load();
+    return res;
+  }
+
+  // ---------- Undo ----------
+  // Every change pushes its opposite here. The toast's Undo, the top-bar Undo
+  // and Cmd/Ctrl+Z all pop the newest one.
+  const undoStack = [];
+  let toastTimer = null;
+  function pushUndo(label, undoFn) {
+    undoStack.push({ label, undoFn });
+    if (undoStack.length > 30) undoStack.shift();
+    syncUndo();
+    showToast(label, true);
+  }
+  function syncUndo() {
+    const b = $('undo-top');
+    b.disabled = undoStack.length === 0;
+    b.title = undoStack.length ? 'Undo: ' + undoStack[undoStack.length - 1].label + ' (Cmd or Ctrl + Z)' : 'Nothing to undo';
+  }
+  async function undo() {
+    const last = undoStack.pop();
+    syncUndo();
+    if (!last) return;
+    showToast('Undone: ' + last.label, null);
+    await last.undoFn();
+  }
+  function showToast(text, canUndo) {
+    $('toast-msg').textContent = text;
+    $('toast-undo').hidden = !canUndo;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $('toast').classList.remove('show'), canUndo ? 7000 : 3500);
+  }
+  $('toast-undo').addEventListener('click', () => { $('toast').classList.remove('show'); undo(); });
+  $('undo-top').addEventListener('click', undo);
+  document.addEventListener('keydown', (e) => {
+    if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.key.toLowerCase() !== 'z') return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;   // let fields undo their own typing
+    if ($('app').hidden) return;
+    e.preventDefault();
+    undo();
+  });
+  const short = (s) => (s.length > 38 ? s.slice(0, 36) + '…' : s);
+
+  $('add-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = $('new-text').value.trim();
+    if (!text) return;
+    const section = $('new-section').value;
+    const q = parseInt($('new-questions').value, 10);
+    const questions = q > 0 ? q : null;
+    $('new-text').value = '';
+    $('new-questions').value = '';
+    mutate(() => sb.from('todos').insert({ text, section, questions }).select()).then((res) => {
+      const row = res && res.data && res.data[0];
+      if (!row) return;
+      pushUndo('Added "' + short(text) + '"', () => {
+        todos = todos.filter((x) => x.id !== row.id);
+        render();
+        return mutate(() => sb.from('todos').delete().eq('id', row.id));
+      });
+    });
+  });
+
+  function setDone(t, done) {
+    const live = todos.find((x) => x.id === t.id);
+    if (live) live.done = done;
+    render();
+    return mutate(() => sb.from('todos').update({ done }).eq('id', t.id));
+  }
+
+  function toggle(t) {
+    const now = !t.done;
+    setDone(t, now);
+    pushUndo((now ? 'Checked off "' : 'Unchecked "') + short(t.text) + '"', () => setDone(t, !now));
+  }
+
+  // No "are you sure?" box any more: delete is instant and Undo puts the task back
+  // exactly as it was (same text, section, questions, who added it and its place in the list).
+  function remove(t) {
+    const copy = { text: t.text, section: t.section, questions: t.questions, done: t.done, created_by: t.created_by, created_at: t.created_at };
+    todos = todos.filter((x) => x.id !== t.id);
+    render();
+    mutate(() => sb.from('todos').delete().eq('id', t.id));
+    pushUndo('Deleted "' + short(t.text) + '"', () => mutate(() => sb.from('todos').insert(copy)));
+  }
+
+  function setDaily(item, day, on) {
+    if (day === todayStr()) {
+      dailyRows = on
+        ? [...dailyRows, { item, user_email: myEmail }]
+        : dailyRows.filter((r) => !(r.item === item && r.user_email === myEmail));
+      renderDaily();
+    }
+    return mutate(() => on
+      ? sb.from('daily').insert({ day, item })
+      : sb.from('daily').delete().eq('day', day).eq('item', item).eq('user_email', myEmail));
+  }
+
+  function toggleDaily(item, quiet) {
+    const day = todayStr();
+    const mine = dailyRows.some((r) => r.item === item && r.user_email === myEmail);
+    setDaily(item, day, !mine);
+    pushUndo((mine ? 'Unchecked ' : 'Checked off ') + item, () => setDaily(item, day, mine));
+  }
+
+  // ---------- Rendering ----------
+  function buildSectionControls() {
+    const sel = $('new-section');
+    SECTIONS.forEach((s) => sel.append(new Option(s, s)));
+    const syncSelect = () => { sel.dataset.s = slug(sel.value); };
+    sel.addEventListener('change', syncSelect);
+    syncSelect();
+
+    const bar = $('filters');
+    ['All', ...SECTIONS].forEach((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      if (s !== 'All') b.dataset.s = slug(s);
+      b.textContent = s;
+      b.setAttribute('aria-pressed', String(s === filter));
+      b.addEventListener('click', () => {
+        filter = s;
+        [...bar.children].forEach((c) => c.setAttribute('aria-pressed', String(c.textContent === s)));
+        render();
+      });
+      bar.append(b);
+    });
+  }
+
+  const slug = (s) => String(s).toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '');
+
+  function itemEl(t) {
+    const li = document.createElement('li');
+    li.className = 'item' + (t.done ? ' done' : '');
+    li.dataset.s = slug(t.section);
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = t.done;
+    cb.setAttribute('aria-label', 'Mark done');
+    cb.addEventListener('change', () => toggle(t));
+
+    const body = document.createElement('div');
+    body.className = 'body';
+    const text = document.createElement('span');
+    text.className = 'text';
+    text.textContent = t.text;
+    const meta = document.createElement('span');
+    meta.className = 'meta';
+    const sec = document.createElement('span');
+    sec.className = 'sec';
+    sec.textContent = t.section;
+    const rest = [
+      t.questions ? t.questions + (t.questions === 1 ? ' question' : ' questions') : '',
+      t.created_by ? 'added by ' + t.created_by.split('@')[0] : '',
+    ].filter(Boolean);
+    meta.append(sec, document.createTextNode(rest.map((r) => ' · ' + r).join('')));
+    body.append(text, meta);
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'del';
+    del.setAttribute('aria-label', 'Delete task');
+    del.textContent = '×';
+    del.addEventListener('click', () => remove(t));
+
+    li.append(cb, body, del);
+    return li;
+  }
+
+  function render() {
+    const visible = todos.filter((t) => filter === 'All' || t.section === filter);
+    // todos arrive from the database already sorted by created_at, oldest first
+    $('list').replaceChildren(...visible.map(itemEl));
+    $('empty').hidden = visible.length > 0;
+
+    const total = todos.length;
+    const done = todos.filter((t) => t.done).length;
+    const qTotal = todos.reduce((n, t) => n + (t.questions || 0), 0);
+    const qDone = todos.reduce((n, t) => n + (t.done ? (t.questions || 0) : 0), 0);
+    let line = total ? done + ' of ' + total + ' tasks done' : 'Nothing yet.';
+    if (qTotal) line += ' · ' + qDone + ' of ' + qTotal + ' questions';
+    $('count').textContent = line;
+    renderDaily();
+    if (view === 'board') renderBoard();
+  }
+
+  const DAILY = [
+    { item: 'CARS', key: 'cars' },
+    { item: 'Flashcards', key: 'flashcards' },
+  ];
+
+  function todayStr() {                   // the viewer's local date, YYYY-MM-DD
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function dailyEl(d) {
+    const mine = dailyRows.some((r) => r.item === d.item && r.user_email === myEmail);
+
+    const li = document.createElement('li');
+    li.className = 'item daily-item' + (mine ? ' done' : '');
+    li.dataset.s = d.key;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = mine;
+    cb.setAttribute('aria-label', d.item + ' done today');
+    cb.addEventListener('change', () => toggleDaily(d.item));
+
+    const body = document.createElement('div');
+    body.className = 'body';
+    const text = document.createElement('span');
+    text.className = 'text';
+    text.textContent = d.item;
+    body.append(text);
+
+    li.append(cb, body);
+    return li;
+  }
+
+  function renderDaily() {
+    $('daily-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    $('daily-setup').hidden = dailyOk;
+    $('daily-list').hidden = !dailyOk;
+    $('daily-count').hidden = !dailyOk;
+    if (!dailyOk) return;
+    const mineCount = DAILY.filter((d) => dailyRows.some((r) => r.item === d.item && r.user_email === myEmail)).length;
+    $('daily-count').textContent = mineCount + ' of ' + DAILY.length + ' done today';
+    $('daily-list').replaceChildren(...DAILY.map(dailyEl));
+  }
+
+  function setStatus(msg) { $('status').textContent = msg; }
+
+  // ---------- Touch Board ----------
+  // Same grid as the Touch Board PDF in 01_MCAT. Dates live in Supabase so every device shows them.
+  const STAGES = [
+    { key: 'map', label: '1 Map', sub: 'orient', v: 'var(--map)' },
+    { key: 'drill', label: '2 Drill', sub: 'answers showing', v: 'var(--drill)' },
+    { key: 'quiz', label: '3 Quiz', sub: 'cold', v: 'var(--quiz)' },
+    { key: 'figure', label: '4 Figure', sub: 'reference', v: 'var(--fig)' },
+  ];
+  const SUBJECTS = [
+    { key: 'bio', name: 'Bio', note: '2 maps · 2 drills · 3 quizzes', c: '#15803d' },
+    { key: 'biochem', name: 'Biochem', note: '9 figures · 1 quiz', c: '#9d174d' },
+    { key: 'genchem', name: 'Gen Chem', note: 'thinnest science subject', c: '#0f766e' },
+    { key: 'orgo', name: 'Orgo', note: 'fully looped · the model', c: '#b45309' },
+    { key: 'physics', name: 'Physics', note: '6 figures · 1 quiz', c: '#0e7490' },
+    { key: 'psychsoc', name: 'Psych-Soc', note: '2 maps · 2 drills · 3 quizzes', c: '#be185d' },
+    { key: 'mathres', name: 'Math & Research', note: 'balanced', c: '#92400e' },
+    { key: 'cars', name: 'CARS', note: '1 file total', c: '#4338ca', toBuild: ['map', 'drill', 'quiz'] },
+  ];
+  const touchKey = (s, st) => 'touch|' + s + '|' + st;
+  const DAY_MS = 86400000;
+  const parseDay = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const daysAgo = (s) => Math.round((parseDay(todayStr()) - parseDay(s)) / DAY_MS);
+  const niceDay = (s) => parseDay(s).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+  function touchDates(s, st) {
+    const k = touchKey(s, st);
+    return touchRows.filter((r) => r.item === k).map((r) => r.day).sort();   // oldest first
+  }
+
+  function setTouch(s, st, day, on) {
+    const item = touchKey(s, st);
+    touchRows = on ? [...touchRows, { day, item, user_email: myEmail }]
+                   : touchRows.filter((r) => !(r.item === item && r.day === day));
+    renderBoard();
+    return mutate(() => on
+      ? sb.from('daily').insert({ day, item })
+      : sb.from('daily').delete().eq('day', day).eq('item', item).eq('user_email', myEmail));
+  }
+
+  function tapTouch(subj, stage) {
+    const day = $('touch-date').value || todayStr();
+    if (day > todayStr()) { showToast("Can't date a box in the future.", null); return; }
+    const on = !touchDates(subj.key, stage.key).includes(day);
+    setTouch(subj.key, stage.key, day, on);
+    const what = subj.name + ' ' + stage.label.replace(/^\d /, '');
+    pushUndo((on ? 'Dated ' : 'Cleared ') + what + ' · ' + niceDay(day), () => setTouch(subj.key, stage.key, day, !on));
+  }
+
+  function cellEl(subj, stage) {
+    const td = document.createElement('td');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cell';
+    b.style.setProperty('--s', stage.v);
+    const d = document.createElement('span'); d.className = 'd';
+    const a = document.createElement('span'); a.className = 'a';
+    if (subj.toBuild && subj.toBuild.includes(stage.key)) {
+      b.className = 'cell hatch'; b.disabled = true; d.textContent = 'To build';
+      b.append(d); td.append(b); return td;
+    }
+    const dates = touchDates(subj.key, stage.key);
+    const last = dates[dates.length - 1];
+    if (!last) {
+      b.classList.add('blank'); d.textContent = 'Date';
+    } else {
+      const ago = daysAgo(last);
+      b.classList.add(ago <= 7 ? 'fresh' : ago <= 21 ? 'ok' : 'cold');
+      if (last === ($('touch-date').value || todayStr())) b.classList.add('today');
+      d.textContent = niceDay(last);
+      const narrow = window.matchMedia('(max-width: 640px)').matches;
+      const agoTxt = narrow ? (ago === 0 ? 'today' : ago < 14 ? ago + 'd ago' : Math.floor(ago / 7) + 'w ago') : ago === 0 ? 'today' : ago === 1 ? 'yesterday' : ago < 14 ? ago + ' days ago' : Math.floor(ago / 7) + ' weeks ago';
+      a.textContent = agoTxt + (dates.length > 1 ? ' · ' + dates.length + '×' : '');
+    }
+    b.title = dates.length ? 'Touched: ' + dates.map(niceDay).join(', ') : 'Not touched yet';
+    b.setAttribute('aria-label', subj.name + ' ' + stage.label + ': ' + (last ? 'last ' + niceDay(last) : 'no date') + '. Tap to date it.');
+    b.addEventListener('click', () => tapTouch(subj, stage));
+    b.append(d, a);
+    td.append(b);
+    return td;
+  }
+
+  function renderBoard() {
+    const tb = $('tb');
+    if (!tb) return;
+    const head = document.createElement('tr');
+    const h0 = document.createElement('th'); h0.className = 'subj-h'; h0.textContent = 'Subject'; head.append(h0);
+    STAGES.forEach((st) => {
+      const th = document.createElement('th');
+      th.dataset.st = st.key; th.style.setProperty('--s', st.v);
+      th.innerHTML = st.label + '<span class="bar"></span><span class="sub2">' + st.sub + '</span>';
+      head.append(th);
+    });
+    const rows = SUBJECTS.map((subj) => {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td'); td.className = 'subj'; td.style.setProperty('--c', subj.c);
+      const b = document.createElement('b'); b.textContent = subj.name;
+      const sm = document.createElement('small'); sm.textContent = subj.note;
+      td.append(b, sm); tr.append(td);
+      STAGES.forEach((st) => tr.append(cellEl(subj, st)));
+      return tr;
+    });
+    const thead = document.createElement('thead'); thead.append(head);
+    const tbody = document.createElement('tbody'); tbody.append(...rows);
+    tb.replaceChildren(thead, tbody);
+
+    // the coldest real-study box (Map, Drill, Quiz), never-touched first
+    let worst = null;
+    SUBJECTS.forEach((subj) => STAGES.slice(0, 3).forEach((st) => {
+      if (subj.toBuild && subj.toBuild.includes(st.key)) return;
+      const ds = touchDates(subj.key, st.key);
+      const age = ds.length ? daysAgo(ds[ds.length - 1]) : Infinity;
+      if (!worst || age > worst.age) worst = { subj, st, age };
+    }));
+    const total = touchRows.length;
+    $('coldest').innerHTML = '';
+    if (worst) {
+      const what = document.createElement('b');
+      what.textContent = worst.subj.name + ' · ' + worst.st.label.replace(/^\d /, '');
+      $('coldest').append('Coldest box: ', what, worst.age === Infinity ? ' (never touched)' : ' (' + worst.age + ' days)');
+      $('coldest').append(' · ' + total + (total === 1 ? ' touch' : ' touches') + ' logged');
+    }
+  }
+
+  // ---------- Views ----------
+  let view = localStorage.getItem('mcatView') === 'board' ? 'board' : 'todo';
+  function setView(v) {
+    view = v;
+    localStorage.setItem('mcatView', v);
+    $('todo-view').hidden = v !== 'todo';
+    $('board-view').hidden = v !== 'board';
+    $('view-title').textContent = v === 'board' ? 'Touch Board' : 'To do';
+    $('count').hidden = v !== 'todo';
+    document.querySelectorAll('.views button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+    if (v === 'board') renderBoard();
+  }
+  document.querySelectorAll('.views button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+  $('touch-date').value = todayStr();
+  $('touch-date').max = todayStr();
+  $('touch-date').addEventListener('change', renderBoard);
+  $('touch-today').addEventListener('click', () => { $('touch-date').value = todayStr(); renderBoard(); });
+  $('board-print').addEventListener('click', () => { setView('board'); setTimeout(() => window.print(), 50); });
+  setView(view);
+
+  init();
+</script>
+</body>
+</html>
